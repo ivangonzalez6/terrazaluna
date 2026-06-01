@@ -268,7 +268,7 @@ tr:hover td{background:var(--gold-pale)}
         </div>
         <div class="table-wrap">
           <table><thead><tr>
-            <th>Nombre</th><th>WhatsApp</th><th>Sellos</th><th>Visitas</th><th>Cumpleaños</th><th></th>
+            <th>Nombre</th><th>WhatsApp</th><th>Nivel</th><th>Visitas</th><th>Sellos</th><th>Premio</th><th>Cumpleaños</th><th></th>
           </tr></thead><tbody id="clientesTable"></tbody></table>
         </div>
       </div>
@@ -508,8 +508,30 @@ function setScanMsg(m,t){document.getElementById('scanMsg').innerHTML=m?`<div cl
 
 // ── CLIENTES ──
 let allClientes=[];
+let _rewardsCache=[];            // niveles ordenados por visitas_requeridas
+let _redeemedByClient={};        // client_id -> Set(niveles canjeados)
+function nivelActual(visitas){
+  let r=null;
+  _rewardsCache.forEach(x=>{ if(visitas>=x.visitas_requeridas) r=x; });
+  return r;
+}
 async function loadClientes(){
-  try{allClientes=await api('GET','loyalty_clients',null,'?order=nombre.asc&select=*')||[];renderClientes(allClientes)}catch(e){}
+  try{
+    const [clientes,rewards,redemptions]=await Promise.all([
+      api('GET','loyalty_clients',null,'?order=nombre.asc&select=*'),
+      api('GET','loyalty_rewards',null,'?activo=eq.true&order=visitas_requeridas.asc&select=*'),
+      api('GET','loyalty_redemptions',null,'?select=client_id,nivel')
+    ]);
+    allClientes=clientes||[];
+    _rewardsCache=rewards||[];
+    _redeemedByClient={};
+    (redemptions||[]).forEach(r=>{
+      const k=String(r.client_id);
+      if(!_redeemedByClient[k])_redeemedByClient[k]=new Set();
+      _redeemedByClient[k].add(r.nivel);
+    });
+    renderClientes(allClientes);
+  }catch(e){}
 }
 function filtrarClientes(){
   const q=document.getElementById('searchClients').value.toLowerCase();
@@ -517,17 +539,28 @@ function filtrarClientes(){
 }
 function renderClientes(list){
   const tb=document.getElementById('clientesTable');tb.innerHTML='';
-  if(!list.length){tb.innerHTML='<tr><td colspan="6" style="color:var(--faint);text-align:center;padding:28px">Sin clientes registrados</td></tr>';return}
+  if(!list.length){tb.innerHTML='<tr><td colspan="8" style="color:var(--faint);text-align:center;padding:28px">Sin clientes registrados</td></tr>';return}
   const now=new Date();
   list.forEach(c=>{
     const bd=c.fecha_nacimiento?new Date(c.fecha_nacimiento+'T12:00:00'):null;
     const isBd=bd&&bd.getMonth()===now.getMonth();
     const bdStr=bd?`${bd.toLocaleDateString('es-MX',{day:'numeric',month:'short'})}${isBd?' 🎂':''}` :'—';
+    const rw=nivelActual(c.visitas_totales);
+    const nivelStr=rw?`<span title="${(rw.recompensa||'').replace(/"/g,'&quot;')}">Nivel ${rw.nivel}</span>`:'<span style="color:var(--faint)">—</span>';
+    let premioStr;
+    if(!rw){ premioStr='<span style="color:var(--faint)">—</span>'; }
+    else if((_redeemedByClient[String(c.id)]||new Set()).has(rw.nivel)){
+      premioStr='<span style="color:var(--ok,#3a7a3a);font-weight:600">✓ Canjeado</span>';
+    } else {
+      premioStr='<span style="color:var(--gold);font-weight:600">Pendiente</span>';
+    }
     tb.innerHTML+=`<tr>
       <td>${c.nombre}${!c.activo?' <span style="color:var(--faint);font-size:11px">(inactivo)</span>':''}</td>
       <td style="color:var(--faint)">${c.whatsapp}</td>
-      <td><strong>${c.sellos}</strong>/10</td>
+      <td>${nivelStr}</td>
       <td>${c.visitas_totales}</td>
+      <td><strong>${c.sellos}</strong>/10</td>
+      <td>${premioStr}</td>
       <td style="color:var(--faint)">${bdStr}</td>
       <td><div class="actions-cell">
         <button class="btn-sm" onclick='editClient(${JSON.stringify(c)})'>Editar</button>
