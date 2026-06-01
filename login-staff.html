@@ -180,8 +180,15 @@ tr:hover td{background:var(--gold-pale)}
 </head>
 <body>
 
+<div id="tlBoot" style="position:fixed;inset:0;z-index:99999;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;background:#f5efe6">
+  <div style="width:42px;height:42px;border-radius:50%;border:3px solid #e7ddcf;border-top-color:#8a6420;animation:tlspin .8s linear infinite"></div>
+  <div style="font-family:sans-serif;color:#8a6420;font-size:14px;letter-spacing:.5px">Iniciando sesión…</div>
+</div>
+<style>@keyframes tlspin{to{transform:rotate(360deg)}}</style>
+
 <!-- LOGIN -->
-<div id="loginScreen">
+<div id="loginScreen" style="display:none">
+
   <div class="login-wrap">
     <div class="login-logo">Terraza Luna</div>
     <p class="login-sub">Panel · Club de Lealtad</p>
@@ -678,6 +685,7 @@ function tlGoLogin(){location.href='index.html';}
     var rows=await api('GET','app_users',null,`?id=eq.${encodeURIComponent(s.id)}&active=eq.true&select=*`);
     if(!rows||!rows.length){ tlClearAuth(); tlGoLogin(); return; }
     currentUser=rows[0];
+    var boot=document.getElementById('tlBoot'); if(boot)boot.style.display='none';
     var ls=document.getElementById('loginScreen'); if(ls)ls.style.display='none';
     document.getElementById('app').style.display='flex';
     document.getElementById('userChip').textContent=currentUser.username;

@@ -61,6 +61,11 @@ body{
 </style>
 </head>
 <body>
+<div id="tlBoot" style="position:fixed;inset:0;z-index:99999;display:none;flex-direction:column;align-items:center;justify-content:center;gap:16px;background:radial-gradient(900px 500px at 88% -8%,rgba(138,100,32,.12),transparent 60%),var(--bg)">
+  <div style="width:42px;height:42px;border-radius:50%;border:3px solid #e7ddcf;border-top-color:#8a6420;animation:tlspin .8s linear infinite"></div>
+  <div style="font-family:'Inter Tight',sans-serif;color:#8a6420;font-size:14px;letter-spacing:.5px">Iniciando sesión…</div>
+</div>
+<style>@keyframes tlspin{to{transform:rotate(360deg)}}</style>
 <div class="wrap">
   <div class="brand">
     <div class="moon"></div>
@@ -129,6 +134,7 @@ function enterFor(user){
 }
 
 function renderHub(user,allowed){
+  var boot=gid('tlBoot'); if(boot)boot.style.display='none';
   gid('loginCard').style.display='none';
   gid('hub').style.display='block';
   gid('whoName').textContent=user.username;
@@ -169,12 +175,14 @@ gid('logout').addEventListener('click',function(){tlClearAuth();location.reload(
 (async function(){
   var s=tlGetAuth();
   if(!s)return;
-  // Ocultar el login de inmediato para que NO parpadee un login secundario al reabrir
+  // Hay sesión: mostrar overlay "Iniciando sesión…" y ocultar el login para que
+  // NO se vea un segundo login al reabrir.
   gid('loginCard').style.display='none';
+  gid('tlBoot').style.display='flex';
   var rows=await sfetch('/rest/v1/app_users?id=eq.'+encodeURIComponent(s.id)+'&select=*');
   var found=Array.isArray(rows)?rows.find(function(r){return r.active;}):null;
-  if(found){ tlSetAuth(found); enterFor(found); }
-  else { tlClearAuth(); gid('loginCard').style.display=''; }
+  if(found){ tlSetAuth(found); enterFor(found); } // si redirige, el overlay queda hasta cargar la otra página
+  else { tlClearAuth(); gid('tlBoot').style.display='none'; gid('loginCard').style.display=''; }
 })();
 </script>
 </body>

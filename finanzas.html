@@ -239,8 +239,14 @@ textarea{resize:vertical;min-height:60px;font-family:inherit}
 </head>
 <body>
 
+<div id="tlBoot" style="position:fixed;inset:0;z-index:99999;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;background:var(--bg,#f5efe6)">
+  <div style="width:42px;height:42px;border-radius:50%;border:3px solid #e7ddcf;border-top-color:#8a6420;animation:tlspin .8s linear infinite"></div>
+  <div style="font-family:sans-serif;color:#8a6420;font-size:14px;letter-spacing:.5px">Iniciando sesión…</div>
+</div>
+<style>@keyframes tlspin{to{transform:rotate(360deg)}}</style>
+
 <!-- ════ LOGIN ════ -->
-<div id="loginView" class="login">
+<div id="loginView" class="login" style="display:none">
   <div class="login-card">
     <div class="login-title">Terraza Luna</div>
     <div class="login-sub">Finanzas</div>
@@ -701,6 +707,7 @@ async function tryAutoLogin(){
 
 async function enterApp(){
   startAutoRefresh();
+  var boot=gid('tlBoot'); if(boot)boot.style.display='none';
   gid('loginView').style.display='none';
   gid('appView').style.display='block';
   gid('hUser').innerHTML=esc(loggedUser.username)+' <button class="h-logout" id="logoutBtn">Salir</button>';

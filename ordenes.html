@@ -433,10 +433,17 @@ h2.sec::after{content:'';flex:1;height:1px;background:var(--line);margin-left:6p
 </head>
 <body>
 
+<!-- BOOT / INICIANDO SESIÓN -->
+<div id="tlBoot" style="position:fixed;inset:0;z-index:99999;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;background:var(--bg)">
+  <div style="width:42px;height:42px;border-radius:50%;border:3px solid #e7ddcf;border-top-color:#8a6420;animation:tlspin .8s linear infinite"></div>
+  <div style="font-family:'Inter Tight',sans-serif;color:#8a6420;font-size:14px;letter-spacing:.5px">Iniciando sesión…</div>
+</div>
+<style>@keyframes tlspin{to{transform:rotate(360deg)}}</style>
+
 <!-- NET STATUS -->
 <div id="netBanner" style="display:none;position:fixed;top:0;left:0;right:0;z-index:9999;background:var(--danger);color:#fff;font-size:11px;letter-spacing:.12em;text-transform:uppercase;text-align:center;padding:8px 14px;font-weight:600">⚠ Sin conexión — los cambios no se guardarán</div>
 <!-- LOGIN -->
-<div id="loginScreen">
+<div id="loginScreen" style="display:none">
   <div class="lbox">
     <div class="lmoon"></div>
     <div class="ltitle">Terraza Luna</div>
@@ -1049,10 +1056,11 @@ async function saveOrders(o){
   // Read-modify-write: traer estado fresco del servidor y mezclar para NO pisar
   // las mesas que otros usuarios estén editando. Solo forzamos la mesa activa local.
   try{
+    var ct=(curTable===null||curTable===undefined)?null:String(curTable); // las claves de orders son strings
     var fresh=await loadOrders();
     if(fresh&&typeof fresh==='object'){
-      Object.keys(fresh).forEach(function(t){ if(t!==curTable) o[t]=fresh[t]; });
-      Object.keys(o).forEach(function(t){ if(t!==curTable && !(t in fresh)) delete o[t]; });
+      Object.keys(fresh).forEach(function(t){ if(t!==ct) o[t]=fresh[t]; });
+      Object.keys(o).forEach(function(t){ if(t!==ct && !(t in fresh)) delete o[t]; });
     }
   }catch(e){/* si falla la lectura, guardamos lo local */}
   return spatch('/rest/v1/orders?id=eq.current',{data:o,updated_at:new Date().toISOString()})
@@ -1301,6 +1309,7 @@ async function startSession(found){
   orders=await loadOrders();appHistory=await loadHistory();
   await rebuildMenuFromDB();
   gid('loginScreen').style.display='none';gid('appShell').style.display='block';
+  var boot=gid('tlBoot'); if(boot)boot.style.display='none';
   renderTables();renderCatTabs();renderMenu();
   setInterval(sync,2500);
   startRealtime();
@@ -1331,7 +1340,7 @@ async function doLogin(){
     var s=tlGetAuth();
     if(!s){ tlGoLogin(); return; }
     var users=await loadUsers();
-    if(!users||!users.length){ gid('loginErr').textContent='Error de conexión.'; return; }
+    if(!users||!users.length){ var b=gid('tlBoot'); if(b)b.innerHTML='<div style="font-family:sans-serif;color:#8a6420;text-align:center;padding:24px">Error de conexión.<br><button onclick="location.reload()" style="margin-top:12px;padding:8px 16px;border:1px solid #8a6420;background:#fff;border-radius:8px;color:#8a6420">Reintentar</button></div>'; return; }
     var found=null;for(var i=0;i<users.length;i++){if(users[i].id===s.id&&users[i].active){found=users[i];break;}}
     if(!found){ tlClearAuth(); tlGoLogin(); return; }
     appUsers=users;
@@ -1824,6 +1833,7 @@ function doCloseTable(t){
   var paid=tblPaid(t);
   var sub=paid>0?'Ya cobrado: '+money(paid):' ';
   openPayModal('Cobrar mesa '+t,sub,remaining,'Cobrar y cerrar',async function(method){
+    if(_closeBusy)return; _closeBusy=true; // evita doble cobro por doble toque
     var fallbackPm=method||'efectivo';
     var all=[];
     if(o.items)o.items.forEach(function(it){all.push({n:it.n,p:it.p,q:it.q,note:it.note||'',paid:false,pm:fallbackPm});});
@@ -1836,10 +1846,13 @@ function doCloseTable(t){
     var totalClosed=tblSubtotal(t)+tblDiscount(t);
     var rec={id:uid(),table:t,tableNote:o.tableNote||'',openedAt:o.openedAt||Date.now(),closedAt:Date.now(),total:totalClosed,itemCount:all.length,items:all,persons:pb,paymentMethod:fallbackPm};
     appHistory.unshift(rec);
+    _closedRecently[String(t)]=Date.now();
     delete orders[t];
-    await saveOrders(orders);
-    await insertHist(rec);
-    await insertFinanceMovements(rec);
+    try{
+      await saveOrders(orders);
+      await insertHist(rec);
+      await insertFinanceMovements(rec);
+    }finally{ _closeBusy=false; }
     showToast('✓ Cuenta cerrada · '+money(totalClosed)+' ('+fallbackPm+')');
     curTable=null;curPersonId=null;
     showSc('tables');gid('cartBar').classList.remove('show');
@@ -3147,6 +3160,7 @@ gid('roleStats').addEventListener('click',function(){setRole('stats');});
 // ══ CIERRE AUTOMÁTICO CUANDO REMANENTE = $0 ══
 async function doAutoCloseTable(t){
   var o=orders[t];if(!o)return;
+  if(_closeBusy)return; _closeBusy=true;
   var sub=tblSubtotal(t),disc=tblDiscount(t),totalClosed=sub+disc;
   var all=[];
   if(o.items)o.items.forEach(function(it){all.push({n:it.n,p:it.p,q:it.q,note:it.note||'',paid:false,pm:'efectivo'});});
@@ -3157,8 +3171,12 @@ async function doAutoCloseTable(t){
   if(o.discounts&&o.discounts.length)o.discounts.forEach(function(d){all.push({n:d.label,p:d.amount,q:1,note:'Descuento 2×1',pm:'efectivo'});});
   var pb=o.persons?o.persons.map(function(p){return{name:p.name,total:pTotal(p),count:pCount(p),paid:true,paymentMethod:p.paymentMethod||'efectivo'};}):[];
   var rec={id:uid(),table:t,tableNote:o.tableNote||'',openedAt:o.openedAt||Date.now(),closedAt:Date.now(),total:totalClosed,itemCount:all.length,items:all,persons:pb,paymentMethod:'efectivo'};
-  appHistory.unshift(rec);delete orders[t];
-  await saveOrders(orders);await insertHist(rec);await insertFinanceMovements(rec);
+  appHistory.unshift(rec);
+  _closedRecently[String(t)]=Date.now();
+  delete orders[t];
+  try{
+    await saveOrders(orders);await insertHist(rec);await insertFinanceMovements(rec);
+  }finally{ _closeBusy=false; }
   showToast('✓ Mesa cerrada · '+money(totalClosed));
   curTable=null;curPersonId=null;
   showSc('tables');gid('cartBar').classList.remove('show');renderTables();
@@ -3256,6 +3274,8 @@ gid('ppayCloseBtn').addEventListener('click',function(){
 // (curTable), y volvemos a renderizar la vista visible para reflejar los cambios
 // de otros usuarios al instante.
 var _syncing=false;
+var _closedRecently={}; // claves de mesas cerradas hace poco (evita resucitarlas por sync)
+var _closeBusy=false;   // evita cobros/cierres duplicados por doble toque
 async function sync(){
   if(_syncing)return; _syncing=true;
   try{
@@ -3264,7 +3284,15 @@ async function sync(){
       var next={};
       Object.keys(fresh).forEach(function(t){ next[t]=fresh[t]; });
       // Conservar la mesa activa local (edición en curso) para no perder cambios sin guardar
-      if(curTable && orders[curTable]) next[curTable]=orders[curTable];
+      var ct=(curTable===null||curTable===undefined)?null:String(curTable);
+      if(ct && orders[ct]) next[ct]=orders[ct];
+      // No resucitar mesas cerradas recientemente: la baja puede no haberse reflejado
+      // todavía en el servidor cuando llega este sync.
+      var now=Date.now();
+      Object.keys(_closedRecently).forEach(function(k){
+        if(now-_closedRecently[k]>15000){ delete _closedRecently[k]; }
+        else { delete next[k]; }
+      });
       orders=next;
       rerenderCurrent();
     }
