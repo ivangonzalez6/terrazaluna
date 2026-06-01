@@ -118,13 +118,23 @@ var APPS=[
 
 function canSee(app,role){ return app.roles==='*' || app.roles.indexOf(role)>=0; }
 
-function renderHub(user){
+// Decide a dónde entra el usuario:
+//  - 1 sola app permitida  -> redirección automática (sin tarjetas)
+//  - varias apps           -> mostrar el hub con tarjetas
+function enterFor(user){
+  var allowed=APPS.filter(function(a){return canSee(a,user.role);});
+  if(allowed.length===1){ location.href=allowed[0].href; return; }
+  if(allowed.length===0){ gid('err').textContent='Tu usuario no tiene apps asignadas'; return; }
+  renderHub(user,allowed);
+}
+
+function renderHub(user,allowed){
   gid('loginCard').style.display='none';
   gid('hub').style.display='block';
   gid('whoName').textContent=user.username;
   gid('whoRole').textContent='· '+(user.role||'');
   var c=gid('cards');c.innerHTML='';
-  APPS.filter(function(a){return canSee(a,user.role);}).forEach(function(a){
+  (allowed||APPS.filter(function(a){return canSee(a,user.role);})).forEach(function(a){
     var el=document.createElement('a');
     el.className='app';el.href=a.href;
     el.innerHTML='<div class="ico">'+a.ico+'</div><div class="tx"><h3>'+a.title+'</h3><p>'+a.desc+'</p></div><div class="arr">→</div>';
@@ -144,7 +154,7 @@ async function doLogin(){
     if(!found){gid('err').textContent='Usuario o contraseña incorrectos';return;}
     if(!found.active){gid('err').textContent='Usuario bloqueado';return;}
     tlSetAuth(found);
-    renderHub(found);
+    enterFor(found);
   }catch(e){gid('err').textContent='Error: '+e.message;}
   finally{gid('enter').disabled=false;gid('enter').textContent='Entrar';}
 }
@@ -161,7 +171,7 @@ gid('logout').addEventListener('click',function(){tlClearAuth();location.reload(
   if(!s)return;
   var rows=await sfetch('/rest/v1/app_users?id=eq.'+encodeURIComponent(s.id)+'&select=*');
   var found=Array.isArray(rows)?rows.find(function(r){return r.active;}):null;
-  if(found){ tlSetAuth(found); renderHub(found); }
+  if(found){ tlSetAuth(found); enterFor(found); }
   else tlClearAuth();
 })();
 </script>
