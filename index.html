@@ -169,10 +169,12 @@ gid('logout').addEventListener('click',function(){tlClearAuth();location.reload(
 (async function(){
   var s=tlGetAuth();
   if(!s)return;
+  // Ocultar el login de inmediato para que NO parpadee un login secundario al reabrir
+  gid('loginCard').style.display='none';
   var rows=await sfetch('/rest/v1/app_users?id=eq.'+encodeURIComponent(s.id)+'&select=*');
   var found=Array.isArray(rows)?rows.find(function(r){return r.active;}):null;
   if(found){ tlSetAuth(found); enterFor(found); }
-  else tlClearAuth();
+  else { tlClearAuth(); gid('loginCard').style.display=''; }
 })();
 </script>
 </body>
