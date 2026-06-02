@@ -3336,7 +3336,7 @@ function startRealtime(){
 
 // ══ LEALTAD POST-CIERRE ══
 var _loyaltyScanner=null, _loyaltyScanning=false, _loyaltyFoundClient=null, _loyaltyCanjearMode=false;
-var LOYALTY_REG_URL = 'https://terrazaloyalty.vercel.app/loyalty-register.html';
+var LOYALTY_REG_URL = 'https://terrazaloyalty.vercel.app/registro.html';
 
 function showLoyaltyCheckModal(){
   _loyaltyCanjearMode=false;
@@ -3375,31 +3375,29 @@ function closeLoyaltyScanModal(){
   var m=gid('loyaltyScanModal');m.classList.remove('show');
 }
 
-function startLoyaltyScan(){
+async function startLoyaltyScan(){
   if(_loyaltyScanning)return;
-  _loyaltyScanner=new Html5Qrcode('loyaltyScannerBox');
-  _loyaltyScanner.start(
-    {facingMode:{ideal:'environment'}},
-    {fps:10,qrbox:{width:220,height:220}},
-    async function(decoded){
-      await stopLoyaltyScan();
-      var id=null;
-      try{var url=new URL(decoded);id=url.searchParams.get('id');}catch(e){}
-      if(!id){var plain=decoded.trim();if(plain.length>8)id=plain;}
-      if(id)await loyaltyLoadClientById(id);
-      else setLoyaltyScanMsg('QR no válido','err');
-    },
-    function(){}
-  ).then(function(){
+  async function _loyaltyDecoded(decoded){
+    await stopLoyaltyScan();
+    var id=null;
+    try{var url=new URL(decoded);id=url.searchParams.get('id');}catch(e){}
+    if(!id){var plain=decoded.trim();if(plain.length>8)id=plain;}
+    if(id)await loyaltyLoadClientById(id);
+    else setLoyaltyScanMsg('QR no válido','err');
+  }
+  try{
+    var cameras=await Html5Qrcode.getCameras();
+    if(!cameras||!cameras.length){setLoyaltyScanMsg('No se encontró ninguna cámara.','err');return;}
+    var rear=cameras.find(function(c){return /back|rear|env|posterior|trasera/i.test(c.label);})||cameras[cameras.length-1];
+    _loyaltyScanner=new Html5Qrcode('loyaltyScannerBox');
+    await _loyaltyScanner.start(rear.id,{fps:10,qrbox:{width:220,height:220}},_loyaltyDecoded,function(){});
     _loyaltyScanning=true;
     gid('loyaltyStartScanBtn').style.display='none';
     gid('loyaltyStopScanBtn').style.display='';
-    setLoyaltyScanMsg('Cámara activa. Apunta al QR del cliente.','ok');
-  }).catch(function(e){
-    var msg=String(e);
-    if(msg.includes('ermission'))setLoyaltyScanMsg('Permiso de cámara denegado. Actívalo en configuración.','err');
-    else setLoyaltyScanMsg('No se pudo iniciar la cámara: '+msg,'err');
-  });
+    setLoyaltyScanMsg('','');
+  }catch(e){
+    setLoyaltyScanMsg('Error al iniciar cámara: '+String(e),'err');
+  }
 }
 async function stopLoyaltyScan(){
   if(_loyaltyScanner&&_loyaltyScanning){await _loyaltyScanner.stop().catch(function(){});_loyaltyScanning=false;}
@@ -4102,91 +4100,4 @@ async function deleteLoyaltyPromo(id){
     <div id="loyaltyClientFound" style="display:none;background:var(--bg);border:1px solid var(--line2);border-radius:12px;padding:14px 16px;margin-bottom:14px">
       <div id="loyaltyClientName" style="font-family:Georgia,serif;font-size:20px;font-weight:600;margin-bottom:4px"></div>
       <div id="loyaltyClientMeta" style="font-size:12px;color:var(--faint)"></div>
-    </div>
-    <div id="loyaltyScanMsg" style="margin-bottom:8px"></div>
-    <div style="display:flex;gap:8px">
-      <button class="btn btn-g" style="flex:1" onclick="closeLoyaltyScanModal()">Cancelar</button>
-      <button class="btn btn-p" style="flex:1;display:none" id="loyaltyMarkVisitBtn" onclick="loyaltyMarkVisit()">✓ Marcar visita</button>
-      <button class="btn btn-g" style="flex:1;display:none;border-color:var(--gold);color:var(--gold)" id="loyaltyCanjearBtn" onclick="onClientReadyForCanje()">🎁 Ver Premio</button>
-    </div>
-  </div>
-</div>
-
-<div class="mb" id="loyaltyCreateModal">
-  <div class="modal">
-    <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:8px;margin-bottom:4px">
-      <div>
-        <h3>¿Crear tarjeta?</h3>
-        <div class="msub">El cliente escanea el QR para registrarse</div>
-      </div>
-    </div>
-    <div id="loyaltyRegQR" style="display:flex;justify-content:center;margin:20px 0"></div>
-    <div style="display:flex;gap:10px;margin-top:8px">
-      <button class="btn btn-g" style="flex:1;padding:14px" onclick="closeLoyaltyCreateModal()">No, cerrar</button>
-      <button class="btn btn-p" style="flex:1;padding:14px" onclick="closeLoyaltyCreateModal()">Listo ✓</button>
-    </div>
-  </div>
-</div>
-
-<!-- ══ MODAL SELECCIÓN DE PREMIO ══ -->
-<div class="mb" id="canjeoPremioModal">
-  <div class="modal">
-    <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:8px;margin-bottom:6px">
-      <div>
-        <h3>🎁 Canjear Premio</h3>
-        <div class="msub" id="canjeoClienteNombre"></div>
-      </div>
-      <button onclick="gid('canjeoPremioModal').classList.remove('show')" style="font-size:22px;color:var(--faint);padding:2px 6px;line-height:1;background:none;border:none;cursor:pointer">×</button>
-    </div>
-    <div id="canjeoRewardDesc" style="background:var(--gold-pale);border:1px solid rgba(138,100,32,.3);border-radius:10px;padding:12px 14px;margin-bottom:14px;font-size:13px;color:var(--gold);font-weight:600;line-height:1.4"></div>
-    <div class="flbl" style="margin-bottom:8px" id="canjeoPickLabel">Premio configurado para este nivel</div>
-    <div style="display:flex;flex-direction:column;gap:8px">
-      <button id="canjeoBtnBebida" class="btn btn-g" style="padding:14px;border-color:var(--gold);color:var(--gold)" onclick="aplicarPremioCoctel()">🍹 Bebida gratis</button>
-      <button id="canjeoBtn2x1" class="btn btn-g" style="padding:14px;border-color:var(--gold);color:var(--gold)" onclick="aplicarPremio2x1()">2×1 en cocteles</button>
-      <button id="canjeoBtnDescuento" class="btn btn-g" style="padding:14px;border-color:var(--gold);color:var(--gold)" onclick="aplicarDescuentoDirecto()">% Descuento</button>
-      <button id="canjeoBtnMenuGratis" class="btn btn-g" style="padding:14px;border-color:var(--gold);color:var(--gold)" onclick="aplicarPremioMenuGratis()">🍽 Menú gratis</button>
-    </div>
-    <div id="canjeoMsg" style="margin-top:10px;font-size:13px;color:var(--gold)"></div>
-  </div>
-</div>
-
-<!-- ══ MODAL DESCUENTO POR PREMIO (manual %) ══ -->
-<div class="mb" id="canjeoDescuentoModal">
-  <div class="modal">
-    <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:8px;margin-bottom:6px">
-      <div>
-        <h3>% Descuento</h3>
-        <div class="msub" id="canjeoDescClienteNombre"></div>
-      </div>
-      <button onclick="gid('canjeoDescuentoModal').classList.remove('show')" style="font-size:22px;color:var(--faint);padding:2px 6px;line-height:1;background:none;border:none;cursor:pointer">×</button>
-    </div>
-    <div class="flbl" style="margin-bottom:8px">Porcentaje a aplicar</div>
-    <input type="number" id="canjeoDescPct" min="1" max="100" placeholder="Ej. 20" style="width:100%;padding:12px 14px;border:1px solid var(--line2);border-radius:10px;font-size:16px;outline:none;font-family:inherit" onkeydown="if(event.key==='Enter')confirmarDescuentoPremio()">
-    <div id="canjeoDescMsg" style="margin-top:8px;font-size:13px;color:var(--danger)"></div>
-    <div style="display:flex;gap:8px;margin-top:14px">
-      <button class="btn btn-g" style="flex:1" onclick="gid('canjeoDescuentoModal').classList.remove('show')">Cancelar</button>
-      <button class="btn btn-p" style="flex:1" onclick="confirmarDescuentoPremio()">Aplicar</button>
-    </div>
-  </div>
-</div>
-
-<!-- ══ MODAL SELECTOR DE PRODUCTOS PARA PREMIO ══ -->
-<div class="mb" id="premioItemPickerModal">
-  <div class="modal" style="max-height:88vh;display:flex;flex-direction:column">
-    <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:8px;margin-bottom:6px">
-      <div>
-        <h3 id="premioPickerTitle">Selecciona</h3>
-        <div class="msub" id="premioPickerSub"></div>
-      </div>
-      <button onclick="gid('premioItemPickerModal').classList.remove('show')" style="font-size:22px;color:var(--faint);padding:2px 6px;line-height:1;background:none;border:none;cursor:pointer">×</button>
-    </div>
-    <div id="premioPickerCatTabs" class="cat-tabs" style="display:flex;gap:6px;overflow-x:auto;padding:6px 0;flex-shrink:0"></div>
-    <div id="premioPickerList" style="overflow-y:auto;flex:1;display:flex;flex-direction:column;gap:8px;padding-top:6px"></div>
-    <div style="margin-top:10px;flex-shrink:0">
-      <button class="btn btn-g" style="width:100%" onclick="gid('premioItemPickerModal').classList.remove('show')">Cerrar</button>
-    </div>
-  </div>
-</div>
-
-</body>
-</html>
+    
