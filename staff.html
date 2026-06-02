@@ -213,8 +213,7 @@ tr:hover td{background:var(--gold-pale)}
   <nav>
     <div class="nav-brand">Terraza Luna</div>
     <div class="tabs">
-      <div class="tab active" onclick="showTab('scanner')">Escanear</div>
-      <div class="tab" onclick="showTab('clientes')">Clientes</div>
+      <div class="tab active" onclick="showTab('clientes')">Clientes</div>
       <div class="tab" onclick="showTab('promos')">Promociones</div>
       <div class="tab" onclick="showTab('recompensas')">Recompensas</div>
     </div>
@@ -226,45 +225,8 @@ tr:hover td{background:var(--gold-pale)}
   </nav>
 
   <main>
-    <!-- SCANNER -->
-    <div class="section active" id="sec-scanner">
-      <div class="glass-card" style="margin-bottom:20px">
-        <div class="section-label">Escanear QR del cliente</div>
-        <div id="scanMsg"></div>
-        <div id="scanner-container" style="min-height:60px"></div>
-        <div class="scan-row" style="margin-top:8px">
-          <button class="btn" id="startBtn" onclick="startScanner()">📷 Iniciar cámara</button>
-          <button class="btn-ghost" id="stopBtn" onclick="stopScanner()" style="display:none">⏹ Detener</button>
-        </div>
-        <div class="or-line"><span>o buscar por WhatsApp</span></div>
-        <div class="search-wa-row">
-          <input type="tel" id="scanWa" placeholder="WhatsApp (sin +52)" onkeydown="if(event.key==='Enter')buscarPorWa()">
-          <button class="btn" onclick="buscarPorWa()">Buscar</button>
-        </div>
-      </div>
-
-      <div id="clientFound" style="display:none">
-        <div class="client-panel">
-          <div class="cp-top">
-            <div>
-              <div class="cp-name" id="cf-nombre"></div>
-              <div class="cp-meta" id="cf-meta"></div>
-            </div>
-            <div class="badges" id="cf-badges"></div>
-          </div>
-          <div class="stamps-row" id="cf-stamps"></div>
-          <div class="prog-track"><div class="prog-fill" id="cf-prog" style="width:0%"></div></div>
-          <div class="cp-stats" id="cf-stats"></div>
-          <div class="cp-actions">
-            <button class="btn" onclick="marcarVisita()">✓ Marcar visita</button>
-            <button class="btn-ghost" onclick="verHistorial()">Ver historial</button>
-          </div>
-        </div>
-      </div>
-    </div>
-
     <!-- CLIENTES -->
-    <div class="section" id="sec-clientes">
+    <div class="section active" id="sec-clientes">
       <div class="glass-card">
         <div class="table-head">
           <div class="section-label" style="margin:0">Clientes registrados</div>
@@ -275,7 +237,7 @@ tr:hover td{background:var(--gold-pale)}
         </div>
         <div class="table-wrap">
           <table><thead><tr>
-            <th>Nombre</th><th>WhatsApp</th><th>Nivel</th><th>Visitas</th><th>Sellos</th><th>Premio</th><th>Cumpleaños</th><th></th>
+            <th>Nombre</th><th>WhatsApp</th><th>Nivel</th><th>Visitas</th><th>Sellos</th><th>Premio</th><th>Cumpleaños</th><th>Visita</th><th></th>
           </tr></thead><tbody id="clientesTable"></tbody></table>
         </div>
       </div>
@@ -465,13 +427,13 @@ async function login(){
 }
 function showLoginMsg(m){document.getElementById('loginMsg').innerHTML=`<div class="msg err">${m}</div>`}
 function logout(){
-  currentUser=null;stopScanner();
+  currentUser=null;
   tlClearAuth();tlGoLogin();
 }
 
 // ── TABS ──
 function showTab(id){
-  document.querySelectorAll('.tab').forEach((t,i)=>t.classList.toggle('active',['scanner','clientes','promos','recompensas'][i]===id));
+  document.querySelectorAll('.tab').forEach((t,i)=>t.classList.toggle('active',['clientes','promos','recompensas'][i]===id));
   document.querySelectorAll('.section').forEach(s=>s.classList.remove('active'));
   document.getElementById('sec-'+id).classList.add('active');
   if(id==='clientes')loadClientes();
@@ -479,102 +441,8 @@ function showTab(id){
   if(id==='recompensas')loadRewards();
 }
 
-// ── SCANNER ──
-let scanner=null,scanning=false,currentScanClient=null;
-
-async function startScanner(){
-  if(scanning)return;
-  document.getElementById('startBtn').style.display='none';
-  document.getElementById('stopBtn').style.display='';
-  setScanMsg('Iniciando cámara…','');
-
-  async function _decoded(text){
-    await stopScanner();
-    let id=null;
-    try{const url=new URL(text);id=url.searchParams.get('id');}catch(e){}
-    if(!id){const p=text.trim();if(p.length>8)id=p;}
-    if(id)await loadClient(id);
-    else setScanMsg('QR no válido. Intenta de nuevo.','err');
-  }
-
-  try{
-    const cameras=await Html5Qrcode.getCameras();
-    if(!cameras||!cameras.length){setScanMsg('No se encontró ninguna cámara.','err');await stopScanner();return;}
-    // Auto-select best rear camera
-    const rear=cameras.find(c=>/back|rear|env|posterior|trasera/i.test(c.label))||cameras[cameras.length-1];
-    scanner=new Html5Qrcode('scanner-container');
-    await scanner.start(rear.id,{fps:10,qrbox:{width:250,height:250}},_decoded,()=>{});
-    scanning=true;
-    setScanMsg('','');
-  }catch(e){
-    setScanMsg('Error al iniciar cámara: '+String(e),'err');
-    document.getElementById('startBtn').style.display='';
-    document.getElementById('stopBtn').style.display='none';
-  }
-}
-
-async function stopScanner(){
-  if(scanner&&scanning){try{await scanner.stop();}catch(e){}try{scanner.clear();}catch(e){}scanner=null;}
-  scanning=false;
-  document.getElementById('startBtn').style.display='';
-  document.getElementById('stopBtn').style.display='none';
-}
-function cleanWa(raw){
-  let n=raw.replace(/[\s\-()]/g,'');
-  if(n.startsWith('+52'))n=n.slice(3);
-  else if(n.startsWith('52')&&n.length>10)n=n.slice(2);
-  return n;
-}
-async function buscarPorWa(){
-  const wa=cleanWa(document.getElementById('scanWa').value.trim());if(!wa)return;
-  const rows=await api('GET','loyalty_clients',null,`?whatsapp=eq.${encodeURIComponent(wa)}&select=*`);
-  if(!rows||!rows.length){setScanMsg('Cliente no encontrado.','err');return}
-  showClient(rows[0]);
-}
-async function loadClient(id){
-  const rows=await api('GET','loyalty_clients',null,`?id=eq.${id}&select=*`);
-  if(!rows||!rows.length){setScanMsg('Cliente no encontrado.','err');return}
-  showClient(rows[0]);
-}
-function showClient(c){
-  currentScanClient=c;setScanMsg('','');
-  document.getElementById('cf-nombre').textContent=c.nombre;
-  const parts=[c.whatsapp];if(c.email)parts.push(c.email);if(c.como_nos_conocio)parts.push(c.como_nos_conocio);
-  document.getElementById('cf-meta').textContent=parts.join(' · ');
-  const badges=document.getElementById('cf-badges');badges.innerHTML='';
-  if(c.fecha_nacimiento){const bd=new Date(c.fecha_nacimiento+'T12:00:00');if(bd.getMonth()===new Date().getMonth())badges.innerHTML+=`<span class="badge badge-birthday">🎂 Cumpleaños</span>`}
-  if(c.sellos>=10)badges.innerHTML+=`<span class="badge badge-reward">🎁 Recompensa</span>`;
-  const stamps=document.getElementById('cf-stamps');stamps.innerHTML='';
-  for(let i=0;i<10;i++){const s=document.createElement('div');s.className='stamp-dot'+(i<c.sellos?' full':'');s.textContent='🍹';stamps.appendChild(s)}
-  document.getElementById('cf-prog').style.width=Math.min(c.sellos,10)*10+'%';
-  document.getElementById('cf-stats').textContent=`${c.sellos}/10 sellos · ${c.visitas_totales} visitas totales`;
-  document.getElementById('clientFound').style.display='block';
-}
-async function marcarVisita(){
-  if(!currentScanClient)return;
-  try{
-    await api('POST','loyalty_visits',{client_id:currentScanClient.id,marcado_por:currentUser?.username||'admin'});
-    const ns=currentScanClient.sellos>=10?0:currentScanClient.sellos+1;
-    const nt=currentScanClient.visitas_totales+1;
-    await api('PATCH','loyalty_clients',{sellos:ns,visitas_totales:nt,updated_at:new Date().toISOString()},`?id=eq.${currentScanClient.id}`);
-    currentScanClient.sellos=ns;currentScanClient.visitas_totales=nt;
-    showClient(currentScanClient);
-    setScanMsg(`✓ Visita marcada para ${currentScanClient.nombre}. Sellos: ${ns}/10`,'ok');
-  }catch(e){setScanMsg('Error al marcar.','err')}
-}
-async function verHistorial(){
-  if(!currentScanClient)return;
-  const v=await api('GET','loyalty_visits',null,`?client_id=eq.${currentScanClient.id}&order=fecha.desc&limit=30`);
-  document.getElementById('historialTitle').textContent='Historial · '+currentScanClient.nombre;
-  const list=document.getElementById('historialList');list.innerHTML='';
-  if(!v||!v.length){list.innerHTML='<p style="color:var(--faint);font-size:13px">Sin visitas registradas.</p>'}
-  else v.forEach(item=>{
-    const d=new Date(item.fecha);
-    list.innerHTML+=`<div class="visit-item"><span>🍹 ${d.toLocaleDateString('es-MX',{weekday:'short',day:'numeric',month:'short',year:'numeric'})}</span><span style="color:var(--faint);font-size:11px">${d.toLocaleTimeString('es-MX',{hour:'2-digit',minute:'2-digit'})} · ${item.marcado_por||'—'}</span></div>`;
-  });
-  openModal('historialModal');
-}
-function setScanMsg(m,t){document.getElementById('scanMsg').innerHTML=m?`<div class="msg ${t}">${m}</div>`:''}
+// ── SCANNER (removed — clients list is the main view) ──
+let currentScanClient=null;
 
 // ── CLIENTES ──
 let allClientes=[];
@@ -632,6 +500,7 @@ function renderClientes(list){
       <td><strong>${c.sellos}</strong>/10</td>
       <td>${premioStr}</td>
       <td style="color:var(--faint)">${bdStr}</td>
+      <td><button class="btn" style="padding:5px 12px;font-size:11px;white-space:nowrap" onclick="marcarVisitaDirecta('${c.id}','${c.nombre}')">✓ Visita</button></td>
       <td><div class="actions-cell">
         <button class="btn-sm" onclick='editClient(${JSON.stringify(c)})'>Editar</button>
         <button class="btn-sm" style="color:var(--danger)" onclick="deleteClient('${c.id}','${c.nombre}')">Eliminar</button>
@@ -665,6 +534,23 @@ async function saveClient(){
     closeModal('clientModal');loadClientes();
   }catch(e){document.getElementById('clientModalMsg').innerHTML=`<div class="msg err">Error: ${e.message}</div>`}
 }
+async function marcarVisitaDirecta(id,nombre){
+  if(!confirm('¿Marcar visita para '+nombre+'?'))return;
+  try{
+    const rows=await api('GET','loyalty_clients',null,`?id=eq.${id}&select=*`);
+    if(!rows||!rows.length){alert('Cliente no encontrado');return;}
+    const c=rows[0];
+    await api('POST','loyalty_visits',{client_id:c.id,marcado_por:currentUser?.username||'admin'});
+    const ns=c.sellos>=10?0:c.sellos+1;
+    const nt=c.visitas_totales+1;
+    await api('PATCH','loyalty_clients',{sellos:ns,visitas_totales:nt,updated_at:new Date().toISOString()},`?id=eq.${c.id}`);
+    loadClientes();
+    // Small feedback
+    const btn=document.querySelector(`button[onclick="marcarVisitaDirecta('${id}','${nombre}')"]`);
+    if(btn){btn.textContent='✓✓';btn.style.background='var(--ok)';setTimeout(()=>{btn.textContent='✓ Visita';btn.style.background='';},2000);}
+  }catch(e){alert('Error al marcar visita: '+e.message);}
+}
+
 async function deleteClient(id,nombre){
   if(!confirm(`¿Eliminar a ${nombre}? Esta acción no se puede deshacer.`))return;
   await api('DELETE','loyalty_clients',null,`?id=eq.${id}`);loadClientes();
@@ -897,7 +783,7 @@ function tlGoLogin(){location.href='index.html';}
     var ls=document.getElementById('loginScreen'); if(ls)ls.style.display='none';
     document.getElementById('app').style.display='flex';
     document.getElementById('userChip').textContent=currentUser.username;
-    loadClientes();loadPromos();
+    loadClientes();loadPromos();loadRewards();
   }catch(e){ tlGoLogin(); }
 })();
 </script>
