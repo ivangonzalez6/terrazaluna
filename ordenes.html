@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>Terraza Luna · POS</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html5-qrcode/2.3.8/html5-qrcode.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jsqr/1.4.0/jsQR.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400&family=Inter+Tight:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <style>
@@ -3354,9 +3355,6 @@ function loyaltyCheckYes(){
   gid('loyaltyMarkVisitBtn').style.display='none';
   gid('loyaltyWaInput').value='';
   gid('loyaltyScanMsg').innerHTML='';
-  gid('loyaltyScannerBox').innerHTML='';
-  gid('loyaltyStartScanBtn').style.display='';
-  gid('loyaltyStopScanBtn').style.display='none';
   var m=gid('loyaltyScanModal');m.classList.add('show');
 }
 function loyaltyCheckNo(){
@@ -3370,65 +3368,44 @@ function closeLoyaltyCreateModal(){
   var m=gid('loyaltyCreateModal');m.classList.remove('show');
 }
 function closeLoyaltyScanModal(){
-  stopLoyaltyScan();
-  _loyaltyCanjearMode=false;
+  _loyaltyScanning=false;_loyaltyCanjearMode=false;
+  try{var inp=gid('loyaltyQrInput');if(inp)inp.value='';}catch(e){}
   var m=gid('loyaltyScanModal');m.classList.remove('show');
 }
 
-async function startLoyaltyScan(){
-  if(_loyaltyScanning)return;
-  gid('loyaltyStartScanBtn').style.display='none';
-  setLoyaltyScanMsg('Iniciando cámara…','');
-
-  async function _loyaltyDecoded(decoded){
-    await stopLoyaltyScan();
-    var id=null;
-    try{var url=new URL(decoded);id=url.searchParams.get('id');}catch(e){}
-    if(!id){var plain=decoded.trim();if(plain.length>8)id=plain;}
-    if(id)await loyaltyLoadClientById(id);
-    else setLoyaltyScanMsg('QR no válido — intenta de nuevo','err');
-  }
-
-  var scanConfig={fps:10,qrbox:{width:220,height:220}};
-  // Try multiple camera strategies in order of reliability
-  var strategies=[
-    function(s){return s.start({facingMode:{exact:'environment'}},scanConfig,_loyaltyDecoded,function(){});},
-    function(s){return s.start({facingMode:'environment'},scanConfig,_loyaltyDecoded,function(){});},
-    function(s){return s.start({facingMode:{ideal:'environment'}},scanConfig,_loyaltyDecoded,function(){});},
-    async function(s){
-      var cams=await Html5Qrcode.getCameras();
-      if(!cams||!cams.length)throw new Error('Sin cámaras');
-      var cam=cams.find(function(c){return /back|rear|env|posterior|trasera/i.test(c.label);})||cams[cams.length-1];
-      return s.start(cam.id,scanConfig,_loyaltyDecoded,function(){});
-    }
-  ];
-
-  var started=false;
-  for(var i=0;i<strategies.length;i++){
-    _loyaltyScanner=new Html5Qrcode('loyaltyScannerBox');
-    try{
-      await strategies[i](_loyaltyScanner);
-      started=true;
-      break;
-    }catch(e){
-      try{await _loyaltyScanner.clear();}catch(e2){}
-      _loyaltyScanner=null;
-    }
-  }
-
-  if(started){
-    _loyaltyScanning=true;
-    gid('loyaltyStopScanBtn').style.display='';
-    setLoyaltyScanMsg('','');
-  }else{
-    gid('loyaltyStartScanBtn').style.display='';
-    setLoyaltyScanMsg('No se pudo acceder a la cámara. Verifica los permisos en tu navegador.','err');
-  }
+function processLoyaltyQr(input){
+  if(!input.files||!input.files[0])return;
+  setLoyaltyScanMsg('Leyendo QR…','');
+  var reader=new FileReader();
+  reader.onload=function(e){
+    var img=new Image();
+    img.onload=function(){
+      var canvas=gid('loyaltyQrCanvas');
+      canvas.width=img.width;canvas.height=img.height;
+      var ctx=canvas.getContext('2d');
+      ctx.drawImage(img,0,0);
+      var imageData=ctx.getImageData(0,0,canvas.width,canvas.height);
+      var code=jsQR(imageData.data,imageData.width,imageData.height,{inversionAttempts:'dontInvert'});
+      if(code){
+        var decoded=code.data;
+        var id=null;
+        try{var url=new URL(decoded);id=url.searchParams.get('id');}catch(err){}
+        if(!id){var plain=decoded.trim();if(plain.length>8)id=plain;}
+        if(id){setLoyaltyScanMsg('','');loyaltyLoadClientById(id);}
+        else setLoyaltyScanMsg('QR no válido. Intenta con otro ángulo.','err');
+      }else{
+        setLoyaltyScanMsg('No se detectó QR. Asegúrate de enfocar bien el código.','err');
+      }
+    };
+    img.onerror=function(){setLoyaltyScanMsg('Error al leer la imagen.','err');};
+    img.src=e.target.result;
+  };
+  reader.readAsDataURL(input.files[0]);
+  input.value=''; // reset so same file can be selected again
 }
 async function stopLoyaltyScan(){
-  if(_loyaltyScanner&&_loyaltyScanning){await _loyaltyScanner.stop().catch(function(){});_loyaltyScanning=false;}
-  gid('loyaltyStartScanBtn').style.display='';
-  gid('loyaltyStopScanBtn').style.display='none';
+  // No video stream to stop with photo-based scanning
+  _loyaltyScanning=false;
 }
 async function loyaltySearchByWa(){
   var wa=gid('loyaltyWaInput').value.trim();if(!wa)return;
@@ -3515,9 +3492,6 @@ gid('canjearPremioBtn').addEventListener('click', function(){
   gid('loyaltyCanjearBtn').style.display='none';
   gid('loyaltyWaInput').value='';
   gid('loyaltyScanMsg').innerHTML='';
-  gid('loyaltyScannerBox').innerHTML='';
-  gid('loyaltyStartScanBtn').style.display='';
-  gid('loyaltyStopScanBtn').style.display='none';
   gid('loyaltyScanModal').classList.add('show');
 });
 
@@ -4109,10 +4083,18 @@ async function deleteLoyaltyPromo(id){
       </div>
       <button onclick="closeLoyaltyScanModal()" style="font-size:22px;color:var(--faint);padding:2px 6px;line-height:1;background:none;border:none;cursor:pointer">×</button>
     </div>
-    <div id="loyaltyScannerBox" style="border-radius:10px;overflow:hidden;border:1px solid var(--line2);max-height:220px;margin-bottom:12px"></div>
-    <div style="display:flex;gap:8px;margin-bottom:14px">
-      <button class="btn btn-g" style="flex:0;padding:8px 12px;font-size:11px" id="loyaltyStartScanBtn" onclick="startLoyaltyScan()">📷 Cámara</button>
-      <button class="btn btn-g" style="flex:0;padding:8px 12px;font-size:11px;display:none" id="loyaltyStopScanBtn" onclick="stopLoyaltyScan()">Detener</button>
+    <!-- Captura de foto para leer QR (funciona en todos los móviles) -->
+    <input type="file" id="loyaltyQrInput" accept="image/*" capture="environment"
+      style="display:none" onchange="processLoyaltyQr(this)">
+    <canvas id="loyaltyQrCanvas" style="display:none"></canvas>
+    <div style="margin-bottom:14px">
+      <button class="btn btn-p" style="width:100%;padding:14px;font-size:14px;letter-spacing:.04em"
+        onclick="gid('loyaltyQrInput').click()">
+        📷 Escanear QR con cámara
+      </button>
+      <div style="font-size:11px;color:var(--faint);text-align:center;margin-top:6px">
+        Apunta al código QR de la tarjeta y toma la foto
+      </div>
     </div>
     <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px">
       <div style="flex:1;height:1px;background:var(--line)"></div>
