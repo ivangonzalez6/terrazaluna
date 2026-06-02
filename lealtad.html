@@ -208,4 +208,11 @@ async function ingresar(){
     } else {
       location.href='cliente.html?id='+data[0].id;
     }
-  }catch(e){showMsg('Error de conexión. Intenta
+  }catch(e){showMsg('Error de conexión. Intenta de nuevo.','err')}
+  finally{btn.disabled=false;btn.textContent='Ingresar →'}
+}
+
+function showMsg(m,t){document.getElementById('msg').innerHTML=`<div class="msg ${t}">${m}</div>`}
+</script>
+</body>
+</html>
