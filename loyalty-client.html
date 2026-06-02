@@ -288,7 +288,9 @@ footer{margin-top:32px;font-size:11px;color:var(--faint);text-align:center;lette
       <button class="close-btn-x" onclick="closePassport()" title="Cerrar">✕</button>
     </div>
     <p class="p-sub">Califica los cocteles que ya probaste.</p>
-    <div id="passportCounter" style="font-family:'Cormorant Garamond',serif;font-size:18px;font-weight:600;color:var(--gold);margin-bottom:4px;padding:12px 16px;background:var(--gold-pale);border-radius:10px;border:1px solid rgba(138,100,32,.2)"></div>
+    <div id="passportCounter" style="font-family:'Cormorant Garamond',serif;font-size:18px;font-weight:600;color:var(--gold);margin-bottom:12px;padding:12px 16px;background:var(--gold-pale);border-radius:10px;border:1px solid rgba(138,100,32,.2)"></div>
+    <input type="search" id="passportSearch" placeholder="🔍 Buscar coctel…" oninput="filterPassport()"
+      style="width:100%;padding:10px 14px;border:1px solid var(--line2);border-radius:10px;font-family:'Inter Tight',sans-serif;font-size:14px;color:var(--ink);background:var(--bg2);outline:none;margin-bottom:4px">
     <div id="passportList"></div>
   </div>
 </div>
@@ -683,8 +685,30 @@ function shareCard(){
 }
 
 // ── PASSPORT ──
-function openPassport(){document.getElementById('passportOverlay').classList.add('open');renderPassport()}
+function openPassport(){
+  const s=document.getElementById('passportSearch');if(s)s.value='';
+  document.getElementById('passportOverlay').classList.add('open');
+  renderPassport();
+}
 function closePassport(){document.getElementById('passportOverlay').classList.remove('open')}
+
+function filterPassport(){
+  const q=(document.getElementById('passportSearch')?.value||'').toLowerCase().trim();
+  const list=document.getElementById('passportList');
+  list.querySelectorAll('.drink-item').forEach(item=>{
+    const name=item.querySelector('.drink-name')?.textContent?.toLowerCase()||'';
+    item.style.display=(!q||name.includes(q))?'':'none';
+  });
+  // Hide section headers if all their items are hidden
+  list.querySelectorAll('.passport-section-head').forEach(head=>{
+    let next=head.nextElementSibling;let allHidden=true;
+    while(next&&!next.classList.contains('passport-section-head')){
+      if(next.style.display!=='none'){allHidden=false;break}
+      next=next.nextElementSibling;
+    }
+    head.style.display=allHidden?'none':'';
+  });
+}
 
 // ── VISITS OVERLAY ──
 function openVisitsOverlay(){document.getElementById('visitsOverlay').classList.add('open');renderVisitsOverlay()}

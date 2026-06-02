@@ -169,6 +169,13 @@ tr:hover td{background:var(--gold-pale)}
 
 /* SECTION LABEL */
 .section-label{font-size:10px;font-weight:600;letter-spacing:.22em;text-transform:uppercase;color:var(--faint);margin-bottom:16px}
+/* CLIENT DETAIL STAT BOX */
+.cd-stat{background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:12px;text-align:center}
+.cd-stat strong{display:block;font-family:'Cormorant Garamond',serif;font-size:26px;font-weight:600;color:var(--ink);line-height:1}
+.cd-stat span{font-size:10px;color:var(--faint);letter-spacing:.12em;text-transform:uppercase;margin-top:3px;display:block}
+/* CLIENT NAME LINK in table */
+.client-name-link{color:var(--ink);text-decoration:none;font-weight:600;cursor:pointer;border-bottom:1px dashed var(--line2);transition:color .15s,border-color .15s}
+.client-name-link:hover{color:var(--gold);border-color:var(--gold)}
 
 /* OR DIVIDER */
 .or-line{display:flex;align-items:center;gap:12px;margin:20px 0}
@@ -224,14 +231,14 @@ tr:hover td{background:var(--gold-pale)}
       <div class="glass-card" style="margin-bottom:20px">
         <div class="section-label">Escanear QR del cliente</div>
         <div id="scanMsg"></div>
-        <div id="scanner-container"></div>
-        <div class="scan-row">
+        <div id="scanner-container" style="min-height:60px"></div>
+        <div class="scan-row" style="margin-top:8px">
           <button class="btn" id="startBtn" onclick="startScanner()">📷 Iniciar cámara</button>
-          <button class="btn-ghost" id="stopBtn" onclick="stopScanner()" style="display:none">Detener</button>
+          <button class="btn-ghost" id="stopBtn" onclick="stopScanner()" style="display:none">⏹ Detener</button>
         </div>
         <div class="or-line"><span>o buscar por WhatsApp</span></div>
         <div class="search-wa-row">
-          <input type="tel" id="scanWa" placeholder="WhatsApp del cliente" onkeydown="if(event.key==='Enter')buscarPorWa()">
+          <input type="tel" id="scanWa" placeholder="WhatsApp (sin +52)" onkeydown="if(event.key==='Enter')buscarPorWa()">
           <button class="btn" onclick="buscarPorWa()">Buscar</button>
         </div>
       </div>
@@ -366,6 +373,44 @@ tr:hover td{background:var(--gold-pale)}
   </div>
 </div>
 
+<!-- MODAL DETALLE CLIENTE -->
+<div class="overlay" id="clientDetailModal">
+  <div class="modal" style="max-width:560px">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px">
+      <h3 id="cdNombre" style="margin:0"></h3>
+      <button class="btn-ghost" style="padding:6px 12px" onclick="closeModal('clientDetailModal')">✕</button>
+    </div>
+    <div id="cdMeta" style="font-size:12px;color:var(--faint);margin-bottom:18px"></div>
+
+    <!-- Stats row -->
+    <div id="cdStats" style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:18px"></div>
+
+    <!-- Contact info -->
+    <div class="section-label" style="margin-bottom:8px">Información de contacto</div>
+    <div id="cdContact" style="font-size:13px;color:var(--dim);background:var(--bg);border:1px solid var(--line);border-radius:var(--nr);padding:12px 14px;margin-bottom:18px;line-height:1.8"></div>
+
+    <!-- Nivel y premios -->
+    <div class="section-label" style="margin-bottom:8px">Nivel y recompensas</div>
+    <div id="cdLevel" style="margin-bottom:18px"></div>
+
+    <!-- Bebidas probadas -->
+    <div id="cdDrinksSection" style="display:none;margin-bottom:18px">
+      <div class="section-label" style="margin-bottom:8px">Bebidas probadas</div>
+      <div id="cdDrinksList" style="max-height:160px;overflow-y:auto;font-size:13px;color:var(--dim)"></div>
+    </div>
+
+    <!-- Visitas -->
+    <div class="section-label" style="margin-bottom:8px">Historial de visitas</div>
+    <div id="cdVisits" class="visit-list" style="max-height:200px;overflow-y:auto"></div>
+    <p id="cdVisitsEmpty" style="font-size:13px;color:var(--faint);display:none">Sin visitas registradas.</p>
+
+    <div class="modal-actions">
+      <button class="btn-ghost" onclick="closeModal('clientDetailModal')">Cerrar</button>
+      <button class="btn" id="cdEditBtn" onclick="">Editar</button>
+    </div>
+  </div>
+</div>
+
 <!-- MODAL PROMO -->
 <div class="overlay" id="promoModal">
   <div class="modal">
@@ -436,45 +481,47 @@ function showTab(id){
 
 // ── SCANNER ──
 let scanner=null,scanning=false,currentScanClient=null;
+
 function startScanner(){
   if(scanning)return;
-  scanner=new Html5Qrcode('scanner-container');
-  scanner.start(
-    {facingMode:{ideal:'environment'}},
-    {fps:10,qrbox:{width:250,height:250},aspectRatio:1.0},
-    async decoded=>{
-      await stopScanner();
-      // Try as URL first; if not a URL, treat decoded value as client ID directly
-      let id=null;
-      try{const url=new URL(decoded);id=url.searchParams.get('id');}catch{}
-      if(!id){
-        // Fallback: decoded string might just be the ID
-        const plain=decoded.trim();
-        if(plain&&plain.length>8)id=plain;
-      }
-      if(id)await loadClient(id);else setScanMsg('QR no válido. Intenta de nuevo.','err');
-    },
-    ()=>{}
-  ).then(()=>{
-    scanning=true;
-    document.getElementById('startBtn').style.display='none';
-    document.getElementById('stopBtn').style.display='';
-    setScanMsg('Cámara activa. Apunta al código QR del cliente.','ok');
-  }).catch(e=>{
-    const msg=String(e);
-    if(msg.includes('permission')||msg.includes('Permission'))
-      setScanMsg('Permiso de cámara denegado. Actívalo en configuración.','err');
-    else
-      setScanMsg('No se pudo iniciar la cámara: '+msg,'err');
-  });
+  document.getElementById('startBtn').style.display='none';
+  document.getElementById('stopBtn').style.display='';
+  setScanMsg('','');
+  // Use Html5QrcodeScanner for better iOS/Android compatibility
+  scanner=new Html5QrcodeScanner('scanner-container',{
+    fps:10,
+    qrbox:{width:250,height:250},
+    rememberLastUsedCamera:true,
+    supportedScanTypes:[Html5QrcodeScanType.SCAN_TYPE_CAMERA]
+  },false);
+  scanner.render(async decoded=>{
+    try{await scanner.clear();}catch(e){}
+    scanning=false;
+    document.getElementById('startBtn').style.display='';
+    document.getElementById('stopBtn').style.display='none';
+    let id=null;
+    try{const url=new URL(decoded);id=url.searchParams.get('id');}catch{}
+    if(!id){const plain=decoded.trim();if(plain.length>8)id=plain;}
+    if(id)await loadClient(id);
+    else setScanMsg('QR no válido. Intenta de nuevo.','err');
+  },err=>{/* ignore scan errors */});
+  scanning=true;
 }
+
 async function stopScanner(){
-  if(scanner&&scanning){await scanner.stop().catch(()=>{});scanning=false}
+  if(scanner){try{await scanner.clear();}catch(e){}scanner=null;}
+  scanning=false;
   document.getElementById('startBtn').style.display='';
   document.getElementById('stopBtn').style.display='none';
 }
+function cleanWa(raw){
+  let n=raw.replace(/[\s\-()]/g,'');
+  if(n.startsWith('+52'))n=n.slice(3);
+  else if(n.startsWith('52')&&n.length>10)n=n.slice(2);
+  return n;
+}
 async function buscarPorWa(){
-  const wa=document.getElementById('scanWa').value.trim();if(!wa)return;
+  const wa=cleanWa(document.getElementById('scanWa').value.trim());if(!wa)return;
   const rows=await api('GET','loyalty_clients',null,`?whatsapp=eq.${encodeURIComponent(wa)}&select=*`);
   if(!rows||!rows.length){setScanMsg('Cliente no encontrado.','err');return}
   showClient(rows[0]);
@@ -573,7 +620,7 @@ function renderClientes(list){
       premioStr='<span style="color:var(--gold);font-weight:600">Pendiente</span>';
     }
     tb.innerHTML+=`<tr>
-      <td>${c.nombre}${!c.activo?' <span style="color:var(--faint);font-size:11px">(inactivo)</span>':''}</td>
+      <td><a class="client-name-link" onclick="verDetalleCliente('${c.id}')">${c.nombre}</a>${!c.activo?' <span style="color:var(--faint);font-size:11px">(inactivo)</span>':''}</td>
       <td style="color:var(--faint)">${c.whatsapp}</td>
       <td>${nivelStr}</td>
       <td>${c.visitas_totales}</td>
@@ -616,6 +663,111 @@ async function saveClient(){
 async function deleteClient(id,nombre){
   if(!confirm(`¿Eliminar a ${nombre}? Esta acción no se puede deshacer.`))return;
   await api('DELETE','loyalty_clients',null,`?id=eq.${id}`);loadClientes();
+}
+
+// ── DETALLE CLIENTE ──
+async function verDetalleCliente(id){
+  openModal('clientDetailModal');
+  // Reset content
+  document.getElementById('cdNombre').textContent='Cargando…';
+  document.getElementById('cdMeta').textContent='';
+  document.getElementById('cdStats').innerHTML='';
+  document.getElementById('cdContact').innerHTML='';
+  document.getElementById('cdLevel').innerHTML='';
+  document.getElementById('cdDrinksList').innerHTML='';
+  document.getElementById('cdDrinksSection').style.display='none';
+  document.getElementById('cdVisits').innerHTML='';
+  document.getElementById('cdVisitsEmpty').style.display='none';
+
+  try{
+    const [clients,visits,ratings,redemptions]=await Promise.all([
+      api('GET','loyalty_clients',null,`?id=eq.${id}&select=*`),
+      api('GET','loyalty_visits',null,`?client_id=eq.${id}&order=fecha.desc&limit=50`),
+      api('GET','loyalty_drink_ratings',null,`?client_id=eq.${id}&probada=eq.true&select=*`),
+      api('GET','loyalty_redemptions',null,`?client_id=eq.${id}&select=*`)
+    ]);
+    if(!clients||!clients.length){document.getElementById('cdNombre').textContent='No encontrado';return}
+    const c=clients[0];
+    const rw=nivelActual(c.visitas_totales);
+    const redeemedSet=new Set((redemptions||[]).map(r=>r.nivel));
+
+    // Header
+    document.getElementById('cdNombre').textContent=c.nombre;
+    const since=new Date(c.created_at).toLocaleDateString('es-MX',{month:'long',year:'numeric'});
+    document.getElementById('cdMeta').textContent=`Miembro desde ${since}${!c.activo?' · Inactivo':''}`;
+
+    // Edit button
+    document.getElementById('cdEditBtn').onclick=()=>{closeModal('clientDetailModal');editClient(c)};
+
+    // Stats
+    const stats=[
+      {label:'Visitas',val:c.visitas_totales},
+      {label:'Sellos',val:`${c.sellos}/10`},
+      {label:'Cocteles',val:(ratings||[]).length}
+    ];
+    document.getElementById('cdStats').innerHTML=stats.map(s=>`
+      <div class="cd-stat"><strong>${s.val}</strong><span>${s.label}</span></div>`).join('');
+
+    // Contact
+    const bd=c.fecha_nacimiento?new Date(c.fecha_nacimiento+'T12:00:00').toLocaleDateString('es-MX',{day:'numeric',month:'long',year:'numeric'}):'—';
+    const conocio={instagram:'Instagram',tiktok:'TikTok',facebook:'Facebook',recomendacion:'Recomendación',google:'Google Maps',pasando:'Pasaba por aquí',evento:'Evento',otro:'Otro'};
+    document.getElementById('cdContact').innerHTML=`
+      📱 <strong>WhatsApp:</strong> ${c.whatsapp}<br>
+      ${c.email?`✉️ <strong>Email:</strong> ${c.email}<br>`:''}
+      🎂 <strong>Cumpleaños:</strong> ${bd}<br>
+      ${c.como_nos_conocio?`🔍 <strong>Nos conoció por:</strong> ${conocio[c.como_nos_conocio]||c.como_nos_conocio}`:''}`;
+
+    // Level & prizes
+    if(rw){
+      const canjeado=redeemedSet.has(rw.nivel);
+      document.getElementById('cdLevel').innerHTML=`
+        <div style="background:var(--gold-pale);border:1px solid rgba(138,100,32,.2);border-radius:10px;padding:12px 14px">
+          <div style="font-size:10px;font-weight:600;letter-spacing:.15em;text-transform:uppercase;color:var(--gold);margin-bottom:4px">Nivel ${rw.nivel}</div>
+          <div style="font-family:'Cormorant Garamond',serif;font-size:18px;font-weight:600;color:var(--ink)">${rw.recompensa}</div>
+          ${rw.descripcion?`<div style="font-size:12px;color:var(--faint);margin-top:3px">${rw.descripcion}</div>`:''}
+          <div style="margin-top:8px;font-size:11px;font-weight:600;color:${canjeado?'var(--ok)':'var(--gold)'}">
+            ${canjeado?'✓ Premio canjeado':'⏳ Premio pendiente de canje'}
+          </div>
+        </div>`;
+    } else {
+      document.getElementById('cdLevel').innerHTML=`<p style="font-size:13px;color:var(--faint)">Sin nivel desbloqueado aún. ${10-c.visitas_totales>0?`Faltan ${10-c.visitas_totales} visitas para el primer nivel.`:''}</p>`;
+    }
+
+    // Drinks tried
+    const ratingsList=ratings||[];
+    if(ratingsList.length>0){
+      // Fetch drink names
+      const ids=ratingsList.map(r=>r.drink_id).join(',');
+      let nameMap={};
+      try{
+        const items=await api('GET','menu_items',null,`?id=in.(${ids})&select=id,name`);
+        (items||[]).forEach(i=>{nameMap[i.id]=i.name});
+      }catch(e){}
+      const emojiMap={deliciosa:'😍',mas_o_menos:'😐',no_me_gusto:'😞'};
+      document.getElementById('cdDrinksList').innerHTML=ratingsList.map(r=>`
+        <div style="display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid var(--line)">
+          <span>${emojiMap[r.rating]||'✅'}</span>
+          <span>${nameMap[r.drink_id]||'Coctel'}</span>
+        </div>`).join('');
+      document.getElementById('cdDrinksSection').style.display='block';
+    }
+
+    // Visits
+    const vList=document.getElementById('cdVisits');
+    if(!visits||!visits.length){
+      document.getElementById('cdVisitsEmpty').style.display='block';
+      vList.style.display='none';
+    } else {
+      vList.style.display='flex';
+      visits.forEach((v,i)=>{
+        const d=new Date(v.fecha);
+        const row=document.createElement('div');row.className='visit-item';
+        row.innerHTML=`<span>🍹 ${d.toLocaleDateString('es-MX',{weekday:'short',day:'numeric',month:'short',year:'numeric'})}</span>
+          <span style="color:var(--faint);font-size:11px">${d.toLocaleTimeString('es-MX',{hour:'2-digit',minute:'2-digit'})} · #${visits.length-i}</span>`;
+        vList.appendChild(row);
+      });
+    }
+  }catch(e){document.getElementById('cdNombre').textContent='Error al cargar';console.error(e)}
 }
 
 // ── PROMOS ──

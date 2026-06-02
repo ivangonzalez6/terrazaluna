@@ -138,7 +138,7 @@ footer{margin-top:40px;font-size:11px;color:var(--faint);text-align:center;lette
 
   <!-- Formulario -->
   <div class="glass-card" id="formCard">
-    <div class="card-title" style="font-size:28px">✦ REGISTRAR NUEVA TARJETA ✦</div>
+    <div class="card-title" style="font-size:20px;letter-spacing:.04em">Registrar nueva tarjeta de lealtad</div>
     <p class="card-sub">Regístrate gratis para acumular sellos y ganar beneficios exclusivos en Terraza Luna.</p>
     <div id="formMsg"></div>
 
@@ -149,36 +149,31 @@ footer{margin-top:40px;font-size:11px;color:var(--faint);text-align:center;lette
       </div>
       <div class="field">
         <label>WhatsApp *</label>
-        <input type="tel" id="whatsapp" placeholder="+52 55 0000 0000" autocomplete="tel">
+        <input type="tel" id="whatsapp" placeholder="55 0000 0000" autocomplete="tel">
       </div>
     </div>
     <div class="field">
-      <label>Cumpleaños 🎂 <span style="color:var(--faint);font-weight:400;letter-spacing:0;text-transform:none">— para tu beneficio de cumpleaños</span></label>
+      <label>Cumpleaños 🎂 * <span style="color:var(--faint);font-weight:400;letter-spacing:0;text-transform:none">— para tu beneficio de cumpleaños</span></label>
       <input type="date" id="fechaNac">
     </div>
-
-    <details class="opt-fields">
-      <summary>+ Datos opcionales (email, cómo nos conociste)</summary>
-      <div style="margin-top:14px">
-        <div class="field">
-          <label>Email</label>
-          <input type="email" id="email" placeholder="tu@correo.com" autocomplete="email">
-        </div>
-        <div class="field" style="margin-bottom:4px">
-          <label>¿Cómo nos conociste?</label>
-          <select id="conocio">
-            <option value="">Selecciona…</option>
-            <option value="instagram">Instagram</option>
-            <option value="facebook">Facebook</option>
-            <option value="recomendacion">Un amigo me recomendó</option>
-            <option value="google">Google Maps</option>
-            <option value="pasando">Pasaba por aquí</option>
-            <option value="evento">Evento</option>
-            <option value="otro">Otro</option>
-          </select>
-        </div>
-      </div>
-    </details>
+    <div class="field">
+      <label>Email *</label>
+      <input type="email" id="email" placeholder="tu@correo.com" autocomplete="email">
+    </div>
+    <div class="field">
+      <label>¿Cómo nos conociste? *</label>
+      <select id="conocio">
+        <option value="">Selecciona…</option>
+        <option value="instagram">Instagram</option>
+        <option value="tiktok">TikTok</option>
+        <option value="facebook">Facebook</option>
+        <option value="recomendacion">Un amigo me recomendó</option>
+        <option value="google">Google Maps</option>
+        <option value="pasando">Pasaba por aquí</option>
+        <option value="evento">Evento</option>
+        <option value="otro">Otro</option>
+      </select>
+    </div>
 
     <button class="btn-primary" id="registerBtn" onclick="registrar()" style="margin-top:18px">Obtener mi tarjeta →</button>
 
@@ -231,10 +226,25 @@ async function api(method,table,body,filter=''){
 
 let currentId='';
 
+function cleanWa(raw){
+  // Remove spaces, dashes, parens then strip leading country code +52 or 52
+  let n=raw.replace(/[\s\-()]/g,'');
+  if(n.startsWith('+52'))n=n.slice(3);
+  else if(n.startsWith('52')&&n.length>10)n=n.slice(2);
+  return n;
+}
+
 async function registrar(){
   const nombre=document.getElementById('nombre').value.trim();
-  const wa=document.getElementById('whatsapp').value.trim();
+  const waRaw=document.getElementById('whatsapp').value.trim();
+  const wa=cleanWa(waRaw);
+  const email=document.getElementById('email').value.trim();
+  const fechaNac=document.getElementById('fechaNac').value;
+  const conocio=document.getElementById('conocio').value;
   if(!nombre||!wa){showMsg('Nombre y WhatsApp son requeridos.','err');return}
+  if(!email){showMsg('El email es requerido.','err');return}
+  if(!fechaNac){showMsg('La fecha de cumpleaños es requerida.','err');return}
+  if(!conocio){showMsg('Por favor indica cómo nos conociste.','err');return}
   const btn=document.getElementById('registerBtn');
   btn.disabled=true;btn.textContent='Procesando…';
   document.getElementById('formMsg').innerHTML='';
@@ -244,9 +254,9 @@ async function registrar(){
     if(ex&&ex.length>0){c=ex[0];showMsg('¡Ya tienes tarjeta! Aquí está tu QR.','ok')}
     else{
       const payload={nombre,whatsapp:wa,
-        fecha_nacimiento:document.getElementById('fechaNac').value||null,
-        email:document.getElementById('email').value.trim()||null,
-        como_nos_conocio:document.getElementById('conocio').value||null};
+        fecha_nacimiento:fechaNac||null,
+        email:email||null,
+        como_nos_conocio:conocio||null};
       const res=await api('POST','loyalty_clients',payload);
       c=Array.isArray(res)?res[0]:res;
     }

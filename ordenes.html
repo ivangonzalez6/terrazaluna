@@ -3378,19 +3378,28 @@ function closeLoyaltyScanModal(){
 function startLoyaltyScan(){
   if(_loyaltyScanning)return;
   _loyaltyScanner=new Html5Qrcode('loyaltyScannerBox');
-  _loyaltyScanner.start({facingMode:'environment'},{fps:10,qrbox:{width:200,height:200}},async function(decoded){
-    await stopLoyaltyScan();
-    try{
-      var url=new URL(decoded);
-      var id=url.searchParams.get('id');
+  _loyaltyScanner.start(
+    {facingMode:{ideal:'environment'}},
+    {fps:10,qrbox:{width:220,height:220}},
+    async function(decoded){
+      await stopLoyaltyScan();
+      var id=null;
+      try{var url=new URL(decoded);id=url.searchParams.get('id');}catch(e){}
+      if(!id){var plain=decoded.trim();if(plain.length>8)id=plain;}
       if(id)await loyaltyLoadClientById(id);
       else setLoyaltyScanMsg('QR no válido','err');
-    }catch(e){setLoyaltyScanMsg('QR no válido','err');}
-  },function(){}).then(function(){
+    },
+    function(){}
+  ).then(function(){
     _loyaltyScanning=true;
     gid('loyaltyStartScanBtn').style.display='none';
     gid('loyaltyStopScanBtn').style.display='';
-  }).catch(function(e){setLoyaltyScanMsg('Sin acceso a cámara','err');});
+    setLoyaltyScanMsg('Cámara activa. Apunta al QR del cliente.','ok');
+  }).catch(function(e){
+    var msg=String(e);
+    if(msg.includes('ermission'))setLoyaltyScanMsg('Permiso de cámara denegado. Actívalo en configuración.','err');
+    else setLoyaltyScanMsg('No se pudo iniciar la cámara: '+msg,'err');
+  });
 }
 async function stopLoyaltyScan(){
   if(_loyaltyScanner&&_loyaltyScanning){await _loyaltyScanner.stop().catch(function(){});_loyaltyScanning=false;}
