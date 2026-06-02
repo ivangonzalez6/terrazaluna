@@ -439,16 +439,34 @@ let scanner=null,scanning=false,currentScanClient=null;
 function startScanner(){
   if(scanning)return;
   scanner=new Html5Qrcode('scanner-container');
-  scanner.start({facingMode:'environment'},{fps:10,qrbox:{width:220,height:220}},async decoded=>{
-    await stopScanner();
-    try{const url=new URL(decoded);const id=url.searchParams.get('id');
-      if(id)await loadClient(id);else setScanMsg('QR no válido.','err');
-    }catch{setScanMsg('QR no válido.','err')}
-  },()=>{}).then(()=>{
+  scanner.start(
+    {facingMode:{ideal:'environment'}},
+    {fps:10,qrbox:{width:250,height:250},aspectRatio:1.0},
+    async decoded=>{
+      await stopScanner();
+      // Try as URL first; if not a URL, treat decoded value as client ID directly
+      let id=null;
+      try{const url=new URL(decoded);id=url.searchParams.get('id');}catch{}
+      if(!id){
+        // Fallback: decoded string might just be the ID
+        const plain=decoded.trim();
+        if(plain&&plain.length>8)id=plain;
+      }
+      if(id)await loadClient(id);else setScanMsg('QR no válido. Intenta de nuevo.','err');
+    },
+    ()=>{}
+  ).then(()=>{
     scanning=true;
     document.getElementById('startBtn').style.display='none';
     document.getElementById('stopBtn').style.display='';
-  }).catch(e=>setScanMsg('Sin acceso a cámara: '+e,'err'));
+    setScanMsg('Cámara activa. Apunta al código QR del cliente.','ok');
+  }).catch(e=>{
+    const msg=String(e);
+    if(msg.includes('permission')||msg.includes('Permission'))
+      setScanMsg('Permiso de cámara denegado. Actívalo en configuración.','err');
+    else
+      setScanMsg('No se pudo iniciar la cámara: '+msg,'err');
+  });
 }
 async function stopScanner(){
   if(scanner&&scanning){await scanner.stop().catch(()=>{});scanning=false}
