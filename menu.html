@@ -1,0 +1,522 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Terraza Luna · Menú</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;0,700;1,300;1,400;1,500&family=Inter+Tight:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#f8f4eb;
+  --bg2:#ffffff;
+  --ink:#1a1610;
+  --dim:#4a4337;
+  --faint:#7a7264;
+  --line:#ddd4be;
+  --line2:#c8b898;
+  --gold:#8a6420;
+  --golds:#6b4d18;
+  --gold-light:#f0e4c4;
+  --gold-pale:#faf5e8;
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+html{scroll-behavior:smooth}
+body{
+  background:var(--bg);
+  color:var(--ink);
+  font-family:'Inter Tight',sans-serif;
+  min-height:100vh;
+  overflow-x:hidden;
+}
+body::before{
+  content:'';
+  position:fixed;
+  inset:0;
+  background:
+    radial-gradient(ellipse 80vw 60vh at 90% -5%, rgba(138,100,32,.07) 0%, transparent 60%),
+    radial-gradient(ellipse 60vw 50vh at -5% 100%, rgba(138,100,32,.05) 0%, transparent 60%);
+  pointer-events:none;
+  z-index:0;
+}
+
+/* ── HERO ── */
+.hero{
+  position:relative;
+  text-align:center;
+  padding:56px 24px 48px;
+  background:linear-gradient(180deg,rgba(26,22,16,.03),transparent);
+  border-bottom:1px solid var(--line);
+}
+.hero-moon{display:none}
+.hero-title{
+  font-family:'Cormorant Garamond',serif;
+  font-size:clamp(42px,8vw,72px);
+  font-weight:400;
+  letter-spacing:.25em;
+  text-transform:uppercase;
+  color:var(--ink);
+  line-height:1;
+  margin-bottom:8px;
+}
+.hero-ornament{
+  display:flex;align-items:center;justify-content:center;gap:14px;
+  margin:12px 0 10px;
+}
+.hero-ornament::before,.hero-ornament::after{
+  content:'';flex:1;max-width:80px;height:1px;
+  background:linear-gradient(90deg,transparent,var(--gold));
+}
+.hero-ornament::after{background:linear-gradient(270deg,transparent,var(--gold));}
+.hero-ornament-inner{
+  font-family:'Cormorant Garamond',serif;
+  font-size:18px;color:var(--gold);letter-spacing:.3em;
+  font-style:italic;
+}
+.hero-sub{
+  font-size:11px;letter-spacing:.45em;text-transform:uppercase;
+  color:var(--faint);margin-top:6px;font-weight:500;
+}
+
+/* ── STICKY NAV ── */
+.sticky-nav{
+  position:sticky;top:0;z-index:50;
+  background:rgba(248,244,235,.95);
+  backdrop-filter:blur(12px);
+  border-bottom:1px solid var(--line);
+  padding:0;
+  overflow-x:auto;
+  scrollbar-width:none;
+}
+.sticky-nav::-webkit-scrollbar{display:none}
+.nav-inner{
+  display:flex;gap:0;padding:0 16px;
+  white-space:nowrap;
+  max-width:1200px;margin:0 auto;
+}
+.nav-btn{
+  padding:14px 18px;
+  font-size:10px;letter-spacing:.2em;text-transform:uppercase;
+  color:var(--faint);background:none;border:none;
+  cursor:pointer;font-family:'Inter Tight',sans-serif;
+  font-weight:600;transition:all .2s;
+  border-bottom:2px solid transparent;
+  flex-shrink:0;
+}
+.nav-btn.active,.nav-btn:hover{color:var(--gold);border-bottom-color:var(--gold);}
+.nav-btn.active{color:var(--gold);}
+
+/* ── LAYOUT ── */
+.menu-wrap{
+  max-width:1200px;margin:0 auto;
+  padding:0 16px 80px;
+  position:relative;z-index:1;
+}
+
+/* ── SECTION HEADER ── */
+.section{margin-top:0;padding-top:0;}
+.section-anchor{display:block;height:0;margin-top:-70px;padding-top:70px;}
+.section-header{
+  padding:40px 0 24px;
+  display:flex;flex-direction:column;align-items:center;
+  text-align:center;
+}
+.section-title{
+  font-family:'Cormorant Garamond',serif;
+  font-size:clamp(28px,4vw,40px);
+  font-weight:600;
+  letter-spacing:.12em;
+  text-transform:uppercase;
+  color:var(--ink);
+  line-height:1.1;
+  margin-bottom:10px;
+}
+.section-line{
+  display:flex;align-items:center;gap:10px;
+  width:100%;max-width:300px;
+}
+.section-line::before,.section-line::after{
+  content:'';flex:1;height:1px;
+  background:linear-gradient(90deg,transparent,var(--line2));
+}
+.section-line::after{background:linear-gradient(270deg,transparent,var(--line2));}
+.section-line-dot{
+  width:5px;height:5px;border-radius:50%;
+  background:var(--gold);flex-shrink:0;
+}
+
+/* ── ITEM GRID ── */
+.items-grid{
+  display:grid;
+  grid-template-columns:repeat(auto-fill,minmax(280px,1fr));
+  gap:10px;
+  padding-bottom:8px;
+}
+@media(min-width:600px){.items-grid{grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:12px;}}
+@media(min-width:900px){.items-grid{grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:14px;}}
+@media(min-width:1100px){.items-grid{grid-template-columns:repeat(4,1fr);}}
+
+/* ── ITEM CARD ── */
+.item-card{
+  background:var(--bg2);
+  border:1px solid var(--line);
+  border-radius:14px;
+  padding:16px 18px;
+  display:flex;align-items:flex-start;justify-content:space-between;
+  gap:10px;
+  transition:all .2s;
+  position:relative;overflow:hidden;
+}
+.item-card::before{
+  content:'';position:absolute;inset:0;
+  background:linear-gradient(135deg,rgba(138,100,32,.0),rgba(138,100,32,.03));
+  opacity:0;transition:opacity .2s;
+}
+.item-card:hover::before{opacity:1;}
+.item-card:hover{border-color:var(--line2);box-shadow:0 4px 20px rgba(138,100,32,.08);}
+.item-left{flex:1;min-width:0;}
+.item-name{
+  font-family:'Cormorant Garamond',serif;
+  font-size:17px;font-weight:600;
+  line-height:1.25;color:var(--ink);
+  margin-bottom:3px;
+}
+.item-desc{
+  font-size:11px;color:var(--faint);
+  line-height:1.45;margin-top:2px;
+  font-style:italic;
+}
+.item-price{
+  font-family:'Cormorant Garamond',serif;
+  font-size:18px;font-weight:600;
+  color:var(--gold);white-space:nowrap;
+  padding-top:1px;flex-shrink:0;
+}
+
+/* ── DIVIDER ── */
+.section-divider{
+  height:1px;
+  background:linear-gradient(90deg,transparent,var(--line2) 30%,var(--line2) 70%,transparent);
+  margin:8px 0 0;
+}
+
+/* ── PROMO SECTION ── */
+.promo-card{
+  background:linear-gradient(135deg,#2a1f0e,#1a1610);
+  border:1px solid rgba(138,100,32,.4);
+  border-radius:18px;
+  padding:28px 24px;
+  color:#f0e4c4;
+  margin:12px 0;
+  position:relative;overflow:hidden;
+}
+.promo-card::before{
+  content:'';position:absolute;
+  top:-60px;right:-60px;
+  width:200px;height:200px;
+  border-radius:50%;
+  background:radial-gradient(circle,rgba(212,168,75,.15),transparent 70%);
+}
+.promo-title{
+  font-family:'Cormorant Garamond',serif;
+  font-size:22px;font-weight:600;letter-spacing:.1em;
+  text-transform:uppercase;margin-bottom:16px;
+  color:#d4a84b;
+}
+.promo-grid{
+  display:grid;
+  grid-template-columns:repeat(auto-fill,minmax(200px,1fr));
+  gap:10px;
+}
+@media(min-width:600px){.promo-grid{grid-template-columns:repeat(auto-fill,minmax(220px,1fr));}}
+.promo-item{
+  background:rgba(255,255,255,.06);
+  border:1px solid rgba(212,168,75,.2);
+  border-radius:10px;
+  padding:12px 14px;
+  display:flex;justify-content:space-between;align-items:flex-start;
+  gap:8px;
+}
+.promo-item-name{
+  font-family:'Cormorant Garamond',serif;
+  font-size:15px;font-weight:600;
+  color:#f0e4c4;flex:1;min-width:0;
+  line-height:1.3;
+}
+.promo-item-desc{font-size:11px;color:rgba(240,228,196,.55);margin-top:2px;font-style:italic;}
+.promo-item-price{
+  font-family:'Cormorant Garamond',serif;
+  font-size:17px;font-weight:600;
+  color:#d4a84b;white-space:nowrap;flex-shrink:0;
+}
+
+/* ── FOOTER ── */
+.menu-footer{
+  text-align:center;
+  padding:40px 24px 30px;
+  border-top:1px solid var(--line);
+  position:relative;z-index:1;
+}
+.footer-moon{display:none}
+.footer-brand{
+  font-family:'Cormorant Garamond',serif;
+  font-size:20px;letter-spacing:.2em;text-transform:uppercase;
+  color:var(--dim);margin-bottom:4px;
+}
+.footer-note{
+  font-size:10px;letter-spacing:.25em;text-transform:uppercase;
+  color:var(--faint);
+}
+
+/* ── LOADING ── */
+.loading-wrap{
+  text-align:center;padding:80px 20px;
+}
+.loading-moon{display:none}
+.loading-text{
+  font-size:11px;letter-spacing:.3em;text-transform:uppercase;
+  color:var(--faint);font-weight:500;
+}
+
+/* ── TOAST ── */
+.toast{
+  position:fixed;bottom:24px;left:50%;
+  transform:translateX(-50%) translateY(20px);
+  background:var(--ink);border:1px solid var(--gold);
+  border-radius:10px;padding:9px 16px;
+  font-size:11px;letter-spacing:.1em;color:#c9a35b;
+  opacity:0;pointer-events:none;transition:all .3s;z-index:999;
+  white-space:nowrap;
+}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+
+/* ── RESPONSIVE TWEAKS ── */
+@media(max-width:480px){
+  .hero{padding:44px 20px 36px;}
+  .nav-btn{padding:12px 14px;font-size:9px;}
+  .section-header{padding:32px 0 18px;}
+  .item-name{font-size:16px;}
+  .items-grid{grid-template-columns:1fr;}
+}
+@media(min-width:900px){
+  .menu-wrap{padding:0 32px 80px;}
+  .items-grid{gap:16px;}
+}
+@media(min-width:1200px){
+  .hero{padding:72px 32px 60px;}
+}
+
+/* ── ERROR ── */
+.error-wrap{
+  text-align:center;padding:60px 20px;
+}
+.error-title{
+  font-family:'Cormorant Garamond',serif;
+  font-size:22px;color:var(--dim);margin-bottom:8px;
+}
+.error-sub{font-size:12px;color:var(--faint);}
+</style>
+</head>
+<body>
+
+<!-- HERO -->
+<header class="hero">
+  <h1 class="hero-title">Terraza Luna</h1>
+  <div class="hero-ornament">
+    <div class="hero-ornament-inner">Menú</div>
+  </div>
+  <p class="hero-sub">Huauchinango, Puebla</p>
+</header>
+
+<!-- STICKY NAV -->
+<nav class="sticky-nav" id="stickyNav">
+  <div class="nav-inner" id="navInner"></div>
+</nav>
+
+<!-- MENU CONTENT -->
+<main class="menu-wrap" id="menuWrap">
+  <div class="loading-wrap" id="loadingWrap">
+    <p class="loading-text">Cargando menú…</p>
+  </div>
+</main>
+
+<!-- FOOTER -->
+<footer class="menu-footer">
+  <div class="footer-brand">Terraza Luna</div>
+  <p class="footer-note">Precios en pesos mexicanos · IVA incluido</p>
+</footer>
+
+<div class="toast" id="toast"></div>
+
+<script>
+var SU='https://biuaxkpyujypiigxolwt.supabase.co';
+var SK='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJpdWF4a3B5dWp5cGlpZ3hvbHd0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk5MDY1ODUsImV4cCI6MjA5NTQ4MjU4NX0.4MJ2WfTo6tDNImcN0E5RCy4ilU2-sXnmRb6_BB85YaQ';
+var SH={'Content-Type':'application/json','apikey':SK,'Authorization':'Bearer '+SK};
+
+function sfetch(path){
+  return fetch(SU+path,{headers:SH})
+    .then(function(r){return r.json();})
+    .catch(function(){return null;});
+}
+
+function esc(s){
+  return String(s||'').replace(/[&<>"']/g,function(c){
+    return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];
+  });
+}
+function money(n){return '$'+Math.round(n).toLocaleString('es-MX');}
+
+function showToast(m){
+  var t=document.getElementById('toast');
+  t.textContent=m;t.classList.add('show');
+  clearTimeout(t._t);t._t=setTimeout(function(){t.classList.remove('show');},2200);
+}
+
+// ── PROMO categories (dark card) ──
+var PROMO_CAT='Promociones';
+
+// ── Identify categories that get "por copa/shot" label ──
+var SHOT_CATS=['Tequila (shot)','Whisky (shot)','Ron (shot)','Brandy & Mezcal'];
+
+async function loadMenu(){
+  var cats=await sfetch('/rest/v1/menu_categories?select=*&order=sort_order.asc&active=eq.true');
+  if(!cats||!cats.length){
+    document.getElementById('loadingWrap').innerHTML=
+      '<div class="error-wrap"><div class="error-title">Menú no disponible</div><div class="error-sub">Intenta más tarde</div></div>';
+    return;
+  }
+  var menuData=[];
+  for(var i=0;i<cats.length;i++){
+    var cat=cats[i];
+    var items=await sfetch('/rest/v1/menu_items?category_id=eq.'+cat.id+'&select=*&order=sort_order.asc&active=eq.true');
+    if(items&&items.length){
+      menuData.push({cat:cat,items:items});
+    }
+  }
+  renderMenu(menuData);
+}
+
+function slugify(str){
+  return str.toLowerCase()
+    .replace(/[áàä]/g,'a').replace(/[éèë]/g,'e').replace(/[íìï]/g,'i')
+    .replace(/[óòö]/g,'o').replace(/[úùü]/g,'u').replace(/ñ/g,'n')
+    .replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'');
+}
+
+function renderMenu(menuData){
+  var wrap=document.getElementById('menuWrap');
+  var navInner=document.getElementById('navInner');
+  wrap.innerHTML='';
+  navInner.innerHTML='';
+
+  menuData.forEach(function(group,gi){
+    var catName=group.cat.name;
+    var slug=slugify(catName);
+    var isPromo=catName===PROMO_CAT;
+    var isShot=SHOT_CATS.indexOf(catName)>=0;
+
+    // ── Nav button ──
+    var btn=document.createElement('button');
+    btn.className='nav-btn'+(gi===0?' active':'');
+    btn.textContent=catName;
+    btn.setAttribute('data-target',slug);
+    btn.addEventListener('click',function(){
+      document.getElementById(slug).scrollIntoView({behavior:'smooth',block:'start'});
+    });
+    navInner.appendChild(btn);
+
+    // ── Section wrapper ──
+    var section=document.createElement('div');
+    section.className='section';
+
+    // anchor
+    var anchor=document.createElement('div');
+    anchor.className='section-anchor';
+    anchor.id=slug;
+    section.appendChild(anchor);
+
+    // header
+    var header=document.createElement('div');
+    header.className='section-header';
+    header.innerHTML=
+      '<h2 class="section-title">'+esc(catName)+
+      (isShot?'<span style="font-family:\'Inter Tight\',sans-serif;font-size:11px;letter-spacing:.2em;text-transform:uppercase;color:var(--faint);display:block;margin-top:5px">Por copa · 45ml</span>':'')+
+      '</h2>'+
+      '<div class="section-line"><div class="section-line-dot"></div></div>';
+    section.appendChild(header);
+
+    if(isPromo){
+      // Dark promo card
+      var promoCard=document.createElement('div');
+      promoCard.className='promo-card';
+      promoCard.innerHTML='<div class="promo-title">Nuestras Promociones</div>';
+      var promoGrid=document.createElement('div');
+      promoGrid.className='promo-grid';
+      group.items.forEach(function(item){
+        var pi=document.createElement('div');
+        pi.className='promo-item';
+        pi.innerHTML=
+          '<div><div class="promo-item-name">'+esc(item.name)+'</div>'+
+          (item.description?'<div class="promo-item-desc">'+esc(item.description)+'</div>':'')+
+          '</div>'+
+          '<div class="promo-item-price">'+money(item.price)+'</div>';
+        promoGrid.appendChild(pi);
+      });
+      promoCard.appendChild(promoGrid);
+      section.appendChild(promoCard);
+    }else{
+      // Regular grid
+      var grid=document.createElement('div');
+      grid.className='items-grid';
+      group.items.forEach(function(item){
+        var card=document.createElement('div');
+        card.className='item-card';
+        card.innerHTML=
+          '<div class="item-left">'+
+            '<div class="item-name">'+esc(item.name)+'</div>'+
+            (item.description?'<div class="item-desc">'+esc(item.description)+'</div>':'')+
+          '</div>'+
+          '<div class="item-price">'+money(item.price)+'</div>';
+        grid.appendChild(card);
+      });
+      section.appendChild(grid);
+    }
+
+    // divider
+    if(gi<menuData.length-1){
+      var div=document.createElement('div');
+      div.className='section-divider';
+      section.appendChild(div);
+    }
+
+    wrap.appendChild(section);
+  });
+
+  // ── Active nav on scroll ──
+  var sections=wrap.querySelectorAll('.section-anchor');
+  var navBtns=navInner.querySelectorAll('.nav-btn');
+
+  var observer=new IntersectionObserver(function(entries){
+    entries.forEach(function(entry){
+      if(entry.isIntersecting){
+        var id=entry.target.id;
+        navBtns.forEach(function(btn){
+          btn.classList.toggle('active',btn.getAttribute('data-target')===id);
+          if(btn.getAttribute('data-target')===id){
+            btn.scrollIntoView({behavior:'smooth',block:'nearest',inline:'center'});
+          }
+        });
+      }
+    });
+  },{rootMargin:'-64px 0px -60% 0px',threshold:0});
+
+  sections.forEach(function(s){observer.observe(s);});
+}
+
+// ── Init ──
+loadMenu();
+
+// ── Auto-refresh every 5 min ──
+setInterval(loadMenu,300000);
+</script>
+</body>
+</html>
