@@ -1165,7 +1165,7 @@ function insertUser(u){return spost('/rest/v1/app_users',u);}
 function updateUser(id,data){return spatch('/rest/v1/app_users?id=eq.'+id,data);}
 function deleteUser(id){return sdel('/rest/v1/app_users?id=eq.'+id);}
 
-var CATS_2X1=['Mojitos','Gin & Tonic','Caipiroska (Vodka)','Daiquirí (Ron)','Margarita (Tequila)','Frozen (Vodka)','Coctelería Clásica','Alta Coctelería','Brandy & Mezcal','Mezcalitas'];
+var CATS_2X1=['Mojitos','Gin & Tonic','Caipiroska (Vodka)','Daiquirí (Ron)','Margarita (Tequila)','Frozen (Vodka)','Coctelería Clásica','Alta Coctelería','Brandy (shot)','Mezcal (shot)','Mezcalitas'];
 var SF=[{n:'Clásico',p:50},{n:'Frutos rojos',p:60},{n:'Fresa',p:60},{n:'Mora',p:60},{n:'Arándano',p:60},{n:'Maracuyá',p:60}];
 var SFF=[{n:'Coco',p:60},{n:'Piña',p:60},{n:'Mango',p:60},{n:'Clásico',p:50},{n:'Frutos rojos',p:60},{n:'Fresa',p:60},{n:'Mora',p:60},{n:'Arándano',p:60},{n:'Maracuyá',p:60}];
 var MENU=[  // se sobreescribe desde BD al iniciar
@@ -1182,7 +1182,8 @@ var MENU=[  // se sobreescribe desde BD al iniciar
   {cat:'Tequila (shot)',items:[{n:'Sueño Azteca',p:40},{n:'Cabrito',p:40},{n:'José Cuervo Especial Blanco',p:50},{n:'José Cuervo Especial Reposado',p:50}]},
   {cat:'Whisky (shot)',items:[{n:'Black Jack',p:50},{n:"Cardigan's",p:50},{n:'Black Zebra',p:50},{n:'Johnnie Walker Red Label',p:60},{n:"Buchanan's Deluxe 12 años",p:90},{n:"Buchanan's Masters 15 años",p:120},{n:'Glenfiddich VAT 01',p:150},{n:'Glenmorangie 16 años',p:150}]},
   {cat:'Ron (shot)',items:[{n:'Havana Club 3 años',p:50},{n:'Havana Club Ritual Cubano',p:80},{n:'Black Tears',p:60},{n:'Bacardí Carta Blanca',p:50},{n:'Bacardí Spiced',p:50},{n:'Captain Morgan',p:40},{n:'Baraima Blanco',p:40},{n:'Caney Blanco',p:40},{n:'Santa Cruz del Norte',p:40}]},
-  {cat:'Brandy & Mezcal',items:[{n:'Brandy Presidente',p:40},{n:'Torres 10',p:60},{n:'Mezcal El Chiniquil',p:50},{n:'Mezcal Ancestral',p:50}]},
+  {cat:'Brandy (shot)',items:[{n:'Brandy Presidente',p:40},{n:'Torres 10',p:60}]},
+  {cat:'Mezcal (shot)',items:[{n:'Mezcal El Chiniquil',p:50},{n:'Mezcal Ancestral',p:50}]},
   {cat:'Cervezas',items:[{n:'Carta Blanca',p:40},{n:'Indio',p:40},{n:'Tecate',p:40},{n:'Victoria',p:45},{n:'XX Lager',p:45},{n:'Modelo',p:45},{n:'Modelo Oscura',p:60},{n:'Bohemia Cristal',p:45},{n:'Corona',p:45},{n:'Michelob Ultra',p:50},{n:'Chelado (½ lt)',p:5,d:'Sal y limón'},{n:'Michelada (½ lt)',p:10,d:'Inglesa, maggi, valentina, vinagre, limón, sal y pimienta'},{n:'Española (½ lt)',p:15,d:'Con clamato'}]},
   {cat:'Promociones',items:[{n:'Chelada 1 litro',p:80,d:'Carta Blanca, Indio o Tecate'},{n:'Michelada 1 litro',p:90,d:'Carta Blanca, Indio o Tecate'},{n:'Española 1 litro',p:100,d:'Con clamato'},{n:'Cantarito 1 litro',p:80},{n:'Whisky Challenge',p:150,d:'Degusta premium vs comercial a ciegas'}]},
   {cat:'Snacks',items:[{n:'Papas a la Francesa',p:60,d:'Con queso amarillo, catsup y valentina'},{n:'Salchichas con Chiltepín',p:50,d:'Con queso amarillo, catsup y valentina, incluye papas'}]},
@@ -2120,7 +2121,7 @@ async function renderKitchen(){
     var linesHTML=allItems.map(function(it){var st=it.status||'pending';var hasRec=!!kitchenRecipeNames[it.n.toLowerCase()];return'<div class="tl '+(st==='delivered'?'del ':'')+ '" data-table="'+t+'" data-id="'+it.id+'" data-pid="'+(it._pid||'')+'"><span class="tl-q">'+it.q+'×</span><span class="tl-n">'+esc(it.n)+(it.note?'<span class="tl-note">↳ '+esc(it.note)+'</span>':'')+( it._pl?'<span class="tl-per" style="color:'+it._pc+'">↳ '+esc(it._pl)+'</span>':'')+'</span>'+(hasRec?'<span class="tl-st"><button class="sb recipe" data-item-name="'+esc(it.n)+'">Receta</button></span>':'<span></span>')+(st==='pending'?'<span class="tl-st"><button class="sb pend">Entregar</button></span>':'<span class="tl-st"><button class="sb deld">✓ Listo</button></span>')+'</div>';}).join('');
     var doneLabel=allDel?'<span class="ticket-done-badge">Todo entregado · esperando cierre</span>':'';
     ticket.innerHTML='<div class="t-head"><div><div class="t-tbl">Mesa '+t.toString().padStart(2,'0')+'</div>'+(o.tableNote?'<div class="t-note">↳ '+esc(o.tableNote)+'</div>':'')+'</div><div style="text-align:right"><div class="t-time">'+hh+':'+mm+' · '+min+'min</div><div class="t-prog">'+(pend>0?'<span class="bp">'+pend+' pend.</span>':'')+(del>0?'<span class="bd">'+del+' ✓</span>':'')+'</div></div></div>'+doneLabel+'<div><div class="t-hrow"><span>Cant</span><span>Producto</span><span></span><span>Status</span></div>'+linesHTML+'</div><div class="t-foot"><span style="font-size:9px;letter-spacing:.2em;color:var(--faint);text-transform:uppercase">'+allItems.reduce(function(s,it){return s+it.q;},0)+' productos</span><span class="t-tot">'+money(tot)+'</span></div>';
-    ticket.querySelectorAll('.sb').forEach(function(btn){
+    ticket.querySelectorAll('.sb:not(.recipe)').forEach(function(btn){
       btn.addEventListener('click',async function(e){
         e.stopPropagation();var line=btn.closest('.tl');var tbl=parseInt(line.getAttribute('data-table')),iid=line.getAttribute('data-id'),pid=line.getAttribute('data-pid');
         var o2=orders[tbl];if(!o2)return;var item=null;
@@ -3337,7 +3338,7 @@ function startRealtime(){
 
 // ══ LEALTAD POST-CIERRE ══
 var _loyaltyScanner=null, _loyaltyScanning=false, _loyaltyFoundClient=null, _loyaltyCanjearMode=false;
-var LOYALTY_REG_URL = 'https://terrazaloyalty.vercel.app/registro.html';
+var LOYALTY_REG_URL = 'https://terrazaluna.vercel.app/registro.html';
 
 function showLoyaltyCheckModal(){
   _loyaltyCanjearMode=false;
@@ -3353,9 +3354,12 @@ function loyaltyCheckYes(){
   _loyaltyFoundClient=null;
   gid('loyaltyClientFound').style.display='none';
   gid('loyaltyMarkVisitBtn').style.display='none';
-  gid('loyaltyWaInput').value='';
   gid('loyaltyScanMsg').innerHTML='';
+  gid('loyaltyClientSearch').value='';
+  gid('loyaltyScanTitle').textContent='Seleccionar cliente';
+  gid('loyaltyScanSub').textContent='Toca un cliente para registrar su visita';
   var m=gid('loyaltyScanModal');m.classList.add('show');
+  loadLoyaltyClientList();
 }
 function loyaltyCheckNo(){
   closeLoyaltyCheckModal();
@@ -3373,38 +3377,48 @@ function closeLoyaltyScanModal(){
   var m=gid('loyaltyScanModal');m.classList.remove('show');
 }
 
-function processLoyaltyQr(input){
-  if(!input.files||!input.files[0])return;
-  setLoyaltyScanMsg('Leyendo QR…','');
-  var reader=new FileReader();
-  reader.onload=function(e){
-    var img=new Image();
-    img.onload=function(){
-      var canvas=gid('loyaltyQrCanvas');
-      canvas.width=img.width;canvas.height=img.height;
-      var ctx=canvas.getContext('2d');
-      ctx.drawImage(img,0,0);
-      var imageData=ctx.getImageData(0,0,canvas.width,canvas.height);
-      var code=jsQR(imageData.data,imageData.width,imageData.height,{inversionAttempts:'dontInvert'});
-      if(code){
-        var decoded=code.data;
-        var id=null;
-        try{var url=new URL(decoded);id=url.searchParams.get('id');}catch(err){}
-        if(!id){var plain=decoded.trim();if(plain.length>8)id=plain;}
-        if(id){setLoyaltyScanMsg('','');loyaltyLoadClientById(id);}
-        else setLoyaltyScanMsg('QR no válido. Intenta con otro ángulo.','err');
-      }else{
-        setLoyaltyScanMsg('No se detectó QR. Asegúrate de enfocar bien el código.','err');
-      }
-    };
-    img.onerror=function(){setLoyaltyScanMsg('Error al leer la imagen.','err');};
-    img.src=e.target.result;
-  };
-  reader.readAsDataURL(input.files[0]);
-  input.value=''; // reset so same file can be selected again
+// ── Loyalty client list for scan modal ──
+var _loyaltyAllClients=[];
+
+async function loadLoyaltyClientList(){
+  try{
+    var rows=await loyaltyApi('GET','loyalty_clients',null,'?order=nombre.asc&select=id,nombre,whatsapp,visitas_totales,sellos&activo=eq.true');
+    _loyaltyAllClients=rows||[];
+    renderLoyaltyClientList(_loyaltyAllClients);
+  }catch(e){
+    gid('loyaltyClientList').innerHTML='<div style="text-align:center;color:var(--danger);font-size:13px;padding:20px">Error al cargar clientes.</div>';
+  }
 }
+
+function filterLoyaltyClients(){
+  var q=(gid('loyaltyClientSearch').value||'').toLowerCase().trim();
+  var filtered=q?_loyaltyAllClients.filter(function(c){
+    return c.nombre.toLowerCase().includes(q)||(c.whatsapp||'').includes(q);
+  }):_loyaltyAllClients;
+  renderLoyaltyClientList(filtered);
+}
+
+function renderLoyaltyClientList(list){
+  var el=gid('loyaltyClientList');
+  if(!list||!list.length){
+    el.innerHTML='<div style="text-align:center;color:var(--faint);font-size:13px;padding:20px">Sin resultados.</div>';
+    return;
+  }
+  el.innerHTML='';
+  list.forEach(function(c){
+    var row=document.createElement('div');
+    row.style.cssText='display:flex;align-items:center;justify-content:space-between;padding:10px 12px;border:1px solid var(--line);border-radius:10px;background:#fff;cursor:pointer;gap:10px';
+    row.innerHTML='<div style="flex:1;min-width:0">'
+      +'<div style="font-weight:600;font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+esc(c.nombre)+'</div>'
+      +'<div style="font-size:11px;color:var(--faint)">'+c.visitas_totales+' visitas · '+c.sellos+'/10 sellos</div>'
+      +'</div>'
+      +'<div class="btn btn-p" style="flex-shrink:0;padding:6px 14px;font-size:12px">Seleccionar</div>';
+    row.addEventListener('click',function(){loyaltyShowClient(c);});
+    el.appendChild(row);
+  });
+}
+
 async function stopLoyaltyScan(){
-  // No video stream to stop with photo-based scanning
   _loyaltyScanning=false;
 }
 async function loyaltySearchByWa(){
@@ -3490,9 +3504,12 @@ gid('canjearPremioBtn').addEventListener('click', function(){
   gid('loyaltyClientFound').style.display='none';
   gid('loyaltyMarkVisitBtn').style.display='none';
   gid('loyaltyCanjearBtn').style.display='none';
-  gid('loyaltyWaInput').value='';
   gid('loyaltyScanMsg').innerHTML='';
+  gid('loyaltyClientSearch').value='';
+  gid('loyaltyScanTitle').textContent='Canjear premio';
+  gid('loyaltyScanSub').textContent='Selecciona el cliente para canjear su premio';
   gid('loyaltyScanModal').classList.add('show');
+  loadLoyaltyClientList();
 });
 
 async function onClientReadyForCanje(){
@@ -3569,7 +3586,7 @@ async function registrarCanje(tipo, notas){
 }
 
 // ── Opción: Bebida gratis — seleccionar bebida YA en la orden ──
-var CATS_EXCL_BRANDY = CATS_2X1.filter(function(c){return c!=='Brandy & Mezcal'&&c!=='Mezcalitas';});
+var CATS_EXCL_BRANDY = CATS_2X1.filter(function(c){return c!=='Brandy (shot)'&&c!=='Mezcal (shot)'&&c!=='Mezcalitas';});
 
 function esCoctelSinBrandy(nombre){
   for(var i=0;i<MENU.length;i++){
@@ -4075,45 +4092,33 @@ async function deleteLoyaltyPromo(id){
 </div>
 
 <div class="mb" id="loyaltyScanModal">
-  <div class="modal">
-    <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:8px;margin-bottom:14px">
+  <div class="modal" style="max-height:85vh;display:flex;flex-direction:column;overflow:hidden">
+    <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:12px;flex-shrink:0">
       <div>
-        <h3>Registrar visita</h3>
-        <div class="msub">Escanea el QR o busca por WhatsApp</div>
+        <h3 id="loyaltyScanTitle">Seleccionar cliente</h3>
+        <div class="msub" id="loyaltyScanSub">Busca y selecciona el cliente</div>
       </div>
       <button onclick="closeLoyaltyScanModal()" style="font-size:22px;color:var(--faint);padding:2px 6px;line-height:1;background:none;border:none;cursor:pointer">×</button>
     </div>
-    <!-- Captura de foto para leer QR (funciona en todos los móviles) -->
-    <input type="file" id="loyaltyQrInput" accept="image/*" capture="environment"
-      style="display:none" onchange="processLoyaltyQr(this)">
-    <canvas id="loyaltyQrCanvas" style="display:none"></canvas>
-    <div style="margin-bottom:14px">
-      <button class="btn btn-p" style="width:100%;padding:14px;font-size:14px;letter-spacing:.04em"
-        onclick="gid('loyaltyQrInput').click()">
-        📷 Escanear QR con cámara
-      </button>
-      <div style="font-size:11px;color:var(--faint);text-align:center;margin-top:6px">
-        Apunta al código QR de la tarjeta y toma la foto
-      </div>
+    <!-- Search -->
+    <input type="search" id="loyaltyClientSearch" placeholder="Buscar por nombre o WhatsApp…"
+      oninput="filterLoyaltyClients()"
+      style="flex-shrink:0;width:100%;padding:11px 14px;border:1px solid var(--line2);border-radius:10px;font-size:14px;outline:none;font-family:inherit;margin-bottom:10px">
+    <!-- Client list -->
+    <div id="loyaltyClientList"
+      style="flex:1;overflow-y:auto;display:flex;flex-direction:column;gap:6px;padding-bottom:4px">
+      <div style="text-align:center;color:var(--faint);font-size:13px;padding:20px">Cargando clientes…</div>
     </div>
-    <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px">
-      <div style="flex:1;height:1px;background:var(--line)"></div>
-      <span style="font-size:10px;color:var(--faint);text-transform:uppercase;letter-spacing:.12em">o por WhatsApp</span>
-      <div style="flex:1;height:1px;background:var(--line)"></div>
-    </div>
-    <div style="display:flex;gap:8px;margin-bottom:14px">
-      <input type="tel" id="loyaltyWaInput" placeholder="WhatsApp del cliente" style="flex:1;padding:10px 12px;border:1px solid var(--line2);border-radius:10px;font-size:14px;outline:none;font-family:inherit" onkeydown="if(event.key==='Enter')loyaltySearchByWa()">
-      <button class="btn btn-p" style="flex:0;padding:10px 14px;font-size:12px" onclick="loyaltySearchByWa()">Buscar</button>
-    </div>
-    <div id="loyaltyClientFound" style="display:none;background:var(--bg);border:1px solid var(--line2);border-radius:12px;padding:14px 16px;margin-bottom:14px">
-      <div id="loyaltyClientName" style="font-family:Georgia,serif;font-size:20px;font-weight:600;margin-bottom:4px"></div>
-      <div id="loyaltyClientMeta" style="font-size:12px;color:var(--faint)"></div>
-          <div style="display:flex;gap:8px;margin-top:12px">
+    <!-- Selected client confirmation -->
+    <div id="loyaltyClientFound" style="display:none;flex-shrink:0;background:var(--bg);border:1px solid var(--line2);border-radius:12px;padding:12px 14px;margin-top:10px">
+      <div id="loyaltyClientName" style="font-family:Georgia,serif;font-size:18px;font-weight:600;margin-bottom:2px"></div>
+      <div id="loyaltyClientMeta" style="font-size:12px;color:var(--faint);margin-bottom:10px"></div>
+      <div style="display:flex;gap:8px">
         <button class="btn btn-p" id="loyaltyMarkVisitBtn" style="flex:1;padding:12px" onclick="loyaltyMarkVisit()">✓ Registrar visita</button>
         <button class="btn btn-g" id="loyaltyCanjearBtn" style="flex:1;padding:12px;display:none" onclick="onClientReadyForCanje()">🎁 Canjear premio</button>
       </div>
     </div>
-    <div id="loyaltyScanMsg" style="margin-top:6px"></div>
+    <div id="loyaltyScanMsg" style="flex-shrink:0;margin-top:6px"></div>
   </div>
 </div>
 

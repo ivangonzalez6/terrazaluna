@@ -375,7 +375,7 @@ function showToast(m){
 var PROMO_CAT='Promociones';
 
 // ── Identify categories that get "por copa/shot" label ──
-var SHOT_CATS=['Tequila (shot)','Whisky (shot)','Ron (shot)','Brandy & Mezcal'];
+var SHOT_CATS=['Tequila (shot)','Whisky (shot)','Ron (shot)','Brandy (shot)','Mezcal (shot)'];
 
 async function loadMenu(){
   var cats=await sfetch('/rest/v1/menu_categories?select=*&order=sort_order.asc&active=eq.true');
