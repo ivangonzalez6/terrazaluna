@@ -1,0 +1,412 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Terraza Luna</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;0,700;1,400&family=Inter+Tight:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --ink:#1a1610;
+  --gold:#8a6420;
+  --golds:#6b4d18;
+  --gold-light:#d4a84b;
+  --bg:#0a0805;
+  --bg2:#1a1610;
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+html,body{height:100%;width:100%;overflow:hidden;background:var(--bg);color:#fff;font-family:'Inter Tight',sans-serif}
+body{position:relative}
+
+/* ── Carrusel móvil (default) ── */
+.carousel{
+  position:fixed;inset:0;
+  width:100vw;height:100vh;
+  overflow:hidden;
+  background:#000;
+}
+.carousel-track{
+  display:flex;
+  width:100%;height:100%;
+  transition:transform .8s cubic-bezier(.65,.05,.36,1);
+  will-change:transform;
+}
+.slide{
+  flex:0 0 100%;
+  width:100vw;height:100vh;
+  position:relative;
+  overflow:hidden;
+  background:#000;
+}
+.slide img,.slide video{
+  width:100%;height:100%;
+  object-fit:cover;
+  display:block;
+}
+.slide iframe{
+  width:100%;height:100%;
+  border:0;
+  pointer-events:none;
+}
+.slide::after{
+  content:'';position:absolute;inset:0;
+  background:linear-gradient(180deg,
+    rgba(0,0,0,.35) 0%,
+    rgba(0,0,0,0) 25%,
+    rgba(0,0,0,0) 60%,
+    rgba(0,0,0,.7) 100%);
+  pointer-events:none;
+}
+/* Overlay oscuro uniforme cuando hay 1 sola media */
+.carousel.single-media .slide::after{
+  background:rgba(0,0,0,.45);
+}
+
+/* ── Grid desktop/tablet ── */
+.grid-bg{
+  position:fixed;inset:0;
+  display:none;
+  width:100vw;height:100vh;
+}
+.grid-bg .gcell{
+  position:relative;
+  overflow:hidden;
+  background:#000;
+}
+.grid-bg .gcell img,.grid-bg .gcell video{
+  width:100%;height:100%;
+  object-fit:cover;
+  display:block;
+}
+.grid-bg .gcell iframe{
+  width:100%;height:100%;
+  border:0;
+  pointer-events:none;
+  position:absolute;inset:0;
+  /* Scale up to crop the YouTube/Vimeo UI */
+  transform:scale(1.5);
+  transform-origin:center;
+}
+.grid-bg::after{
+  content:'';position:absolute;inset:0;
+  background:linear-gradient(180deg,rgba(0,0,0,.45) 0%,rgba(0,0,0,.2) 30%,rgba(0,0,0,.6) 100%);
+  pointer-events:none;
+}
+/* Overlay uniforme en grid cuando hay 1 sola media */
+.grid-bg.single-media::after{
+  background:rgba(0,0,0,.45);
+}
+
+/* ── Overlay con marca + botón ── */
+.overlay{
+  position:fixed;inset:0;
+  z-index:20;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  text-align:center;
+  pointer-events:none;
+  padding:20px;
+}
+.menu-btn{
+  display:inline-block;
+  pointer-events:auto;
+  font-family:'Cormorant Garamond',serif;
+  font-size:clamp(20px,4.5vw,26px);
+  font-weight:600;
+  letter-spacing:.4em;
+  text-transform:uppercase;
+  color:#fff;
+  border:1.5px solid rgba(255,255,255,.7);
+  border-radius:0;
+  padding:18px 50px 18px 56px;
+  cursor:pointer;
+  text-decoration:none;
+  transition:all .3s ease;
+  position:relative;
+  overflow:hidden;
+  backdrop-filter:blur(8px);
+  -webkit-backdrop-filter:blur(8px);
+  background:rgba(0,0,0,.45);
+  box-shadow:0 6px 28px rgba(0,0,0,.4);
+}
+.menu-btn::before{
+  content:'';
+  position:absolute;
+  top:0;left:-100%;
+  width:100%;height:100%;
+  background:linear-gradient(90deg,transparent,rgba(212,168,75,.25),transparent);
+  transition:left .6s ease;
+}
+.menu-btn:hover{
+  background:rgba(0,0,0,.7);
+  border-color:var(--gold-light);
+  color:var(--gold-light);
+  box-shadow:0 10px 36px rgba(0,0,0,.5),0 0 24px rgba(138,100,32,.3);
+  transform:translateY(-2px);
+}
+.menu-btn:hover::before{left:100%;}
+.menu-btn:active{transform:translateY(0);}
+
+/* ── Dots indicador móvil ── */
+.dots{
+  position:fixed;
+  bottom:24px;left:50%;
+  transform:translateX(-50%);
+  display:flex;gap:8px;
+  z-index:25;
+  pointer-events:none;
+}
+.dot{
+  width:7px;height:7px;border-radius:50%;
+  background:rgba(255,255,255,.35);
+  transition:all .3s;
+}
+.dot.active{
+  background:var(--gold-light);
+  width:24px;border-radius:4px;
+}
+
+/* ── Loader ── */
+.loader{
+  position:fixed;inset:0;
+  z-index:50;
+  background:var(--bg);
+  display:flex;align-items:center;justify-content:center;
+  flex-direction:column;
+  gap:14px;
+  transition:opacity .5s;
+}
+.loader.fade{opacity:0;pointer-events:none;}
+.loader-text{
+  font-size:10px;
+  letter-spacing:.4em;
+  text-transform:uppercase;
+  color:rgba(255,255,255,.5);
+  font-weight:500;
+}
+
+/* ── Responsive: grid en tablet+ ── */
+@media(min-width:768px) and (orientation:landscape){
+  .carousel{display:none;}
+  .grid-bg{display:grid;}
+  .dots{display:none;}
+}
+@media(min-width:1024px){
+  .carousel{display:none;}
+  .grid-bg{display:grid;}
+  .dots{display:none;}
+}
+
+/* ── Empty state ── */
+.empty-bg{
+  position:fixed;inset:0;
+  background:
+    radial-gradient(ellipse at center,rgba(138,100,32,.25),transparent 60%),
+    linear-gradient(135deg,#2a1f0e,#0a0805);
+}
+</style>
+</head>
+<body>
+
+<!-- Loader inicial -->
+<div class="loader" id="loader">
+  <div class="loader-text">Cargando…</div>
+</div>
+
+<!-- Fondo cuando no hay media -->
+<div class="empty-bg" id="emptyBg" style="display:none"></div>
+
+<!-- Carrusel (móvil) -->
+<div class="carousel" id="carousel" style="display:none">
+  <div class="carousel-track" id="carouselTrack"></div>
+</div>
+
+<!-- Dots indicador móvil -->
+<div class="dots" id="dots" style="display:none"></div>
+
+<!-- Grid (tablet/desktop) -->
+<div class="grid-bg" id="gridBg" style="display:none"></div>
+
+<!-- Overlay solo botón -->
+<div class="overlay">
+  <a href="/menu" class="menu-btn">Menú</a>
+</div>
+
+<script>
+var SU='https://biuaxkpyujypiigxolwt.supabase.co';
+var SK='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJpdWF4a3B5dWp5cGlpZ3hvbHd0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk5MDY1ODUsImV4cCI6MjA5NTQ4MjU4NX0.4MJ2WfTo6tDNImcN0E5RCy4ilU2-sXnmRb6_BB85YaQ';
+var SH={'Content-Type':'application/json','apikey':SK,'Authorization':'Bearer '+SK};
+
+function esc(s){return String(s||'').replace(/[&<>"']/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];});}
+
+function sfetch(p){return fetch(SU+p,{headers:SH}).then(function(r){return r.json();}).catch(function(){return null;});}
+
+// Detectar dispositivo
+function isMobile(){
+  return window.innerWidth<768||(window.innerWidth<1024&&window.matchMedia('(orientation:portrait)').matches);
+}
+
+// Construir HTML del media item
+function buildMediaEl(m,isGrid){
+  if(!m||!m.url)return '<div></div>';
+  var url=m.url;
+  // YouTube
+  var ytMatch=url.match(/(?:youtube\.com\/(?:watch\?v=|embed\/)|youtu\.be\/)([a-zA-Z0-9_-]{11})/);
+  if(ytMatch){
+    var vid=ytMatch[1];
+    return '<iframe src="https://www.youtube.com/embed/'+vid+'?autoplay=1&mute=1&loop=1&playlist='+vid+'&controls=0&showinfo=0&rel=0&modestbranding=1&playsinline=1" allow="autoplay; encrypted-media" allowfullscreen></iframe>';
+  }
+  // Vimeo
+  var vmMatch=url.match(/vimeo\.com\/(\d+)/);
+  if(vmMatch){
+    var vmId=vmMatch[1];
+    return '<iframe src="https://player.vimeo.com/video/'+vmId+'?autoplay=1&muted=1&loop=1&controls=0&background=1" allow="autoplay; fullscreen" allowfullscreen></iframe>';
+  }
+  // Video directo (mp4, webm)
+  if(m.kind==='video'){
+    return '<video src="'+esc(url)+'" autoplay muted loop playsinline></video>';
+  }
+  // Imagen
+  return '<img src="'+esc(url)+'" alt="'+esc(m.name||'')+'">';
+}
+
+// ── Carrusel móvil ──
+var carouselIdx=0;
+var carouselInterval=null;
+var mediaList=[];
+
+function renderCarousel(){
+  var track=document.getElementById('carouselTrack');
+  var dots=document.getElementById('dots');
+  track.innerHTML='';
+  dots.innerHTML='';
+  mediaList.forEach(function(m,i){
+    var slide=document.createElement('div');
+    slide.className='slide';
+    slide.innerHTML=buildMediaEl(m,false);
+    track.appendChild(slide);
+    var dot=document.createElement('div');
+    dot.className='dot'+(i===0?' active':'');
+    dots.appendChild(dot);
+  });
+  carouselIdx=0;
+  updateCarouselPosition();
+  startCarousel();
+}
+
+function updateCarouselPosition(){
+  var track=document.getElementById('carouselTrack');
+  track.style.transform='translateX(-'+(carouselIdx*100)+'%)';
+  var dots=document.querySelectorAll('.dot');
+  dots.forEach(function(d,i){d.classList.toggle('active',i===carouselIdx);});
+}
+
+function nextSlide(){
+  if(!mediaList.length)return;
+  carouselIdx=(carouselIdx+1)%mediaList.length;
+  updateCarouselPosition();
+}
+
+function startCarousel(){
+  clearInterval(carouselInterval);
+  if(mediaList.length<=1)return;
+  carouselInterval=setInterval(nextSlide,9000);
+}
+
+// ── Grid layout ──
+function calcGridDims(count){
+  // Returns CSS grid-template settings to fill viewport
+  if(count===1)return{cols:'1fr',rows:'1fr'};
+  if(count===2)return{cols:'1fr 1fr',rows:'1fr'};
+  if(count===3)return{cols:'1fr 1fr 1fr',rows:'1fr'};
+  if(count===4)return{cols:'1fr 1fr',rows:'1fr 1fr'};
+  if(count<=6)return{cols:'1fr 1fr 1fr',rows:'1fr 1fr'};
+  if(count<=9)return{cols:'1fr 1fr 1fr',rows:'1fr 1fr 1fr'};
+  // 10+ → 4 cols
+  var rows=Math.ceil(count/4);
+  return{cols:'1fr 1fr 1fr 1fr',rows:'repeat('+rows+',1fr)'};
+}
+
+function renderGrid(){
+  var grid=document.getElementById('gridBg');
+  grid.innerHTML='';
+  var n=mediaList.length;
+  if(n===0){grid.style.display='none';return;}
+  var d=calcGridDims(n);
+  grid.style.gridTemplateColumns=d.cols;
+  grid.style.gridTemplateRows=d.rows;
+  mediaList.forEach(function(m){
+    var cell=document.createElement('div');
+    cell.className='gcell';
+    cell.innerHTML=buildMediaEl(m,true);
+    grid.appendChild(cell);
+  });
+}
+
+// ── Init ──
+async function init(){
+  var data=await sfetch('/rest/v1/landing_media?select=*&active=eq.true&order=sort_order.asc');
+  mediaList=Array.isArray(data)?data:[];
+
+  var loader=document.getElementById('loader');
+  var carousel=document.getElementById('carousel');
+  var grid=document.getElementById('gridBg');
+  var dots=document.getElementById('dots');
+  var empty=document.getElementById('emptyBg');
+
+  if(!mediaList.length){
+    empty.style.display='block';
+  }else if(isMobile()){
+    carousel.style.display='block';
+    if(mediaList.length===1) carousel.classList.add('single-media');
+    dots.style.display=mediaList.length>1?'flex':'none';
+    renderCarousel();
+  }else{
+    grid.style.display='grid';
+    if(mediaList.length===1) grid.classList.add('single-media');
+    renderGrid();
+  }
+
+  setTimeout(function(){loader.classList.add('fade');setTimeout(function(){loader.style.display='none';},500);},400);
+}
+
+// Re-render on resize (orientation/viewport change)
+var resizeTimeout=null;
+window.addEventListener('resize',function(){
+  clearTimeout(resizeTimeout);
+  resizeTimeout=setTimeout(function(){
+    var carousel=document.getElementById('carousel');
+    var grid=document.getElementById('gridBg');
+    var dots=document.getElementById('dots');
+    if(!mediaList.length)return;
+    if(isMobile()){
+      grid.style.display='none';
+      carousel.style.display='block';
+      dots.style.display=mediaList.length>1?'flex':'none';
+      if(!document.getElementById('carouselTrack').children.length)renderCarousel();
+    }else{
+      clearInterval(carouselInterval);
+      carousel.style.display='none';
+      dots.style.display='none';
+      grid.style.display='grid';
+      if(!grid.children.length)renderGrid();
+    }
+  },200);
+});
+
+// Swipe en móvil
+var touchStartX=0;
+document.addEventListener('touchstart',function(e){touchStartX=e.touches[0].clientX;},{passive:true});
+document.addEventListener('touchend',function(e){
+  if(!document.getElementById('carousel').style.display||document.getElementById('carousel').style.display==='none')return;
+  var dx=e.changedTouches[0].clientX-touchStartX;
+  if(Math.abs(dx)<50)return;
+  clearInterval(carouselInterval);
+  if(dx<0){nextSlide();}
+  else{carouselIdx=(carouselIdx-1+mediaList.length)%mediaList.length;updateCarouselPosition();}
+  startCarousel();
+},{passive:true});
+
+init();
+</script>
+</body>
+</html>
