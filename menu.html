@@ -2,6 +2,10 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8">
+  <link rel="preconnect" href="https://biuaxkpyujypiigxolwt.supabase.co">
+  <link rel="dns-prefetch" href="https://biuaxkpyujypiigxolwt.supabase.co">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Terraza Luna · Menú</title>
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;0,700;1,300;1,400;1,500&family=Inter+Tight:wght@300;400;500;600&display=swap" rel="stylesheet">
@@ -378,19 +382,31 @@ var PROMO_CAT='Promociones';
 var SHOT_CATS=['Tequila (shot)','Whisky (shot)','Ron (shot)','Brandy (shot)','Mezcal (shot)'];
 
 async function loadMenu(){
-  var cats=await sfetch('/rest/v1/menu_categories?select=*&order=sort_order.asc&active=eq.true');
+  // Una sola query: categorías + items embebidos (PostgREST join)
+  var cats=await sfetch(
+    '/rest/v1/menu_categories'+
+    '?select=*,menu_items(*)'+
+    '&active=eq.true'+
+    '&order=sort_order.asc'+
+    '&menu_items.active=eq.true'+
+    '&menu_items.order=sort_order.asc'
+  );
   if(!cats||!cats.length){
     document.getElementById('loadingWrap').innerHTML=
       '<div class="error-wrap"><div class="error-title">Menú no disponible</div><div class="error-sub">Intenta más tarde</div></div>';
     return;
   }
-  var menuData=[];
-  for(var i=0;i<cats.length;i++){
-    var cat=cats[i];
-    var items=await sfetch('/rest/v1/menu_items?category_id=eq.'+cat.id+'&select=*&order=sort_order.asc&active=eq.true');
-    if(items&&items.length){
-      menuData.push({cat:cat,items:items});
-    }
+  var menuData=cats
+    .filter(function(cat){return cat.menu_items&&cat.menu_items.length;})
+    .map(function(cat){
+      // Ordenar items por sort_order (la BD ya los ordena, pero asegurar)
+      var items=cat.menu_items.slice().sort(function(a,b){return(a.sort_order||0)-(b.sort_order||0);});
+      return{cat:cat,items:items};
+    });
+  if(!menuData.length){
+    document.getElementById('loadingWrap').innerHTML=
+      '<div class="error-wrap"><div class="error-title">Menú vacío</div><div class="error-sub">Agrega categorías e ítems desde el panel</div></div>';
+    return;
   }
   renderMenu(menuData);
 }
@@ -500,23 +516,4 @@ function renderMenu(menuData){
       if(entry.isIntersecting){
         var id=entry.target.id;
         navBtns.forEach(function(btn){
-          btn.classList.toggle('active',btn.getAttribute('data-target')===id);
-          if(btn.getAttribute('data-target')===id){
-            btn.scrollIntoView({behavior:'smooth',block:'nearest',inline:'center'});
-          }
-        });
-      }
-    });
-  },{rootMargin:'-64px 0px -60% 0px',threshold:0});
-
-  sections.forEach(function(s){observer.observe(s);});
-}
-
-// ── Init ──
-loadMenu();
-
-// ── Auto-refresh every 5 min ──
-setInterval(loadMenu,300000);
-</script>
-</body>
-</html>
+   

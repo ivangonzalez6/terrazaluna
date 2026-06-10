@@ -2,6 +2,10 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8">
+  <link rel="preconnect" href="https://biuaxkpyujypiigxolwt.supabase.co">
+  <link rel="dns-prefetch" href="https://biuaxkpyujypiigxolwt.supabase.co">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>Terraza Luna · POS</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html5-qrcode/2.3.8/html5-qrcode.min.js"></script>
@@ -1058,6 +1062,13 @@ function sfetch(path){return fetch(SU+path,{headers:SH}).then(function(r){return
 function spatch(path,body){return fetch(SU+path,{method:'PATCH',headers:Object.assign({},SH,{'Prefer':'return=minimal'}),body:JSON.stringify(body)}).catch(function(){});}
 function spost(path,body){return fetch(SU+path,{method:'POST',headers:Object.assign({},SH,{'Prefer':'return=minimal'}),body:JSON.stringify(body)}).catch(function(){});}
 function sdel(path){return fetch(SU+path,{method:'DELETE',headers:SH}).catch(function(){});}
+// ── Cache de MENU en memoria (TTL 5 min) ──
+// rebuildMenuFromDB actualiza _menuCacheTs; las llamadas dentro de TTL devuelven inmediatamente.
+var _menuCacheTs=0;
+var MENU_CACHE_TTL=5*60*1000; // 5 minutos
+function _menuCacheValid(){return MENU.length>0&&(Date.now()-_menuCacheTs)<MENU_CACHE_TTL;}
+function invalidateMenuCache(){_menuCacheTs=0;} // llamar tras guardar cambios en admin
+
 function loadOrders(){return sfetch('/rest/v1/orders?id=eq.current&select=data').then(function(r){return(r&&r[0])?r[0].data:{};});}
 async function saveOrders(o){
   if(!isOnline()){showSaveErr('Sin conexión — orden no guardada');return Promise.resolve();}
@@ -1314,9 +1325,17 @@ function openConfirm(title,body,okTxt,onOk,onCancel){
 async function startSession(found){
   loggedUser=found;
   tlSetAuth(found);
-  var ap=await loadConfig('admin_password');if(ap)adminPass=ap;
-  orders=await loadOrders();appHistory=await loadHistory();
-  await rebuildMenuFromDB();
+  // Cargar todo en paralelo: config, órdenes, historial y menú al mismo tiempo
+  var results=await Promise.all([
+    loadConfig('admin_password'),
+    loadOrders(),
+    loadHistory(),
+    rebuildMenuFromDB()
+  ]);
+  if(results[0])adminPass=results[0];
+  orders=results[1]||{};
+  appHistory=results[2]||[];
+  // rebuildMenuFromDB ya asigna MENU y curCat internamente
   gid('loginScreen').style.display='none';gid('appShell').style.display='block';
   var boot=gid('tlBoot'); if(boot)boot.style.display='none';
   renderTables();renderCatTabs();renderMenu();
@@ -2183,26 +2202,29 @@ gid('exportJSON').addEventListener('click',async function(){var ok=await askPass
 gid('clearHistory').addEventListener('click',async function(){var ok=await askPass('Contraseña para borrar historial');if(!ok)return;openConfirm('Borrar TODO el historial','Sin retorno.','Borrar todo',async function(){await deleteAllHist();appHistory=[];renderStats();showToast('Historial borrado');});});
 function dlFile(n,c,t){var b=new Blob([c],{type:t}),u=URL.createObjectURL(b),a=document.createElement('a');a.href=u;a.download=n;document.body.appendChild(a);a.click();a.remove();setTimeout(function(){URL.revokeObjectURL(u);},1000);}
 
-// ══ RECONSTRUIR MENU DESDE BD ══
+// ══ RECONSTRUIR MENU DESDE BD (1 query con join, cache TTL 5 min) ══
 async function rebuildMenuFromDB(){
-  var cats=await loadMenuCategories();
+  if(_menuCacheValid())return; // datos frescos en memoria, no va a BD
+  var cats=await sfetch(
+    '/rest/v1/menu_categories'+
+    '?select=*,menu_items(*)'+
+    '&active=eq.true'+
+    '&order=sort_order.asc'+
+    '&menu_items.active=eq.true'+
+    '&menu_items.order=sort_order.asc'
+  );
+  if(!Array.isArray(cats))cats=[];
   var newMenu=[];
   for(var i=0;i<cats.length;i++){
     var cat=cats[i];
-    if(!cat.active)continue;
-    var items=await loadMenuItems(cat.id);
-    var activeItems=items.filter(function(it){return it.active;}).map(function(it){
-      return{n:it.name,p:Number(it.price),d:it.description||''};
-    });
-    if(activeItems.length){
-      newMenu.push({cat:cat.name,items:activeItems});
-    }
+    var rawItems=Array.isArray(cat.menu_items)?cat.menu_items:[];
+    var activeItems=rawItems
+      .sort(function(a,b){return(a.sort_order||0)-(b.sort_order||0);})
+      .map(function(it){return{n:it.name,p:Number(it.price),d:it.description||''};});
+    if(activeItems.length)newMenu.push({cat:cat.name,items:activeItems});
   }
-  // Ordenar categorías e ítems alfabéticamente
-  newMenu.sort(function(a,b){return a.cat.localeCompare(b.cat,'es');});
-  newMenu.forEach(function(g){g.items.sort(function(a,b){return a.n.localeCompare(b.n,'es');});});
   MENU=newMenu;
-  // Reset current category to first
+  _menuCacheTs=Date.now();
   if(MENU.length)curCat=MENU[0].cat;
 }
 
@@ -2360,7 +2382,7 @@ async function reorderCats(srcEl,dstEl,side){
     await updateMenuCat(menuAdminCats[i].id,{sort_order:i+1});
   }
   await renderMenuAdmin();
-  await rebuildMenuFromDB();renderCatTabs();renderMenu();
+  invalidateMenuCache();await rebuildMenuFromDB();renderCatTabs();renderMenu();
   showToast('✓ Categoría movida');
 }
 
@@ -2380,7 +2402,7 @@ async function reorderItems(srcEl,dstEl,side){
     await updateMenuItem(menuAdminItems[i].id,{sort_order:i+1});
   }
   await renderMenuAdmin();
-  await rebuildMenuFromDB();renderCatTabs();renderMenu();
+  invalidateMenuCache();await rebuildMenuFromDB();renderCatTabs();renderMenu();
   showToast('✓ Producto movido');
 }
 
@@ -2500,7 +2522,7 @@ gid('catFSave').addEventListener('click',async function(){
   }
   gid('catFormModal').classList.remove('show');editingCatId=null;
   await renderMenuAdmin();
-  await rebuildMenuFromDB();renderCatTabs();renderMenu();
+  invalidateMenuCache();await rebuildMenuFromDB();renderCatTabs();renderMenu();
   showToast('✓ Categoría guardada');
 });
 
@@ -2542,7 +2564,7 @@ gid('itemFSave').addEventListener('click',async function(){
   }
   gid('itemFormModal').classList.remove('show');editingItemId=null;
   await renderMenuAdmin();
-  await rebuildMenuFromDB();renderCatTabs();renderMenu();
+  invalidateMenuCache();await rebuildMenuFromDB();renderCatTabs();renderMenu();
   showToast(isNew?'✓ Producto creado · Agrega la receta en Recetario':'✓ Producto guardado');
 });
 
@@ -4167,49 +4189,4 @@ async function deleteLoyaltyPromo(id){
     <h3>🎁 Canjear Premio</h3>
     <div id="canjeoClienteNombre" class="msub" style="margin-bottom:8px;font-weight:600"></div>
     <div id="canjeoRewardDesc" style="font-size:13px;color:var(--dim);margin-bottom:16px;padding:10px 12px;background:var(--bg);border-radius:10px;white-space:pre-line;line-height:1.5"></div>
-    <div id="canjeoPickLabel" style="font-size:10px;font-weight:600;letter-spacing:.15em;text-transform:uppercase;color:var(--faint);margin-bottom:10px">Elige el tipo de premio</div>
-    <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:12px">
-      <button class="btn btn-p" id="canjeoBtnBebida" style="padding:13px" onclick="aplicarPremioCoctel()">🍹 Bebida gratis</button>
-      <button class="btn btn-p" id="canjeoBtn2x1" style="padding:13px" onclick="aplicarPremio2x1()">2×1 en cocteles</button>
-      <button class="btn btn-p" id="canjeoBtnDescuento" style="padding:13px" onclick="aplicarDescuentoDirecto()">% Descuento en cuenta</button>
-      <button class="btn btn-p" id="canjeoBtnMenuGratis" style="padding:13px" onclick="aplicarPremioMenuGratis()">🍽 Menú gratis</button>
-    </div>
-    <div id="canjeoMsg" style="font-size:12px;color:var(--danger);min-height:18px;margin-bottom:4px"></div>
-    <button class="btn btn-g" style="width:100%;padding:12px" onclick="gid('canjeoPremioModal').classList.remove('show')">Cancelar</button>
-  </div>
-</div>
-
-<!-- CANJE DESCUENTO MODAL -->
-<div class="mb" id="canjeoDescuentoModal">
-  <div class="modal">
-    <h3>% Descuento por premio</h3>
-    <div id="canjeoDescClienteNombre" class="msub" style="margin-bottom:16px"></div>
-    <label style="font-size:10px;font-weight:600;letter-spacing:.15em;text-transform:uppercase;color:var(--dim);display:block;margin-bottom:6px">Porcentaje de descuento</label>
-    <input type="number" id="canjeoDescPct" min="1" max="100" placeholder="Ej. 20"
-      style="width:100%;padding:12px;border:1px solid var(--line2);border-radius:10px;font-size:24px;text-align:center;outline:none;margin-bottom:10px;font-family:inherit"
-      onkeydown="if(event.key==='Enter')confirmarDescuentoPremio()">
-    <div id="canjeoDescMsg" style="font-size:12px;color:var(--danger);min-height:18px;margin-bottom:8px"></div>
-    <div style="display:flex;gap:8px">
-      <button class="btn btn-g" style="flex:1" onclick="gid('canjeoDescuentoModal').classList.remove('show')">Cancelar</button>
-      <button class="btn btn-p" style="flex:1" onclick="confirmarDescuentoPremio()">Aplicar descuento</button>
-    </div>
-  </div>
-</div>
-
-<!-- PREMIO ITEM PICKER MODAL -->
-<div class="mb" id="premioItemPickerModal">
-  <div class="modal" style="max-height:80vh;display:flex;flex-direction:column;overflow:hidden">
-    <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:8px;margin-bottom:8px;flex-shrink:0">
-      <div>
-        <h3 id="premioPickerTitle">Seleccionar premio</h3>
-        <p class="msub" id="premioPickerSub"></p>
-      </div>
-      <button onclick="gid('premioItemPickerModal').classList.remove('show')" style="font-size:22px;color:var(--faint);padding:2px 6px;line-height:1;background:none;border:none;cursor:pointer">×</button>
-    </div>
-    <div id="premioPickerCatTabs" class="cat-tabs" style="flex-shrink:0;padding-bottom:8px"></div>
-    <div id="premioPickerList" class="menu-list" style="overflow-y:auto;flex:1;padding-bottom:8px"></div>
-  </div>
-</div>
-
-</body>
-</html>
+    <div id="canjeoPickLabel" style="font-size:10px;font-weight:600;letter-spacing:.15em;text-transform:uppercase;color:var(--faint);marg
