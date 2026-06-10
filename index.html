@@ -363,17 +363,61 @@ function buildMediaEl(m,isGrid){
     +' alt="'+esc(m.name||'')+'">';
 }
 
+// ── Filtrado por dispositivo ──
+// Si algún item tiene campo "device", usa eso ('mobile'|'desktop'|'all').
+// Si no, detecta aspect ratio de imágenes: portrait → móvil, landscape → desktop.
+// Videos e iframes siempre pasan.
+function probeAspect(url){
+  return new Promise(function(resolve){
+    var img=new Image();
+    img.onload=function(){resolve(img.naturalWidth/img.naturalHeight);};
+    img.onerror=function(){resolve(1);};  // en error asume cuadrada → pasa en ambos
+    img.src=url;
+  });
+}
+
+async function filterForDevice(list, forMobile){
+  // Prioridad 1: campo "device" en el registro
+  var hasDeviceField=list.some(function(m){return m.device;});
+  if(hasDeviceField){
+    return list.filter(function(m){
+      if(!m.device||m.device==='all')return true;
+      return forMobile ? m.device==='mobile' : m.device==='desktop';
+    });
+  }
+
+  // Prioridad 2: detección automática por aspect ratio
+  // Videos/iframes → siempre incluir
+  // Imágenes portrait (ar < 0.75) → solo móvil
+  // Imágenes landscape (ar > 1.4) → solo desktop
+  // Near-square (0.75–1.4) → ambos
+  var checks=list.map(function(m){
+    if(!m.url)return Promise.resolve(null);
+    var isEmbed=/youtube|youtu\.be|vimeo\.com/.test(m.url);
+    if(isEmbed||m.kind==='video')return Promise.resolve(m);
+    return probeAspect(m.url).then(function(ar){
+      if(forMobile  && ar>1.4) return null;   // landscape: no mostrar en móvil
+      if(!forMobile && ar<0.75)return null;   // portrait:  no mostrar en desktop
+      return m;
+    });
+  });
+  var results=await Promise.all(checks);
+  return results.filter(Boolean);
+}
+
 // ── Carrusel móvil ──
 var carouselIdx=0;
 var carouselInterval=null;
 var mediaList=[];
+var mobileList=[];   // lista filtrada para carrusel
+var desktopList=[];  // lista filtrada para grid
 
-function renderCarousel(){
+function renderCarousel(list){
   var track=document.getElementById('carouselTrack');
   var dots=document.getElementById('dots');
   track.innerHTML='';
   dots.innerHTML='';
-  mediaList.forEach(function(m,i){
+  list.forEach(function(m,i){
     var slide=document.createElement('div');
     slide.className='slide';
     slide.innerHTML=buildMediaEl(m,false);
@@ -384,7 +428,7 @@ function renderCarousel(){
   });
   carouselIdx=0;
   updateCarouselPosition();
-  startCarousel();
+  startCarousel(list.length);
 }
 
 function updateCarouselPosition(){
@@ -395,40 +439,38 @@ function updateCarouselPosition(){
 }
 
 function nextSlide(){
-  if(!mediaList.length)return;
-  carouselIdx=(carouselIdx+1)%mediaList.length;
+  if(!mobileList.length)return;
+  carouselIdx=(carouselIdx+1)%mobileList.length;
   updateCarouselPosition();
 }
 
-function startCarousel(){
+function startCarousel(count){
   clearInterval(carouselInterval);
-  if(mediaList.length<=1)return;
+  if((count||mobileList.length)<=1)return;
   carouselInterval=setInterval(nextSlide,9000);
 }
 
 // ── Grid layout ──
 function calcGridDims(count){
-  // Returns CSS grid-template settings to fill viewport
   if(count===1)return{cols:'1fr',rows:'1fr'};
   if(count===2)return{cols:'1fr 1fr',rows:'1fr'};
   if(count===3)return{cols:'1fr 1fr 1fr',rows:'1fr'};
   if(count===4)return{cols:'1fr 1fr',rows:'1fr 1fr'};
   if(count<=6)return{cols:'1fr 1fr 1fr',rows:'1fr 1fr'};
   if(count<=9)return{cols:'1fr 1fr 1fr',rows:'1fr 1fr 1fr'};
-  // 10+ → 4 cols
   var rows=Math.ceil(count/4);
   return{cols:'1fr 1fr 1fr 1fr',rows:'repeat('+rows+',1fr)'};
 }
 
-function renderGrid(){
+function renderGrid(list){
   var grid=document.getElementById('gridBg');
   grid.innerHTML='';
-  var n=mediaList.length;
+  var n=list.length;
   if(n===0){grid.style.display='none';return;}
   var d=calcGridDims(n);
   grid.style.gridTemplateColumns=d.cols;
   grid.style.gridTemplateRows=d.rows;
-  mediaList.forEach(function(m){
+  list.forEach(function(m){
     var cell=document.createElement('div');
     cell.className='gcell';
     cell.innerHTML=buildMediaEl(m,true);
@@ -441,23 +483,34 @@ async function init(){
   var data=await sfetch('/rest/v1/landing_media?select=*&active=eq.true&order=sort_order.asc');
   mediaList=Array.isArray(data)?data:[];
 
+  // Filtrar listas por dispositivo en paralelo
+  var filtered=await Promise.all([
+    filterForDevice(mediaList,true),
+    filterForDevice(mediaList,false)
+  ]);
+  mobileList=filtered[0];
+  desktopList=filtered[1];
+
   var loader=document.getElementById('loader');
   var carousel=document.getElementById('carousel');
   var grid=document.getElementById('gridBg');
   var dots=document.getElementById('dots');
   var empty=document.getElementById('emptyBg');
 
-  if(!mediaList.length){
+  var mobile=isMobile();
+  var activeList=mobile?mobileList:desktopList;
+
+  if(!activeList.length){
     empty.style.display='block';
-  }else if(isMobile()){
+  }else if(mobile){
     carousel.style.display='block';
-    if(mediaList.length===1) carousel.classList.add('single-media');
-    dots.style.display=mediaList.length>1?'flex':'none';
-    renderCarousel();
+    if(mobileList.length===1)carousel.classList.add('single-media');
+    dots.style.display=mobileList.length>1?'flex':'none';
+    renderCarousel(mobileList);
   }else{
     grid.style.display='grid';
-    if(mediaList.length===1) grid.classList.add('single-media');
-    renderGrid();
+    if(desktopList.length===1)grid.classList.add('single-media');
+    renderGrid(desktopList);
   }
 
   setTimeout(function(){loader.classList.add('fade');setTimeout(function(){loader.style.display='none';},500);},400);
@@ -474,15 +527,17 @@ window.addEventListener('resize',function(){
     if(!mediaList.length)return;
     if(isMobile()){
       grid.style.display='none';
-      carousel.style.display='block';
-      dots.style.display=mediaList.length>1?'flex':'none';
-      if(!document.getElementById('carouselTrack').children.length)renderCarousel();
+      carousel.style.display=mobileList.length?'block':'none';
+      dots.style.display=mobileList.length>1?'flex':'none';
+      if(!document.getElementById('carouselTrack').children.length)renderCarousel(mobileList);
     }else{
       clearInterval(carouselInterval);
       carousel.style.display='none';
       dots.style.display='none';
-      grid.style.display='grid';
-      if(!grid.children.length)renderGrid();
+      if(desktopList.length){
+        grid.style.display='grid';
+        if(!grid.children.length)renderGrid(desktopList);
+      }
     }
   },200);
 });
@@ -496,7 +551,7 @@ document.addEventListener('touchend',function(e){
   if(Math.abs(dx)<50)return;
   clearInterval(carouselInterval);
   if(dx<0){nextSlide();}
-  else{carouselIdx=(carouselIdx-1+mediaList.length)%mediaList.length;updateCarouselPosition();}
+  else{carouselIdx=(carouselIdx-1+mobileList.length)%mobileList.length;updateCarouselPosition();}
   startCarousel();
 },{passive:true});
 
