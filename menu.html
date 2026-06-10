@@ -382,14 +382,9 @@ var PROMO_CAT='Promociones';
 var SHOT_CATS=['Tequila (shot)','Whisky (shot)','Ron (shot)','Brandy (shot)','Mezcal (shot)'];
 
 async function loadMenu(){
-  // Una sola query: categorías + items embebidos (PostgREST join)
+  // Una sola query: categorías activas + todos sus items embebidos
   var cats=await sfetch(
-    '/rest/v1/menu_categories'+
-    '?select=*,menu_items(*)'+
-    '&active=eq.true'+
-    '&order=sort_order.asc'+
-    '&menu_items.active=eq.true'+
-    '&menu_items.order=sort_order.asc'
+    '/rest/v1/menu_categories?select=*,menu_items(*)&active=eq.true&order=sort_order.asc'
   );
   if(!cats||!cats.length){
     document.getElementById('loadingWrap').innerHTML=
@@ -397,12 +392,13 @@ async function loadMenu(){
     return;
   }
   var menuData=cats
-    .filter(function(cat){return cat.menu_items&&cat.menu_items.length;})
     .map(function(cat){
-      // Ordenar items por sort_order (la BD ya los ordena, pero asegurar)
-      var items=cat.menu_items.slice().sort(function(a,b){return(a.sort_order||0)-(b.sort_order||0);});
+      var items=(cat.menu_items||[])
+        .filter(function(it){return it.active;})
+        .sort(function(a,b){return(a.sort_order||0)-(b.sort_order||0);});
       return{cat:cat,items:items};
-    });
+    })
+    .filter(function(g){return g.items.length;});
   if(!menuData.length){
     document.getElementById('loadingWrap').innerHTML=
       '<div class="error-wrap"><div class="error-title">Menú vacío</div><div class="error-sub">Agrega categorías e ítems desde el panel</div></div>';

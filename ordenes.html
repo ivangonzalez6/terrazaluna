@@ -2206,21 +2206,16 @@ function dlFile(n,c,t){var b=new Blob([c],{type:t}),u=URL.createObjectURL(b),a=d
 async function rebuildMenuFromDB(){
   if(_menuCacheValid())return; // datos frescos en memoria, no va a BD
   var cats=await sfetch(
-    '/rest/v1/menu_categories'+
-    '?select=*,menu_items(*)'+
-    '&active=eq.true'+
-    '&order=sort_order.asc'+
-    '&menu_items.active=eq.true'+
-    '&menu_items.order=sort_order.asc'
+    '/rest/v1/menu_categories?select=*,menu_items(*)&active=eq.true&order=sort_order.asc'
   );
   if(!Array.isArray(cats))cats=[];
   var newMenu=[];
   for(var i=0;i<cats.length;i++){
     var cat=cats[i];
-    var rawItems=Array.isArray(cat.menu_items)?cat.menu_items:[];
-    var activeItems=rawItems
-      .sort(function(a,b){return(a.sort_order||0)-(b.sort_order||0);})
-      .map(function(it){return{n:it.name,p:Number(it.price),d:it.description||''};});
+    var rawItems=(Array.isArray(cat.menu_items)?cat.menu_items:[])
+      .filter(function(it){return it.active;})
+      .sort(function(a,b){return(a.sort_order||0)-(b.sort_order||0);});
+    var activeItems=rawItems.map(function(it){return{n:it.name,p:Number(it.price),d:it.description||''};});
     if(activeItems.length)newMenu.push({cat:cat.name,items:activeItems});
   }
   MENU=newMenu;
