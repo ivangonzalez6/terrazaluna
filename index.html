@@ -42,6 +42,8 @@ body{position:relative}
   width:100%;height:100%;
   object-fit:cover;
   display:block;
+  /* Evita flash de imagen sin tamaño */
+  min-height:100vh;
 }
 .slide iframe{
   width:100%;height:100%;
@@ -77,6 +79,7 @@ body{position:relative}
   width:100%;height:100%;
   object-fit:cover;
   display:block;
+  min-height:0;
 }
 .grid-bg .gcell iframe{
   width:100%;height:100%;
@@ -196,6 +199,43 @@ body{position:relative}
   .dots{display:none;}
 }
 
+/* ── Título Terraza Luna (esquina superior izquierda) ── */
+.site-title{
+  position:fixed;
+  top:clamp(16px,3.5vh,36px);
+  left:clamp(18px,3.5vw,48px);
+  z-index:25;
+  display:flex;
+  flex-direction:column;
+  line-height:1;
+  pointer-events:none;
+  /* Sombra sutil para legibilidad sobre cualquier imagen */
+  filter:drop-shadow(0 2px 16px rgba(0,0,0,.55));
+}
+.title-terraza{
+  font-family:'Cormorant Garamond',serif;
+  font-size:clamp(9px,1.5vw,13px);
+  font-weight:400;
+  letter-spacing:.42em;
+  text-transform:uppercase;
+  color:rgba(255,255,255,.72);
+  display:block;
+  line-height:1.2;
+  /* Alineado al margen izquierdo de "Luna", compensando letter-spacing */
+  margin-left:.05em;
+}
+.title-luna{
+  font-family:'Cormorant Garamond',serif;
+  font-size:clamp(26px,5.5vw,56px);
+  font-weight:600;
+  letter-spacing:.22em;
+  text-transform:uppercase;
+  color:rgba(255,255,255,.88);
+  display:block;
+  margin-top:-.08em;
+  line-height:1;
+}
+
 /* ── Empty state ── */
 .empty-bg{
   position:fixed;inset:0;
@@ -226,6 +266,12 @@ body{position:relative}
 <!-- Grid (tablet/desktop) -->
 <div class="grid-bg" id="gridBg" style="display:none"></div>
 
+<!-- Título marca: esquina superior izquierda -->
+<div class="site-title">
+  <span class="title-terraza">Terraza</span>
+  <span class="title-luna">Luna</span>
+</div>
+
 <!-- Overlay solo botón -->
 <div class="overlay">
   <a href="/menu" class="menu-btn">Menú</a>
@@ -243,6 +289,33 @@ function sfetch(p){return fetch(SU+p,{headers:SH}).then(function(r){return r.jso
 // Detectar dispositivo
 function isMobile(){
   return window.innerWidth<768||(window.innerWidth<1024&&window.matchMedia('(orientation:portrait)').matches);
+}
+
+// ── Tamaño óptimo de imagen según contexto ──
+// Supabase Storage soporta transform params: ?width=N&quality=N
+// Se aplica solo a URLs de Supabase Storage; otras quedan intactas.
+function optimizeImg(url, targetW, quality){
+  if(!url) return url;
+  quality = quality || 80;
+  // Solo aplicar a URLs de Supabase Storage
+  if(url.indexOf('/storage/v1/object/public/')!==-1){
+    var sep = url.indexOf('?')!==-1 ? '&' : '?';
+    return url + sep + 'width=' + targetW + '&quality=' + quality;
+  }
+  return url;
+}
+
+// Ancho óptimo según dispositivo y contexto (carrusel vs celda de grid)
+function pickWidth(isGrid){
+  var vw = window.innerWidth;
+  var dpr = Math.min(window.devicePixelRatio || 1, 2); // cap en 2x
+  if(isGrid){
+    // En grid cada celda ocupa una fracción del viewport
+    var cols = vw >= 1200 ? 3 : vw >= 768 ? 2 : 1;
+    return Math.round((vw / cols) * dpr);
+  }
+  // Carrusel: imagen cubre 100vw
+  return Math.round(vw * dpr);
 }
 
 // Construir HTML del media item
@@ -263,10 +336,31 @@ function buildMediaEl(m,isGrid){
   }
   // Video directo (mp4, webm)
   if(m.kind==='video'){
-    return '<video src="'+esc(url)+'" autoplay muted loop playsinline></video>';
+    // Usar mobile_url si existe y estamos en móvil
+    var vidSrc = (!isGrid && isMobile() && m.mobile_url) ? m.mobile_url : url;
+    return '<video src="'+esc(vidSrc)+'" autoplay muted loop playsinline></video>';
   }
-  // Imagen
-  return '<img src="'+esc(url)+'" alt="'+esc(m.name||'')+'">';
+  // Imagen: construir srcset con tamaños adaptativos
+  var w = pickWidth(isGrid);
+  // Versiones para srcset: mitad, óptima y doble (para pantallas HiDPI)
+  var half  = Math.round(w / 2);
+  var full  = w;
+  var hi    = Math.min(Math.round(w * 1.5), 2560); // tope en 2560px
+  var q     = isMobile() ? 75 : 80; // calidad ligeramente menor en móvil
+  var srcLow  = optimizeImg(url, half, q);
+  var srcMid  = optimizeImg(url, full, q);
+  var srcHi   = optimizeImg(url, hi,   q);
+  // sizes: para grid indicamos el ancho real de cada celda
+  var sizesAttr = isGrid
+    ? '(min-width:1200px) 33vw, (min-width:768px) 50vw, 100vw'
+    : '100vw';
+  return '<img'
+    +' src="'+esc(srcMid)+'"'
+    +' srcset="'+esc(srcLow)+' '+half+'w, '+esc(srcMid)+' '+full+'w, '+esc(srcHi)+' '+hi+'w"'
+    +' sizes="'+sizesAttr+'"'
+    +' loading="eager"'
+    +' decoding="async"'
+    +' alt="'+esc(m.name||'')+'">';
 }
 
 // ── Carrusel móvil ──
