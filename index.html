@@ -363,46 +363,14 @@ function buildMediaEl(m,isGrid){
     +' alt="'+esc(m.name||'')+'">';
 }
 
-// ── Filtrado por dispositivo ──
-// Si algún item tiene campo "device", usa eso ('mobile'|'desktop'|'all').
-// Si no, detecta aspect ratio de imágenes: portrait → móvil, landscape → desktop.
-// Videos e iframes siempre pasan.
-function probeAspect(url){
-  return new Promise(function(resolve){
-    var img=new Image();
-    img.onload=function(){resolve(img.naturalWidth/img.naturalHeight);};
-    img.onerror=function(){resolve(1);};  // en error asume cuadrada → pasa en ambos
-    img.src=url;
+// ── Filtrado por dispositivo (síncrono, usa campo "device" de la BD) ──
+// device: 'all' | 'mobile' | 'desktop'   (default 'all' si el campo no existe)
+function filterForDevice(list, forMobile){
+  return list.filter(function(m){
+    var d=m.device||'all';
+    if(d==='all')return true;
+    return forMobile ? d==='mobile' : d==='desktop';
   });
-}
-
-async function filterForDevice(list, forMobile){
-  // Prioridad 1: campo "device" en el registro
-  var hasDeviceField=list.some(function(m){return m.device;});
-  if(hasDeviceField){
-    return list.filter(function(m){
-      if(!m.device||m.device==='all')return true;
-      return forMobile ? m.device==='mobile' : m.device==='desktop';
-    });
-  }
-
-  // Prioridad 2: detección automática por aspect ratio
-  // Videos/iframes → siempre incluir
-  // Imágenes portrait (ar < 0.75) → solo móvil
-  // Imágenes landscape (ar > 1.4) → solo desktop
-  // Near-square (0.75–1.4) → ambos
-  var checks=list.map(function(m){
-    if(!m.url)return Promise.resolve(null);
-    var isEmbed=/youtube|youtu\.be|vimeo\.com/.test(m.url);
-    if(isEmbed||m.kind==='video')return Promise.resolve(m);
-    return probeAspect(m.url).then(function(ar){
-      if(forMobile  && ar>1.4) return null;   // landscape: no mostrar en móvil
-      if(!forMobile && ar<0.75)return null;   // portrait:  no mostrar en desktop
-      return m;
-    });
-  });
-  var results=await Promise.all(checks);
-  return results.filter(Boolean);
 }
 
 // ── Carrusel móvil ──
@@ -483,13 +451,9 @@ async function init(){
   var data=await sfetch('/rest/v1/landing_media?select=*&active=eq.true&order=sort_order.asc');
   mediaList=Array.isArray(data)?data:[];
 
-  // Filtrar listas por dispositivo en paralelo
-  var filtered=await Promise.all([
-    filterForDevice(mediaList,true),
-    filterForDevice(mediaList,false)
-  ]);
-  mobileList=filtered[0];
-  desktopList=filtered[1];
+  // Filtrar por campo device (síncrono — sin latencia adicional)
+  mobileList=filterForDevice(mediaList,true);
+  desktopList=filterForDevice(mediaList,false);
 
   var loader=document.getElementById('loader');
   var carousel=document.getElementById('carousel');

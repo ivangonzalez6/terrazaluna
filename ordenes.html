@@ -838,6 +838,13 @@ h2.sec::after{content:'';flex:1;height:1px;background:var(--line);margin-left:6p
       <option value="image">Imagen</option>
       <option value="video">Video (mp4) o URL</option>
     </select>
+    <label class="flbl" style="margin-top:10px">Mostrar en</label>
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin-top:5px" id="lmDevicePicker">
+      <button type="button" class="dev-opt" data-val="all"    style="padding:9px 4px;border:1.5px solid var(--line);border-radius:8px;background:#fff;font-family:'Inter Tight',sans-serif;font-size:10px;letter-spacing:.15em;text-transform:uppercase;cursor:pointer;transition:all .2s;color:var(--dim)">🖥📱 Todos</button>
+      <button type="button" class="dev-opt" data-val="mobile" style="padding:9px 4px;border:1.5px solid var(--line);border-radius:8px;background:#fff;font-family:'Inter Tight',sans-serif;font-size:10px;letter-spacing:.15em;text-transform:uppercase;cursor:pointer;transition:all .2s;color:var(--dim)">📱 Móvil</button>
+      <button type="button" class="dev-opt" data-val="desktop" style="padding:9px 4px;border:1.5px solid var(--line);border-radius:8px;background:#fff;font-family:'Inter Tight',sans-serif;font-size:10px;letter-spacing:.15em;text-transform:uppercase;cursor:pointer;transition:all .2s;color:var(--dim)">🖥 Escritorio</button>
+    </div>
+    <input type="hidden" id="lmDevice" value="all">
     <label class="flbl" style="margin-top:10px" id="lmFileLabel">Archivo</label>
     <input id="lmFile" type="file" accept="image/*" style="margin-top:5px;padding:8px;font-size:12px">
     <label class="flbl" style="margin-top:10px;display:none" id="lmUrlLabel">o pega una URL (YouTube, Vimeo, mp4)</label>
@@ -2608,7 +2615,9 @@ async function renderLandingAdmin(){
       '<div class="lm-thumb">'+thumbHTML+'</div>'+
       '<div class="lm-info">'+
         '<div class="lm-name">'+esc(m.name||'(Sin nombre)')+'</div>'+
-        '<div class="lm-meta">'+(m.kind==='video'?'🎬 Video':'🖼 Imagen')+'</div>'+
+        '<div class="lm-meta">'+(m.kind==='video'?'🎬 Video':'🖼 Imagen')+
+          ' &nbsp;<span style="background:var(--gold-pale);color:var(--gold);border-radius:4px;padding:1px 6px;font-size:9px;letter-spacing:.15em;font-weight:600;text-transform:uppercase">'+(m.device==='mobile'?'📱 Móvil':m.device==='desktop'?'🖥 Escritorio':'🖥📱 Todos')+'</span>'+
+        '</div>'+
       '</div>'+
       '<div class="lm-acts">'+
         '<button class="ai-btn ai-edit">Editar</button>'+
@@ -2648,6 +2657,17 @@ async function reorderLandingMedia(srcEl,dstEl,side){
   showToast('✓ Orden actualizado');
 }
 
+function setLmDevice(val){
+  gid('lmDevice').value=val;
+  document.querySelectorAll('.dev-opt').forEach(function(btn){
+    var active=btn.getAttribute('data-val')===val;
+    btn.style.background=active?'var(--gold-pale)':'#fff';
+    btn.style.borderColor=active?'var(--gold)':'var(--line)';
+    btn.style.color=active?'var(--gold)':'var(--dim)';
+    btn.style.fontWeight=active?'600':'400';
+  });
+}
+
 function openLandingMediaForm(media){
   editingLandingId=media?media.id:null;
   gid('lmTitle').textContent=media?'Editar archivo':'Agregar a landing';
@@ -2660,6 +2680,7 @@ function openLandingMediaForm(media){
   gid('lmProgress').style.display='none';
   gid('lmPreview').style.display='none';
   gid('lmPreview').innerHTML='';
+  setLmDevice(media?(media.device||'all'):'all');
   toggleLmFields();
   if(media){renderLmPreview(media.url,media.kind);}
   gid('landingMediaModal').classList.add('show');
@@ -2700,6 +2721,9 @@ function renderLmPreview(url,kind){
 }
 
 gid('lmKind').addEventListener('change',toggleLmFields);
+document.querySelectorAll('.dev-opt').forEach(function(btn){
+  btn.addEventListener('click',function(){setLmDevice(btn.getAttribute('data-val'));});
+});
 gid('lmFile').addEventListener('change',function(){
   var f=gid('lmFile').files[0];
   if(!f){gid('lmPreview').style.display='none';return;}
@@ -2735,11 +2759,11 @@ gid('lmSave').addEventListener('click',async function(){
       var oldItem=landingMediaItems.find(function(x){return x.id===editingLandingId;});
       // If file changed, delete old storage file
       if(file&&oldItem&&oldItem.url&&oldItem.url!==finalUrl){await deleteFromStorage(oldItem.url);}
-      await updateLandingMedia(editingLandingId,{name:name,kind:kind,url:finalUrl});
+      await updateLandingMedia(editingLandingId,{name:name,kind:kind,url:finalUrl,device:gid('lmDevice').value});
       showToast('✓ Archivo actualizado');
     }else{
       var maxOrd=landingMediaItems.reduce(function(m,x){return Math.max(m,x.sort_order||0);},0);
-      var newRec={id:'lm-'+uid(),name:name,kind:kind,url:finalUrl,sort_order:maxOrd+1,active:true,created_at:new Date().toISOString()};
+      var newRec={id:'lm-'+uid(),name:name,kind:kind,url:finalUrl,sort_order:maxOrd+1,active:true,device:gid('lmDevice').value,created_at:new Date().toISOString()};
       await insertLandingMedia(newRec);
       showToast('✓ Archivo agregado');
     }
