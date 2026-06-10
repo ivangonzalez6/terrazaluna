@@ -4187,4 +4187,48 @@ async function deleteLoyaltyPromo(id){
     <h3>🎁 Canjear Premio</h3>
     <div id="canjeoClienteNombre" class="msub" style="margin-bottom:8px;font-weight:600"></div>
     <div id="canjeoRewardDesc" style="font-size:13px;color:var(--dim);margin-bottom:16px;padding:10px 12px;background:var(--bg);border-radius:10px;white-space:pre-line;line-height:1.5"></div>
-    <div id="canjeoPickLabel" style="font-size:10px;font-weight:600;letter-spacing:.15em;text-transform:uppercase;color:var(--faint);marg
+    <div id="canjeoPickLabel" style="font-size:10px;font-weight:600;letter-spacing:.15em;text-transform:uppercase;color:var(--faint);margin-bottom:8px">Elige el tipo de premio</div>
+    <div style="display:flex;flex-direction:column;gap:8px">
+      <button class="btn btn-p" id="canjeoBtnBebida" style="width:100%;padding:13px" onclick="aplicarPremioCoctel()">🍹 Bebida gratis</button>
+      <button class="btn btn-p" id="canjeoBtn2x1" style="width:100%;padding:13px" onclick="aplicarPremio2x1()">🍸 2×1 en cocteles</button>
+      <button class="btn btn-p" id="canjeoBtnDescuento" style="width:100%;padding:13px" onclick="aplicarDescuentoDirecto()">% Descuento</button>
+      <button class="btn btn-p" id="canjeoBtnMenuGratis" style="width:100%;padding:13px" onclick="aplicarPremioMenuGratis()">🍽 Menú gratis</button>
+    </div>
+    <div id="canjeoMsg" style="margin-top:8px;font-size:12px;color:var(--danger)"></div>
+    <button class="btn btn-g" style="width:100%;padding:12px;margin-top:10px" onclick="document.getElementById('canjeoPremioModal').classList.remove('show')">Cancelar</button>
+  </div>
+</div>
+
+<!-- DESCUENTO PREMIO MODAL -->
+<div class="mb" id="canjeoDescuentoModal">
+  <div class="modal">
+    <h3>% Descuento por premio</h3>
+    <div id="canjeoDescClienteNombre" class="msub" style="margin-bottom:12px;font-weight:600"></div>
+    <div style="font-size:10px;font-weight:600;letter-spacing:.15em;text-transform:uppercase;color:var(--faint);margin-bottom:6px">Porcentaje de descuento (1–100)</div>
+    <input type="number" id="canjeoDescPct" min="1" max="100" placeholder="Ej. 15"
+      style="width:100%;padding:12px 14px;border:1px solid var(--line2);border-radius:10px;font-size:16px;outline:none;font-family:inherit">
+    <div id="canjeoDescMsg" style="font-size:12px;color:var(--danger);margin:6px 0 0"></div>
+    <div style="display:flex;gap:8px;margin-top:14px">
+      <button class="btn btn-g" style="flex:1;padding:13px" onclick="document.getElementById('canjeoDescuentoModal').classList.remove('show')">Cancelar</button>
+      <button class="btn btn-p" style="flex:1;padding:13px" onclick="confirmarDescuentoPremio()">Aplicar ✓</button>
+    </div>
+  </div>
+</div>
+
+<!-- PREMIO ITEM PICKER MODAL -->
+<div class="mb" id="premioItemPickerModal">
+  <div class="modal" style="max-height:85vh;display:flex;flex-direction:column;overflow:hidden">
+    <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:8px;margin-bottom:10px;flex-shrink:0">
+      <div>
+        <h3 id="premioPickerTitle">Seleccionar producto</h3>
+        <div class="msub" id="premioPickerSub"></div>
+      </div>
+      <button onclick="document.getElementById('premioItemPickerModal').classList.remove('show')" style="font-size:22px;color:var(--faint);padding:2px 6px;line-height:1;background:none;border:none;cursor:pointer">×</button>
+    </div>
+    <div id="premioPickerCatTabs" style="display:flex;gap:6px;overflow-x:auto;flex-shrink:0;padding-bottom:8px;scrollbar-width:none"></div>
+    <div id="premioPickerList" style="flex:1;overflow-y:auto;display:flex;flex-direction:column;gap:6px;padding-bottom:4px"></div>
+  </div>
+</div>
+
+</body>
+</html>

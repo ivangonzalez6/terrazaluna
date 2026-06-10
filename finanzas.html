@@ -969,7 +969,7 @@ async function refreshIngresoAutoCards(){
   var desc='Hoy se cerraron '+money(posTotal)+' en la app de órdenes ('+nProducts+' prod.). Confirma para registrarlos.';
   // Home card
   var homeCard=gid('homeSalesCard');
-  if(posTotal>0&&!existing){
+  if(homeCard&&posTotal>0&&!existing){
     homeCard.style.display='block';
     gid('homeSalesAmt').textContent=money(posTotal);
     gid('homeSalesDesc').textContent=desc;
@@ -977,7 +977,7 @@ async function refreshIngresoAutoCards(){
       homeCard.style.display='none';gid('autoSalesCard').style.display='none';
       await registrarVentasPOS(pos,today);
     };
-  }else{homeCard.style.display='none';}
+  }else if(homeCard){homeCard.style.display='none';}
   // Ingreso view card (secondary)
   var card=gid('autoSalesCard');
   if(posTotal>0&&!existing){
@@ -985,7 +985,8 @@ async function refreshIngresoAutoCards(){
     gid('autoSalesAmt').textContent=money(posTotal);
     gid('autoSalesDesc').textContent=desc;
     gid('autoSalesBtn').onclick=async function(){
-      homeCard.style.display='none';card.style.display='none';
+      if(homeCard)homeCard.style.display='none';
+      card.style.display='none';
       await registrarVentasPOS(pos,today);
     };
   }else{card.style.display='none';}

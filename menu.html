@@ -384,8 +384,8 @@ var SHOT_CATS=['Tequila (shot)','Whisky (shot)','Ron (shot)','Brandy (shot)','Me
 async function loadMenu(){
   // 2 queries en paralelo: categorías + todos los items activos a la vez
   var res=await Promise.all([
-    sfetch('/rest/v1/menu_categories?select=*&active=eq.true&order=sort_order.asc'),
-    sfetch('/rest/v1/menu_items?select=*&active=eq.true&order=sort_order.asc')
+    sfetch('/rest/v1/menu_categories?select=id,name,sort_order&active=eq.true&order=sort_order.asc'),
+    sfetch('/rest/v1/menu_items?select=id,category_id,name,description,price,sort_order&active=eq.true&order=sort_order.asc')
   ]);
   var cats=res[0], allItems=res[1];
   if(!Array.isArray(cats)||!cats.length){
@@ -518,4 +518,18 @@ function renderMenu(menuData){
       if(entry.isIntersecting){
         var id=entry.target.id;
         navBtns.forEach(function(btn){
+          var on=btn.getAttribute('data-target')===id;
+          btn.classList.toggle('active',on);
+          if(on)btn.scrollIntoView({behavior:'smooth',block:'nearest',inline:'center'});
+        });
+      }
+    });
+  },{rootMargin:'-15% 0px -75% 0px',threshold:0});
+  sections.forEach(function(s){observer.observe(s);});
+}
+
+loadMenu();
+</script>
+</body>
+</html>
    
