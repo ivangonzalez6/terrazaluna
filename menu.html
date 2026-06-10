@@ -382,20 +382,26 @@ var PROMO_CAT='Promociones';
 var SHOT_CATS=['Tequila (shot)','Whisky (shot)','Ron (shot)','Brandy (shot)','Mezcal (shot)'];
 
 async function loadMenu(){
-  // Una sola query: categorías activas + todos sus items embebidos
-  var cats=await sfetch(
-    '/rest/v1/menu_categories?select=*,menu_items(*)&active=eq.true&order=sort_order.asc'
-  );
-  if(!cats||!cats.length){
+  // 2 queries en paralelo: categorías + todos los items activos a la vez
+  var res=await Promise.all([
+    sfetch('/rest/v1/menu_categories?select=*&active=eq.true&order=sort_order.asc'),
+    sfetch('/rest/v1/menu_items?select=*&active=eq.true&order=sort_order.asc')
+  ]);
+  var cats=res[0], allItems=res[1];
+  if(!Array.isArray(cats)||!cats.length){
     document.getElementById('loadingWrap').innerHTML=
       '<div class="error-wrap"><div class="error-title">Menú no disponible</div><div class="error-sub">Intenta más tarde</div></div>';
     return;
   }
+  // Agrupar items por category_id (operación local, sin más requests)
+  var bycat={};
+  (allItems||[]).forEach(function(it){
+    if(!bycat[it.category_id])bycat[it.category_id]=[];
+    bycat[it.category_id].push(it);
+  });
   var menuData=cats
     .map(function(cat){
-      var items=(cat.menu_items||[])
-        .filter(function(it){return it.active;})
-        .sort(function(a,b){return(a.sort_order||0)-(b.sort_order||0);});
+      var items=(bycat[cat.id]||[]).sort(function(a,b){return(a.sort_order||0)-(b.sort_order||0);});
       return{cat:cat,items:items};
     })
     .filter(function(g){return g.items.length;});

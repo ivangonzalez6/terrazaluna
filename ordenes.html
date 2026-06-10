@@ -2205,19 +2205,22 @@ function dlFile(n,c,t){var b=new Blob([c],{type:t}),u=URL.createObjectURL(b),a=d
 // ══ RECONSTRUIR MENU DESDE BD (1 query con join, cache TTL 5 min) ══
 async function rebuildMenuFromDB(){
   if(_menuCacheValid())return; // datos frescos en memoria, no va a BD
-  var cats=await sfetch(
-    '/rest/v1/menu_categories?select=*,menu_items(*)&active=eq.true&order=sort_order.asc'
-  );
-  if(!Array.isArray(cats))cats=[];
+  // 2 queries en paralelo: categorías + todos los items activos
+  var res=await Promise.all([
+    sfetch('/rest/v1/menu_categories?select=*&active=eq.true&order=sort_order.asc'),
+    sfetch('/rest/v1/menu_items?select=*&active=eq.true&order=sort_order.asc')
+  ]);
+  var cats=Array.isArray(res[0])?res[0]:[];
+  var allItems=Array.isArray(res[1])?res[1]:[];
+  // Agrupar items por category_id
+  var bycat={};
+  allItems.forEach(function(it){if(!bycat[it.category_id])bycat[it.category_id]=[];bycat[it.category_id].push(it);});
   var newMenu=[];
-  for(var i=0;i<cats.length;i++){
-    var cat=cats[i];
-    var rawItems=(Array.isArray(cat.menu_items)?cat.menu_items:[])
-      .filter(function(it){return it.active;})
-      .sort(function(a,b){return(a.sort_order||0)-(b.sort_order||0);});
-    var activeItems=rawItems.map(function(it){return{n:it.name,p:Number(it.price),d:it.description||''};});
+  cats.forEach(function(cat){
+    var sorted=(bycat[cat.id]||[]).sort(function(a,b){return(a.sort_order||0)-(b.sort_order||0);});
+    var activeItems=sorted.map(function(it){return{n:it.name,p:Number(it.price),d:it.description||''};});
     if(activeItems.length)newMenu.push({cat:cat.name,items:activeItems});
-  }
+  });
   MENU=newMenu;
   _menuCacheTs=Date.now();
   if(MENU.length)curCat=MENU[0].cat;
