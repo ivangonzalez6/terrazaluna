@@ -411,6 +411,7 @@ h2.sec::after{content:'';flex:1;height:1px;background:var(--line);margin-left:6p
 .drag-hint{font-size:9px;letter-spacing:.15em;text-transform:uppercase;color:var(--faint);text-align:center;padding:6px 0 2px;font-weight:500}
 /* ── Recetario admin lista compacta ── */
 .rec-admin-row{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:11px 14px;border:1px solid var(--line);border-radius:12px;background:#fff;margin-bottom:6px}
+.loyalty-search-hint{text-align:center;color:var(--faint);font-size:13px;padding:20px 10px}
 .rec-admin-name{font-family:'Cormorant Garamond',serif;font-size:17px;font-weight:600;flex:1;min-width:0}
 .rec-admin-acts{display:flex;gap:6px;flex-shrink:0}
 
@@ -3450,7 +3451,7 @@ function startRealtime(){
 
 // ══ LEALTAD POST-CIERRE ══
 var _loyaltyScanner=null, _loyaltyScanning=false, _loyaltyFoundClient=null, _loyaltyCanjearMode=false;
-var LOYALTY_REG_URL = 'https://www.terrazaluna.mx/registro';
+var LOYALTY_REG_URL = 'https://terrazaluna.mx/registro';
 
 function showLoyaltyCheckModal(){
   _loyaltyCanjearMode=false;
@@ -3464,14 +3465,15 @@ function closeLoyaltyCheckModal(){
 function loyaltyCheckYes(){
   closeLoyaltyCheckModal();
   _loyaltyFoundClient=null;
+  _loyaltyAllClients=[];
   gid('loyaltyClientFound').style.display='none';
   gid('loyaltyMarkVisitBtn').style.display='none';
   gid('loyaltyScanMsg').innerHTML='';
   gid('loyaltyClientSearch').value='';
-  gid('loyaltyScanTitle').textContent='Seleccionar cliente';
-  gid('loyaltyScanSub').textContent='Toca un cliente para registrar su visita';
+  gid('loyaltyScanTitle').textContent='Registrar visita';
+  gid('loyaltyScanSub').textContent='Busca por nombre o escanea el QR del cliente';
+  gid('loyaltyClientList').innerHTML='<div class="loyalty-search-hint">Escribe para buscar o escanea el QR 👆</div>';
   var m=gid('loyaltyScanModal');m.classList.add('show');
-  loadLoyaltyClientList();
 }
 function loyaltyCheckNo(){
   closeLoyaltyCheckModal();
@@ -3483,30 +3485,111 @@ function loyaltyCheckNo(){
 function closeLoyaltyCreateModal(){
   var m=gid('loyaltyCreateModal');m.classList.remove('show');
 }
+// ── Lector QR con cámara ──
+var _loyaltyQrStream=null, _loyaltyQrInterval=null;
+
+async function toggleLoyaltyQrScan(){
+  var area=gid('loyaltyQrScanArea');
+  if(!area)return;
+  if(area.style.display==='none'||area.style.display===''){
+    await startLoyaltyQrScan();
+  } else {
+    stopLoyaltyQrScan();
+  }
+}
+
+async function startLoyaltyQrScan(){
+  var area=gid('loyaltyQrScanArea'),video=gid('loyaltyQrVideo'),btn=gid('loyaltyQrToggleBtn'),status=gid('loyaltyQrStatus');
+  if(!area||!video)return;
+  try{
+    _loyaltyQrStream=await navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:'environment'},width:{ideal:1280},height:{ideal:720}}});
+    video.srcObject=_loyaltyQrStream;
+    area.style.display='block';
+    if(btn)btn.innerHTML='📷 Cerrar cámara';
+    // Escanear frames cada 250 ms
+    _loyaltyQrInterval=setInterval(function(){
+      var canvas=gid('loyaltyQrCanvas');
+      if(!canvas||!video||video.readyState<video.HAVE_ENOUGH_DATA)return;
+      canvas.width=video.videoWidth;canvas.height=video.videoHeight;
+      var ctx=canvas.getContext('2d');
+      ctx.drawImage(video,0,0,canvas.width,canvas.height);
+      var img=ctx.getImageData(0,0,canvas.width,canvas.height);
+      try{
+        var code=jsQR(img.data,img.width,img.height,{inversionAttempts:'dontInvert'});
+        if(code&&code.data){
+          if(status)status.textContent='✓ QR detectado';
+          stopLoyaltyQrScan();
+          handleLoyaltyQrResult(code.data.trim());
+        }
+      }catch(e){}
+    },250);
+  }catch(e){
+    setLoyaltyScanMsg('No se pudo acceder a la cámara. Verifica los permisos.','err');
+  }
+}
+
+function stopLoyaltyQrScan(){
+  if(_loyaltyQrInterval){clearInterval(_loyaltyQrInterval);_loyaltyQrInterval=null;}
+  if(_loyaltyQrStream){_loyaltyQrStream.getTracks().forEach(function(t){try{t.stop();}catch(e){}});_loyaltyQrStream=null;}
+  var area=gid('loyaltyQrScanArea');if(area)area.style.display='none';
+  var btn=gid('loyaltyQrToggleBtn');if(btn)btn.innerHTML='📷 Escanear tarjeta QR';
+  var status=gid('loyaltyQrStatus');if(status)status.textContent='Apunta al código QR de la tarjeta';
+}
+
+function handleLoyaltyQrResult(data){
+  setLoyaltyScanMsg('QR escaneado, buscando cliente…','');
+  // El QR puede contener: UUID, número de WhatsApp, o URL con ?id=UUID
+  var id=data;
+  var urlMatch=data.match(/[?&]id=([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})/i);
+  if(urlMatch)id=urlMatch[1];
+  var uuidRe=/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+  if(uuidRe.test(id)){
+    loyaltyLoadClientById(id);
+  } else {
+    // Intentar como WhatsApp (solo dígitos)
+    var wa=data.replace(/\D/g,'');
+    if(wa.length>=10){
+      gid('loyaltyClientSearch').value=wa;
+      filterLoyaltyClients();
+    } else {
+      setLoyaltyScanMsg('QR no reconocido: '+data,'err');
+    }
+  }
+}
+
 function closeLoyaltyScanModal(){
   _loyaltyScanning=false;_loyaltyCanjearMode=false;
-  try{var inp=gid('loyaltyQrInput');if(inp)inp.value='';}catch(e){}
+  stopLoyaltyQrScan();
   var m=gid('loyaltyScanModal');m.classList.remove('show');
 }
 
 // ── Loyalty client list for scan modal ──
 var _loyaltyAllClients=[];
 
-async function loadLoyaltyClientList(){
+async function loadLoyaltyClientList(silent){
   try{
     var rows=await loyaltyApi('GET','loyalty_clients',null,'?order=nombre.asc&select=id,nombre,whatsapp,visitas_totales,sellos&activo=eq.true');
     _loyaltyAllClients=rows||[];
-    renderLoyaltyClientList(_loyaltyAllClients);
+    if(!silent)renderLoyaltyClientList(_loyaltyAllClients);
   }catch(e){
-    gid('loyaltyClientList').innerHTML='<div style="text-align:center;color:var(--danger);font-size:13px;padding:20px">Error al cargar clientes.</div>';
+    if(!silent)gid('loyaltyClientList').innerHTML='<div style="text-align:center;color:var(--danger);font-size:13px;padding:20px">Error al cargar clientes.</div>';
   }
 }
 
-function filterLoyaltyClients(){
+async function filterLoyaltyClients(){
   var q=(gid('loyaltyClientSearch').value||'').toLowerCase().trim();
-  var filtered=q?_loyaltyAllClients.filter(function(c){
+  if(!q){
+    gid('loyaltyClientList').innerHTML='<div class="loyalty-search-hint">Escribe para buscar o escanea el QR 👆</div>';
+    return;
+  }
+  // Carga lazy: si aún no tenemos la lista, traerla ahora
+  if(!_loyaltyAllClients.length){
+    gid('loyaltyClientList').innerHTML='<div style="text-align:center;color:var(--faint);font-size:13px;padding:20px">Buscando…</div>';
+    await loadLoyaltyClientList(true);
+  }
+  var filtered=_loyaltyAllClients.filter(function(c){
     return c.nombre.toLowerCase().includes(q)||(c.whatsapp||'').includes(q);
-  }):_loyaltyAllClients;
+  });
   renderLoyaltyClientList(filtered);
 }
 
@@ -3612,6 +3695,7 @@ gid('canjearPremioBtn').addEventListener('click', function(){
   }
   _loyaltyCanjearMode = true;
   _canjeoClient = null; _canjeoReward = null;
+  _loyaltyAllClients = [];
   // Reuse scan modal
   gid('loyaltyClientFound').style.display='none';
   gid('loyaltyMarkVisitBtn').style.display='none';
@@ -3619,9 +3703,9 @@ gid('canjearPremioBtn').addEventListener('click', function(){
   gid('loyaltyScanMsg').innerHTML='';
   gid('loyaltyClientSearch').value='';
   gid('loyaltyScanTitle').textContent='Canjear premio';
-  gid('loyaltyScanSub').textContent='Selecciona el cliente para canjear su premio';
+  gid('loyaltyScanSub').textContent='Busca por nombre o escanea el QR del cliente';
+  gid('loyaltyClientList').innerHTML='<div class="loyalty-search-hint">Escribe para buscar o escanea el QR 👆</div>';
   gid('loyaltyScanModal').classList.add('show');
-  loadLoyaltyClientList();
 });
 
 async function onClientReadyForCanje(){
@@ -4216,10 +4300,26 @@ async function deleteLoyaltyPromo(id){
     <input type="search" id="loyaltyClientSearch" placeholder="Buscar por nombre o WhatsApp…"
       oninput="filterLoyaltyClients()"
       style="flex-shrink:0;width:100%;padding:11px 14px;border:1px solid var(--line2);border-radius:10px;font-size:14px;outline:none;font-family:inherit;margin-bottom:10px">
+    <!-- QR scanner -->
+    <div id="loyaltyQrSection" style="flex-shrink:0;margin-bottom:10px">
+      <button onclick="toggleLoyaltyQrScan()" id="loyaltyQrToggleBtn"
+        style="width:100%;padding:10px 14px;border:1px dashed var(--gold);border-radius:10px;background:var(--bg);color:var(--gold);font-family:inherit;font-size:13px;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px">
+        📷 Escanear tarjeta QR
+      </button>
+      <div id="loyaltyQrScanArea" style="display:none;margin-top:8px;border-radius:12px;overflow:hidden;background:#000;position:relative">
+        <video id="loyaltyQrVideo" style="width:100%;max-height:220px;display:block;object-fit:cover" playsinline autoplay muted></video>
+        <canvas id="loyaltyQrCanvas" style="display:none"></canvas>
+        <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;pointer-events:none">
+          <div style="width:150px;height:150px;border:2px solid rgba(255,255,255,.75);border-radius:10px;box-shadow:0 0 0 9999px rgba(0,0,0,.45)"></div>
+        </div>
+        <button onclick="stopLoyaltyQrScan()" style="position:absolute;top:8px;right:8px;background:rgba(0,0,0,.55);color:#fff;border:none;border-radius:50%;width:30px;height:30px;font-size:17px;cursor:pointer;line-height:1;display:flex;align-items:center;justify-content:center">×</button>
+        <div id="loyaltyQrStatus" style="position:absolute;bottom:8px;left:0;right:0;text-align:center;color:#fff;font-size:12px;background:rgba(0,0,0,.4);padding:4px 8px">Apunta al código QR de la tarjeta</div>
+      </div>
+    </div>
     <!-- Client list -->
     <div id="loyaltyClientList"
       style="flex:1;overflow-y:auto;display:flex;flex-direction:column;gap:6px;padding-bottom:4px">
-      <div style="text-align:center;color:var(--faint);font-size:13px;padding:20px">Cargando clientes…</div>
+      <div class="loyalty-search-hint">Escribe para buscar o escanea el QR 👆</div>
     </div>
     <!-- Selected client confirmation -->
     <div id="loyaltyClientFound" style="display:none;flex-shrink:0;background:var(--bg);border:1px solid var(--line2);border-radius:12px;padding:12px 14px;margin-top:10px">
