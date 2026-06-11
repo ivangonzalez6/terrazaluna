@@ -1184,8 +1184,10 @@ function updateUser(id,data){return spatch('/rest/v1/app_users?id=eq.'+id,data);
 function deleteUser(id){return sdel('/rest/v1/app_users?id=eq.'+id);}
 
 var CATS_2X1=['Mojitos','Gin & Tonic','Caipiroska (Vodka)','Daiquirí (Ron)','Margarita (Tequila)','Frozen (Vodka)','Coctelería Clásica','Alta Coctelería','Brandy (shot)','Mezcal (shot)','Mezcalitas'];
-var SF=[{n:'Clásico',p:50},{n:'Frutos rojos',p:60},{n:'Fresa',p:60},{n:'Mora',p:60},{n:'Arándano',p:60},{n:'Maracuyá',p:60}];
-var SFF=[{n:'Coco',p:60},{n:'Piña',p:60},{n:'Mango',p:60},{n:'Clásico',p:50},{n:'Frutos rojos',p:60},{n:'Fresa',p:60},{n:'Mora',p:60},{n:'Arándano',p:60},{n:'Maracuyá',p:60}];
+// SFA = todos los 9 sabores, en el orden oficial del menú
+var SFA=[{n:'Clásico',p:50},{n:'Frutos rojos',p:60},{n:'Mora',p:60},{n:'Fresa',p:60},{n:'Arándano',p:60},{n:'Maracuyá',p:60},{n:'Mango',p:60},{n:'Piña',p:60},{n:'Coco',p:60}];
+// Alias para compatibilidad con código anterior
+var SF=SFA; var SFF=SFA;
 var MENU=[  // se sobreescribe desde BD al iniciar
   {cat:'Alitas',items:[{n:'Alitas Mango Habanero',p:70,d:'Con papas'},{n:'Alitas BBQ',p:70,d:'Con papas'},{n:'Alitas Tamarindo',p:70,d:'Con papas'},{n:'Alitas Tamarindo Habanero',p:70,d:'Con papas'},{n:'Alitas Piña Coco Habanero',p:70,d:'Con papas'},{n:'Alitas Chiltepín',p:70,d:'Con papas'},{n:'Alitas Clásicas',p:70,d:'Con papas'}]},
   {cat:'Boneless',items:[{n:'Boneless Mango Habanero',p:70,d:'Con papas'},{n:'Boneless BBQ',p:70,d:'Con papas'},{n:'Boneless Tamarindo',p:70,d:'Con papas'},{n:'Boneless Tamarindo Habanero',p:70,d:'Con papas'},{n:'Boneless Piña Coco Habanero',p:70,d:'Con papas'},{n:'Boneless Chiltepín',p:70,d:'Con papas'},{n:'Boneless Clásicos',p:70,d:'Con papas'}]},
@@ -1193,8 +1195,9 @@ var MENU=[  // se sobreescribe desde BD al iniciar
   {cat:'Gin & Tonic',items:SF.map(function(s){return{n:'Gin Tonic '+s.n,p:s.p};})},
   {cat:'Caipiroska (Vodka)',items:SF.map(function(s){return{n:'Caipiroska '+s.n,p:s.p};})},
   {cat:'Daiquirí (Ron)',items:SF.map(function(s){return{n:'Daiquirí '+s.n,p:s.p};})},
-  {cat:'Margarita (Tequila)',items:SFF.map(function(s){return{n:'Margarita '+s.n,p:s.p};})},
-  {cat:'Frozen (Vodka)',items:SFF.map(function(s){return{n:'Frozen '+s.n,p:s.p};})},
+  {cat:'Margarita (Tequila)',items:SFA.map(function(s){return{n:'Margarita '+s.n,p:s.p};})},
+  {cat:'Frozen (Vodka)',items:SFA.map(function(s){return{n:'Frozen '+s.n,p:s.p};})},
+  {cat:'Mezcalitas',items:SFA.map(function(s){return{n:'Mezcalita '+s.n,p:s.p};})},
   {cat:'Coctelería Clásica',items:[{n:'Paloma',p:50,d:'Tequila, limón, toronja, escarchado sal-limón'},{n:'Cantarito',p:60,d:'Tequila, limón, naranja, toronja, chamoy y tajín'},{n:'Cuba Libre',p:50,d:'Ron, limón y cola'},{n:'Screwdriver',p:50,d:'Vodka y jugo de naranja'},{n:'Sex On The Beach',p:50,d:'Vodka, licor naranja, naranja, arándanos'},{n:'Tequila Sunrise',p:50,d:'Tequila, naranja y granadina'},{n:'Azulito',p:50,d:'Vodka, curazao, limón, lima-limón, mora azul'},{n:'Batanga',p:50,d:'Tequila, limón, cola, escarchado sal-limón'},{n:'Tom Collins',p:50,d:'Ginebra, almíbar, limón y agua mineral'},{n:'Whisky Sour',p:50,d:'Whisky, limón y almíbar'},{n:'Gin Sour',p:50,d:'Ginebra, limón y almíbar'},{n:'Ron Sour',p:50,d:'Ron, limón y almíbar'},{n:'Brandy Highball',p:50,d:'Brandy, limón, almíbar y agua mineral'},{n:'Whisky Highball',p:50,d:'Whisky, limón, almíbar y agua mineral'},{n:'Ron Highball',p:50,d:'Ron, limón, cola y agua mineral'},{n:'Piña Colada',p:60,d:'Ron blanco, piña, crema de coco, leche condensada y evaporada'}]},
   {cat:'Alta Coctelería',items:[{n:'AMF',p:70,d:'Vodka, ron, tequila, ginebra, curazao, limón, lima-limón'},{n:'Sidecar',p:60,d:'Brandy, licor naranja, limón, escarchado azúcar'},{n:'Mai Tai',p:60,d:'Ron blanco, ron añejo, licor naranja y almíbar'},{n:'Espresso Martini',p:60,d:'Vodka, licor de café y espresso'},{n:'Bloody Mary',p:60,d:'Vodka, clamato, inglesa, maggi, tabasco'},{n:'Cosmopolitan',p:60,d:'Vodka, licor naranja, arándanos y limón'},{n:'Campari Tonic',p:60,d:'Campari y agua tónica'},{n:'Limoncello Collins',p:60,d:'Limoncello, ginebra, limón y agua mineral'},{n:'Long Island Iced Tea',p:70,d:'Vodka, ron, tequila, ginebra, naranja, limón, cola'},{n:'Ruso Negro',p:60,d:'Vodka y licor de café'},{n:'Ruso Blanco',p:60,d:'Vodka, licor de café y leche'},{n:'Carajillo',p:60,d:'Licor de hierbas y espresso'},{n:'Carajillo de Mazapán',p:70,d:'Licor de hierbas, mazapán y espresso'},{n:'Carajillo de Chocolate',p:70,d:"Licor de hierbas, chocolate Hershey's y espresso"},{n:'Carajillo de Nutella',p:70,d:'Licor de hierbas, crema de avellanas y espresso'},{n:'Gold Rush',p:60,d:'Whisky, limón y almíbar de miel'},{n:'Canchanchara',p:60,d:'Ron añejo, limón y almíbar de miel'}]},
   {cat:'Tequila (shot)',items:[{n:'Sueño Azteca',p:40},{n:'Cabrito',p:40},{n:'José Cuervo Especial Blanco',p:50},{n:'José Cuervo Especial Reposado',p:50}]},
@@ -1341,6 +1344,9 @@ async function startSession(found){
   renderTables();renderCatTabs();renderMenu();
   setInterval(sync,2500);
   startRealtime();
+  // Sembrar items de menú y recetas faltantes en segundo plano (no bloquea el arranque)
+  seedMissingMenuItems();
+  seedMissingRecipes();
 }
 async function doLogin(){
   var u=gid('loginUser').value.trim(),p=gid('loginPass').value;
@@ -2834,11 +2840,14 @@ var recipeAdminCatFilter=null, recipeAllCats=[], editingRecipeId=null, recipeBac
 var SEED_RECIPES=[
   // MOJITOS
   {n:'Mojito Clásico',cat:'Mojitos',base:'Ron blanco',glass:'Highball',prep:'Macerar hierbabuena con azúcar y jugo de limón en el fondo del vaso. Agregar hielo picado. Verter el ron. Completar con agua mineral. Decorar con hierbabuena y limón.',ings:[{i:'Ron blanco',oz:1.5,ml:45},{i:'Jugo de limón',oz:0.75,ml:22},{i:'Azúcar',notes:'1 cda'},{i:'Hierbabuena',notes:'6-8 hojas'},{i:'Agua mineral',ml:90,notes:'al gusto'},{i:'Hielo picado',notes:'c.s.'}]},
-  {n:'Mojito Frutos rojos',cat:'Mojitos',base:'Ron blanco',glass:'Highball',prep:'Macerar hierbabuena con azúcar, limón y frutos rojos. Agregar hielo. Verter ron. Completar con agua mineral.',ings:[{i:'Ron blanco',oz:1.5,ml:45},{i:'Jugo de limón',oz:0.75,ml:22},{i:'Frutos rojos mixtos',oz:1,ml:30},{i:'Azúcar',notes:'1 cda'},{i:'Hierbabuena',notes:'6 hojas'},{i:'Agua mineral',ml:90}]},
-  {n:'Mojito Fresa',cat:'Mojitos',base:'Ron blanco',glass:'Highball',prep:'Macerar fresas con azúcar y hierbabuena. Agregar limón, hielo y ron. Completar con agua mineral.',ings:[{i:'Ron blanco',oz:1.5,ml:45},{i:'Fresa',notes:'3-4 piezas'},{i:'Jugo de limón',oz:0.75,ml:22},{i:'Azúcar',notes:'1 cda'},{i:'Hierbabuena',notes:'5 hojas'},{i:'Agua mineral',ml:90}]},
-  {n:'Mojito Mora',cat:'Mojitos',base:'Ron blanco',glass:'Highball',prep:'Macerar moras con azúcar y hierbabuena. Agregar limón, hielo y ron. Completar con agua mineral.',ings:[{i:'Ron blanco',oz:1.5,ml:45},{i:'Moras',notes:'8-10 piezas'},{i:'Jugo de limón',oz:0.75,ml:22},{i:'Azúcar',notes:'1 cda'},{i:'Hierbabuena',notes:'5 hojas'},{i:'Agua mineral',ml:90}]},
-  {n:'Mojito Arándano',cat:'Mojitos',base:'Ron blanco',glass:'Highball',prep:'Macerar arándanos con azúcar y hierbabuena. Agregar limón, hielo y ron. Completar con agua mineral.',ings:[{i:'Ron blanco',oz:1.5,ml:45},{i:'Arándanos',oz:1,ml:30},{i:'Jugo de limón',oz:0.75,ml:22},{i:'Azúcar',notes:'1 cda'},{i:'Hierbabuena',notes:'5 hojas'},{i:'Agua mineral',ml:90}]},
-  {n:'Mojito Maracuyá',cat:'Mojitos',base:'Ron blanco',glass:'Highball',prep:'Macerar maracuyá con azúcar y hierbabuena. Agregar limón, hielo y ron. Completar con agua mineral.',ings:[{i:'Ron blanco',oz:1.5,ml:45},{i:'Pulpa de maracuyá',oz:1,ml:30},{i:'Jugo de limón',oz:0.5,ml:15},{i:'Azúcar',notes:'1 cda'},{i:'Hierbabuena',notes:'5 hojas'},{i:'Agua mineral',ml:90}]},
+  {n:'Mojito Frutos rojos',cat:'Mojitos',base:'Ron blanco',glass:'Highball',prep:'Macerar hierbabuena con azúcar, limón y frutos rojos. Agregar hielo. Verter ron. Completar con agua mineral.',ings:[{i:'Ron blanco',oz:1.5,ml:45},{i:'Jugo de limón',oz:0.75,ml:22},{i:'Frutos rojos mixtos',oz:1,ml:30},{i:'Azúcar',notes:'1 cda'},{i:'Hierbabuena',notes:'6 hojas'},{i:'Agua mineral',ml:90},{i:'Hielo picado',notes:'c.s.'}]},
+  {n:'Mojito Fresa',cat:'Mojitos',base:'Ron blanco',glass:'Highball',prep:'Macerar fresas con azúcar y hierbabuena. Agregar limón, hielo y ron. Completar con agua mineral.',ings:[{i:'Ron blanco',oz:1.5,ml:45},{i:'Fresa',notes:'3-4 piezas'},{i:'Jugo de limón',oz:0.75,ml:22},{i:'Azúcar',notes:'1 cda'},{i:'Hierbabuena',notes:'5 hojas'},{i:'Agua mineral',ml:90},{i:'Hielo picado',notes:'c.s.'}]},
+  {n:'Mojito Mora',cat:'Mojitos',base:'Ron blanco',glass:'Highball',prep:'Macerar moras con azúcar y hierbabuena. Agregar limón, hielo y ron. Completar con agua mineral.',ings:[{i:'Ron blanco',oz:1.5,ml:45},{i:'Moras',notes:'8-10 piezas'},{i:'Jugo de limón',oz:0.75,ml:22},{i:'Azúcar',notes:'1 cda'},{i:'Hierbabuena',notes:'5 hojas'},{i:'Agua mineral',ml:90},{i:'Hielo picado',notes:'c.s.'}]},
+  {n:'Mojito Arándano',cat:'Mojitos',base:'Ron blanco',glass:'Highball',prep:'Macerar arándanos con azúcar y hierbabuena. Agregar limón, hielo y ron. Completar con agua mineral.',ings:[{i:'Ron blanco',oz:1.5,ml:45},{i:'Arándanos',oz:1,ml:30},{i:'Jugo de limón',oz:0.75,ml:22},{i:'Azúcar',notes:'1 cda'},{i:'Hierbabuena',notes:'5 hojas'},{i:'Agua mineral',ml:90},{i:'Hielo picado',notes:'c.s.'}]},
+  {n:'Mojito Maracuyá',cat:'Mojitos',base:'Ron blanco',glass:'Highball',prep:'Macerar maracuyá con azúcar y hierbabuena. Agregar limón, hielo y ron. Completar con agua mineral.',ings:[{i:'Ron blanco',oz:1.5,ml:45},{i:'Pulpa de maracuyá',oz:1,ml:30},{i:'Jugo de limón',oz:0.5,ml:15},{i:'Azúcar',notes:'1 cda'},{i:'Hierbabuena',notes:'5 hojas'},{i:'Agua mineral',ml:90},{i:'Hielo picado',notes:'c.s.'}]},
+  {n:'Mojito Mango',cat:'Mojitos',base:'Ron blanco',glass:'Highball',prep:'Macerar puré de mango con azúcar y hierbabuena. Agregar limón, hielo y ron. Completar con agua mineral.',ings:[{i:'Ron blanco',oz:1.5,ml:45},{i:'Puré de mango',oz:1.5,ml:45},{i:'Jugo de limón',oz:0.75,ml:22},{i:'Azúcar',notes:'1 cda'},{i:'Hierbabuena',notes:'5 hojas'},{i:'Agua mineral',ml:60},{i:'Hielo picado',notes:'c.s.'}]},
+  {n:'Mojito Piña',cat:'Mojitos',base:'Ron blanco',glass:'Highball',prep:'Macerar trozos de piña con azúcar y hierbabuena. Agregar limón, hielo y ron. Completar con agua mineral.',ings:[{i:'Ron blanco',oz:1.5,ml:45},{i:'Jugo de piña',oz:1,ml:30},{i:'Jugo de limón',oz:0.75,ml:22},{i:'Azúcar',notes:'1 cda'},{i:'Hierbabuena',notes:'5 hojas'},{i:'Agua mineral',ml:60},{i:'Hielo picado',notes:'c.s.'}]},
+  {n:'Mojito Coco',cat:'Mojitos',base:'Ron blanco',glass:'Highball',prep:'Macerar hierbabuena con azúcar y limón. Agregar crema de coco, hielo y ron. Completar con agua mineral.',ings:[{i:'Ron blanco',oz:1.5,ml:45},{i:'Crema de coco',oz:1,ml:30},{i:'Jugo de limón',oz:0.75,ml:22},{i:'Azúcar',notes:'1 cda'},{i:'Hierbabuena',notes:'5 hojas'},{i:'Agua mineral',ml:60},{i:'Hielo picado',notes:'c.s.'}]},
   // GIN & TONIC
   {n:'Gin Tonic Clásico',cat:'Gin & Tonic',base:'Ginebra',glass:'Copa balón',prep:'Llenar la copa con hielo. Verter la ginebra. Completar con agua tónica. Decorar con rodaja de limón.',ings:[{i:'Ginebra',oz:1.5,ml:45},{i:'Agua tónica',ml:120,notes:'al gusto'},{i:'Rodaja de limón',notes:'decoración'},{i:'Hielo',notes:'c.s.'}]},
   {n:'Gin Tonic Frutos rojos',cat:'Gin & Tonic',base:'Ginebra',glass:'Copa balón',prep:'Llenar con hielo. Agregar ginebra y frutos rojos. Completar con tónica. Decorar con frutos.',ings:[{i:'Ginebra',oz:1.5,ml:45},{i:'Frutos rojos mixtos',oz:1,ml:30},{i:'Agua tónica',ml:120},{i:'Hielo',notes:'c.s.'}]},
@@ -2846,6 +2855,9 @@ var SEED_RECIPES=[
   {n:'Gin Tonic Mora',cat:'Gin & Tonic',base:'Ginebra',glass:'Copa balón',prep:'Machacar moras. Agregar hielo, ginebra y tónica.',ings:[{i:'Ginebra',oz:1.5,ml:45},{i:'Moras',notes:'8 piezas'},{i:'Agua tónica',ml:120},{i:'Hielo',notes:'c.s.'}]},
   {n:'Gin Tonic Arándano',cat:'Gin & Tonic',base:'Ginebra',glass:'Copa balón',prep:'Machacar arándanos. Agregar hielo, ginebra y tónica.',ings:[{i:'Ginebra',oz:1.5,ml:45},{i:'Arándanos',oz:1,ml:30},{i:'Agua tónica',ml:120},{i:'Hielo',notes:'c.s.'}]},
   {n:'Gin Tonic Maracuyá',cat:'Gin & Tonic',base:'Ginebra',glass:'Copa balón',prep:'Agregar pulpa de maracuyá al fondo. Hielo, ginebra y tónica.',ings:[{i:'Ginebra',oz:1.5,ml:45},{i:'Pulpa de maracuyá',oz:1,ml:30},{i:'Agua tónica',ml:120},{i:'Hielo',notes:'c.s.'}]},
+  {n:'Gin Tonic Mango',cat:'Gin & Tonic',base:'Ginebra',glass:'Copa balón',prep:'Llenar con hielo. Agregar ginebra y puré de mango. Completar con tónica. Decorar con rodaja de mango.',ings:[{i:'Ginebra',oz:1.5,ml:45},{i:'Puré de mango',oz:1,ml:30},{i:'Agua tónica',ml:120},{i:'Hielo',notes:'c.s.'}]},
+  {n:'Gin Tonic Piña',cat:'Gin & Tonic',base:'Ginebra',glass:'Copa balón',prep:'Llenar con hielo. Agregar ginebra y jugo de piña. Completar con tónica. Decorar con trozo de piña.',ings:[{i:'Ginebra',oz:1.5,ml:45},{i:'Jugo de piña',oz:1,ml:30},{i:'Agua tónica',ml:120},{i:'Hielo',notes:'c.s.'}]},
+  {n:'Gin Tonic Coco',cat:'Gin & Tonic',base:'Ginebra',glass:'Copa balón',prep:'Llenar con hielo. Agregar ginebra y crema de coco. Completar con tónica.',ings:[{i:'Ginebra',oz:1.5,ml:45},{i:'Crema de coco',oz:1,ml:30},{i:'Agua tónica',ml:120},{i:'Hielo',notes:'c.s.'}]},
   // CAIPIROSKA
   {n:'Caipiroska Clásico',cat:'Caipiroska (Vodka)',base:'Vodka',glass:'Old fashioned',prep:'Cortar limón en cuartos y machacar con azúcar. Agregar hielo y vodka. Servir sin colar.',ings:[{i:'Vodka',oz:2,ml:60},{i:'Limón',notes:'1 pieza en cuartos'},{i:'Azúcar',notes:'2 cdas'},{i:'Hielo',notes:'c.s.'}]},
   {n:'Caipiroska Frutos rojos',cat:'Caipiroska (Vodka)',base:'Vodka',glass:'Old fashioned',prep:'Machacar frutos rojos con azúcar. Agregar limón, hielo y vodka.',ings:[{i:'Vodka',oz:2,ml:60},{i:'Frutos rojos',oz:1,ml:30},{i:'Limón',notes:'½ pieza'},{i:'Azúcar',notes:'2 cdas'},{i:'Hielo',notes:'c.s.'}]},
@@ -2853,6 +2865,9 @@ var SEED_RECIPES=[
   {n:'Caipiroska Mora',cat:'Caipiroska (Vodka)',base:'Vodka',glass:'Old fashioned',prep:'Machacar moras con azúcar y limón. Agregar hielo y vodka.',ings:[{i:'Vodka',oz:2,ml:60},{i:'Moras',notes:'10 piezas'},{i:'Limón',notes:'½ pieza'},{i:'Azúcar',notes:'2 cdas'},{i:'Hielo',notes:'c.s.'}]},
   {n:'Caipiroska Arándano',cat:'Caipiroska (Vodka)',base:'Vodka',glass:'Old fashioned',prep:'Machacar arándanos con azúcar. Agregar limón, hielo y vodka.',ings:[{i:'Vodka',oz:2,ml:60},{i:'Arándanos',oz:1,ml:30},{i:'Limón',notes:'½ pieza'},{i:'Azúcar',notes:'2 cdas'},{i:'Hielo',notes:'c.s.'}]},
   {n:'Caipiroska Maracuyá',cat:'Caipiroska (Vodka)',base:'Vodka',glass:'Old fashioned',prep:'Machacar pulpa de maracuyá con azúcar. Agregar limón, hielo y vodka.',ings:[{i:'Vodka',oz:2,ml:60},{i:'Pulpa de maracuyá',oz:1,ml:30},{i:'Limón',notes:'½ pieza'},{i:'Azúcar',notes:'2 cdas'},{i:'Hielo',notes:'c.s.'}]},
+  {n:'Caipiroska Mango',cat:'Caipiroska (Vodka)',base:'Vodka',glass:'Old fashioned',prep:'Machacar puré de mango con azúcar. Agregar limón, hielo y vodka.',ings:[{i:'Vodka',oz:2,ml:60},{i:'Puré de mango',oz:1.5,ml:45},{i:'Limón',notes:'½ pieza'},{i:'Azúcar',notes:'2 cdas'},{i:'Hielo',notes:'c.s.'}]},
+  {n:'Caipiroska Piña',cat:'Caipiroska (Vodka)',base:'Vodka',glass:'Old fashioned',prep:'Machacar trozos de piña con azúcar. Agregar limón, hielo y vodka.',ings:[{i:'Vodka',oz:2,ml:60},{i:'Jugo de piña',oz:1,ml:30},{i:'Limón',notes:'½ pieza'},{i:'Azúcar',notes:'2 cdas'},{i:'Hielo',notes:'c.s.'}]},
+  {n:'Caipiroska Coco',cat:'Caipiroska (Vodka)',base:'Vodka',glass:'Old fashioned',prep:'Machacar crema de coco con azúcar. Agregar limón, hielo y vodka.',ings:[{i:'Vodka',oz:2,ml:60},{i:'Crema de coco',oz:1,ml:30},{i:'Limón',notes:'½ pieza'},{i:'Azúcar',notes:'2 cdas'},{i:'Hielo',notes:'c.s.'}]},
   // DAIQUIRÍ
   {n:'Daiquirí Clásico',cat:'Daiquirí (Ron)',base:'Ron blanco',glass:'Coupette',prep:'Mezclar todos los ingredientes en coctelera con hielo. Agitar y colar en copa fría.',ings:[{i:'Ron blanco',oz:2,ml:60},{i:'Jugo de limón',oz:0.75,ml:22},{i:'Almíbar',oz:0.5,ml:15},{i:'Hielo',notes:'c.s.'}]},
   {n:'Daiquirí Frutos rojos',cat:'Daiquirí (Ron)',base:'Ron blanco',glass:'Coupette',prep:'Batir ron, frutos rojos, limón y almíbar con hielo. Colar en copa.',ings:[{i:'Ron blanco',oz:2,ml:60},{i:'Frutos rojos',oz:1,ml:30},{i:'Jugo de limón',oz:0.75,ml:22},{i:'Almíbar',oz:0.5,ml:15},{i:'Hielo',notes:'c.s.'}]},
@@ -2860,6 +2875,9 @@ var SEED_RECIPES=[
   {n:'Daiquirí Mora',cat:'Daiquirí (Ron)',base:'Ron blanco',glass:'Coupette',prep:'Batir ron, moras, limón y almíbar con hielo. Colar en copa.',ings:[{i:'Ron blanco',oz:2,ml:60},{i:'Moras',notes:'8 piezas'},{i:'Jugo de limón',oz:0.75,ml:22},{i:'Almíbar',oz:0.5,ml:15},{i:'Hielo',notes:'c.s.'}]},
   {n:'Daiquirí Arándano',cat:'Daiquirí (Ron)',base:'Ron blanco',glass:'Coupette',prep:'Batir ron, arándanos, limón y almíbar con hielo. Colar en copa.',ings:[{i:'Ron blanco',oz:2,ml:60},{i:'Arándanos',oz:1,ml:30},{i:'Jugo de limón',oz:0.75,ml:22},{i:'Almíbar',oz:0.5,ml:15},{i:'Hielo',notes:'c.s.'}]},
   {n:'Daiquirí Maracuyá',cat:'Daiquirí (Ron)',base:'Ron blanco',glass:'Coupette',prep:'Batir ron, maracuyá, limón y almíbar con hielo. Colar en copa.',ings:[{i:'Ron blanco',oz:2,ml:60},{i:'Pulpa de maracuyá',oz:1,ml:30},{i:'Jugo de limón',oz:0.5,ml:15},{i:'Almíbar',oz:0.5,ml:15},{i:'Hielo',notes:'c.s.'}]},
+  {n:'Daiquirí Mango',cat:'Daiquirí (Ron)',base:'Ron blanco',glass:'Coupette',prep:'Batir ron, puré de mango, limón y almíbar con hielo. Colar en copa.',ings:[{i:'Ron blanco',oz:2,ml:60},{i:'Puré de mango',oz:1.5,ml:45},{i:'Jugo de limón',oz:0.75,ml:22},{i:'Almíbar',oz:0.25,ml:8},{i:'Hielo',notes:'c.s.'}]},
+  {n:'Daiquirí Piña',cat:'Daiquirí (Ron)',base:'Ron blanco',glass:'Coupette',prep:'Batir ron, jugo de piña, limón y almíbar con hielo. Colar en copa.',ings:[{i:'Ron blanco',oz:2,ml:60},{i:'Jugo de piña',oz:1,ml:30},{i:'Jugo de limón',oz:0.75,ml:22},{i:'Almíbar',oz:0.5,ml:15},{i:'Hielo',notes:'c.s.'}]},
+  {n:'Daiquirí Coco',cat:'Daiquirí (Ron)',base:'Ron blanco',glass:'Coupette',prep:'Batir ron, crema de coco, limón y almíbar con hielo. Colar en copa.',ings:[{i:'Ron blanco',oz:2,ml:60},{i:'Crema de coco',oz:1,ml:30},{i:'Jugo de limón',oz:0.75,ml:22},{i:'Almíbar',oz:0.25,ml:8},{i:'Hielo',notes:'c.s.'}]},
   // MARGARITA
   {n:'Margarita Clásico',cat:'Margarita (Tequila)',base:'Tequila',glass:'Copa margarita',prep:'Escarchar el borde con sal y limón. Mezclar tequila, limón y almíbar en coctelera con hielo. Agitar y colar.',ings:[{i:'Tequila blanco',oz:2,ml:60},{i:'Jugo de limón',oz:0.75,ml:22},{i:'Almíbar',oz:0.5,ml:15},{i:'Sal y limón',notes:'para escarchado'},{i:'Hielo',notes:'c.s.'}]},
   {n:'Margarita Coco',cat:'Margarita (Tequila)',base:'Tequila',glass:'Copa margarita',prep:'Escarchar borde. Batir tequila, crema de coco y limón con hielo. Colar.',ings:[{i:'Tequila blanco',oz:2,ml:60},{i:'Crema de coco',oz:1,ml:30},{i:'Jugo de limón',oz:0.75,ml:22},{i:'Almíbar',oz:0.25,ml:8},{i:'Sal',notes:'escarchado'},{i:'Hielo',notes:'c.s.'}]},
@@ -2914,8 +2932,53 @@ var SEED_RECIPES=[
   {n:'Carajillo de Chocolate',cat:'Alta Coctelería',base:'Licor de hierbas (Licor 43)',glass:'Carajillo',prep:'Verter licor con chocolate. Agregar espresso sin mezclar.',ings:[{i:'Licor de hierbas (43)',oz:1.5,ml:45},{i:"Chocolate Hershey's",notes:'1 cda'},{i:'Café espresso',oz:1,ml:30}]},
   {n:'Carajillo de Nutella',cat:'Alta Coctelería',base:'Licor de hierbas (Licor 43)',glass:'Carajillo',prep:'Verter licor con Nutella disuelta. Agregar espresso sin mezclar.',ings:[{i:'Licor de hierbas (43)',oz:1.5,ml:45},{i:'Crema de avellanas (Nutella)',notes:'1 cda'},{i:'Café espresso',oz:1,ml:30}]},
   {n:'Gold Rush',cat:'Alta Coctelería',base:'Whisky',glass:'Old fashioned',prep:'Agitar whisky, limón y almíbar de miel con hielo. Colar en vaso con hielo.',ings:[{i:'Whisky',oz:2,ml:60},{i:'Jugo de limón',oz:0.75,ml:22},{i:'Almíbar de miel',oz:0.75,ml:22},{i:'Hielo',notes:'c.s.'}]},
-  {n:'Canchanchara',cat:'Alta Coctelería',base:'Ron añejo',glass:'Jarrito de barro',prep:'Mezclar ron añejo con limón y almíbar de miel. Servir sobre hielo.',ings:[{i:'Ron añejo',oz:2,ml:60},{i:'Jugo de limón',oz:0.75,ml:22},{i:'Almíbar de miel',oz:0.75,ml:22},{i:'Hielo',notes:'c.s.'}]}
+  {n:'Canchanchara',cat:'Alta Coctelería',base:'Ron añejo',glass:'Jarrito de barro',prep:'Mezclar ron añejo con limón y almíbar de miel. Servir sobre hielo.',ings:[{i:'Ron añejo',oz:2,ml:60},{i:'Jugo de limón',oz:0.75,ml:22},{i:'Almíbar de miel',oz:0.75,ml:22},{i:'Hielo',notes:'c.s.'}]},
+  // MEZCALITAS
+  {n:'Mezcalita Clásico',cat:'Mezcalitas',base:'Mezcal',glass:'Old fashioned',prep:'Escarchar el borde con sal y tajín. Mezclar mezcal, limón y almíbar en coctelera con hielo. Agitar y colar.',ings:[{i:'Mezcal',oz:2,ml:60},{i:'Jugo de limón',oz:0.75,ml:22},{i:'Almíbar',oz:0.5,ml:15},{i:'Sal y tajín',notes:'escarchado'},{i:'Hielo',notes:'c.s.'}]},
+  {n:'Mezcalita Frutos rojos',cat:'Mezcalitas',base:'Mezcal',glass:'Old fashioned',prep:'Escarchar con sal y tajín. Batir mezcal, frutos rojos, limón y almíbar con hielo. Colar.',ings:[{i:'Mezcal',oz:2,ml:60},{i:'Frutos rojos mixtos',oz:1,ml:30},{i:'Jugo de limón',oz:0.75,ml:22},{i:'Almíbar',oz:0.5,ml:15},{i:'Sal y tajín',notes:'escarchado'},{i:'Hielo',notes:'c.s.'}]},
+  {n:'Mezcalita Fresa',cat:'Mezcalitas',base:'Mezcal',glass:'Old fashioned',prep:'Escarchar con sal y tajín. Batir mezcal, fresas, limón y almíbar con hielo. Colar.',ings:[{i:'Mezcal',oz:2,ml:60},{i:'Fresa',notes:'4 piezas'},{i:'Jugo de limón',oz:0.75,ml:22},{i:'Almíbar',oz:0.5,ml:15},{i:'Sal y tajín',notes:'escarchado'},{i:'Hielo',notes:'c.s.'}]},
+  {n:'Mezcalita Mora',cat:'Mezcalitas',base:'Mezcal',glass:'Old fashioned',prep:'Escarchar con sal y tajín. Batir mezcal, moras, limón y almíbar con hielo. Colar.',ings:[{i:'Mezcal',oz:2,ml:60},{i:'Moras',notes:'10 piezas'},{i:'Jugo de limón',oz:0.75,ml:22},{i:'Almíbar',oz:0.5,ml:15},{i:'Sal y tajín',notes:'escarchado'},{i:'Hielo',notes:'c.s.'}]},
+  {n:'Mezcalita Arándano',cat:'Mezcalitas',base:'Mezcal',glass:'Old fashioned',prep:'Escarchar con sal y tajín. Batir mezcal, arándanos, limón y almíbar con hielo. Colar.',ings:[{i:'Mezcal',oz:2,ml:60},{i:'Arándanos',oz:1,ml:30},{i:'Jugo de limón',oz:0.75,ml:22},{i:'Almíbar',oz:0.5,ml:15},{i:'Sal y tajín',notes:'escarchado'},{i:'Hielo',notes:'c.s.'}]},
+  {n:'Mezcalita Maracuyá',cat:'Mezcalitas',base:'Mezcal',glass:'Old fashioned',prep:'Escarchar con sal y tajín. Batir mezcal, maracuyá, limón y almíbar con hielo. Colar.',ings:[{i:'Mezcal',oz:2,ml:60},{i:'Pulpa de maracuyá',oz:1,ml:30},{i:'Jugo de limón',oz:0.5,ml:15},{i:'Almíbar',oz:0.5,ml:15},{i:'Sal y tajín',notes:'escarchado'},{i:'Hielo',notes:'c.s.'}]},
+  {n:'Mezcalita Mango',cat:'Mezcalitas',base:'Mezcal',glass:'Old fashioned',prep:'Escarchar con sal y tajín. Batir mezcal, puré de mango, limón y almíbar con hielo. Colar.',ings:[{i:'Mezcal',oz:2,ml:60},{i:'Puré de mango',oz:1.5,ml:45},{i:'Jugo de limón',oz:0.75,ml:22},{i:'Almíbar',oz:0.25,ml:8},{i:'Sal y tajín',notes:'escarchado'},{i:'Hielo',notes:'c.s.'}]},
+  {n:'Mezcalita Piña',cat:'Mezcalitas',base:'Mezcal',glass:'Old fashioned',prep:'Escarchar con sal y tajín. Batir mezcal, jugo de piña, limón y almíbar con hielo. Colar.',ings:[{i:'Mezcal',oz:2,ml:60},{i:'Jugo de piña',oz:1,ml:30},{i:'Jugo de limón',oz:0.75,ml:22},{i:'Almíbar',oz:0.5,ml:15},{i:'Sal y tajín',notes:'escarchado'},{i:'Hielo',notes:'c.s.'}]},
+  {n:'Mezcalita Coco',cat:'Mezcalitas',base:'Mezcal',glass:'Old fashioned',prep:'Escarchar con sal y tajín. Batir mezcal, crema de coco, limón y almíbar con hielo. Colar.',ings:[{i:'Mezcal',oz:2,ml:60},{i:'Crema de coco',oz:1,ml:30},{i:'Jugo de limón',oz:0.75,ml:22},{i:'Almíbar',oz:0.25,ml:8},{i:'Sal y tajín',notes:'escarchado'},{i:'Hielo',notes:'c.s.'}]}
 ];
+
+// ══ SEED MENÚ BASE (agrega variantes faltantes a Supabase) ══
+// Categorías cuyos items se construyen desde SFA. key=nombre en BD, val=prefijo del item.
+var SEED_MENU_CATS={
+  'Mojitos':'Mojito ',
+  'Gin & Tonic':'Gin Tonic ',
+  'Caipiroska (Vodka)':'Caipiroska ',
+  'Daiquirí (Ron)':'Daiquirí ',
+  'Margarita (Tequila)':'Margarita ',
+  'Frozen (Vodka)':'Frozen ',
+  'Mezcalitas':'Mezcalita '
+};
+
+async function seedMissingMenuItems(){
+  var cats=await sfetch('/rest/v1/menu_categories?select=id,name&active=eq.true&order=sort_order.asc');
+  if(!Array.isArray(cats)||!cats.length)return;
+  for(var ci=0;ci<cats.length;ci++){
+    var cat=cats[ci];
+    var prefix=SEED_MENU_CATS[cat.name];
+    if(!prefix)continue;
+    var items=await sfetch('/rest/v1/menu_items?category_id=eq.'+cat.id+'&select=name,sort_order&active=eq.true&order=sort_order.asc');
+    if(!Array.isArray(items))items=[];
+    var existNames={};items.forEach(function(it){existNames[it.name.toLowerCase()]=true;});
+    var maxSort=items.reduce(function(m,it){return Math.max(m,it.sort_order||0);},0);
+    for(var fi=0;fi<SFA.length;fi++){
+      var f=SFA[fi];
+      var itemName=prefix+f.n;
+      if(existNames[itemName.toLowerCase()])continue;
+      maxSort++;
+      await insertMenuItem({id:'mi-'+uid(),category_id:cat.id,name:itemName,price:f.p,description:'',sort_order:maxSort,active:true});
+    }
+  }
+  // Reconstruir menú en memoria para reflejar los cambios
+  invalidateMenuCache();await rebuildMenuFromDB();
+}
 
 async function seedMissingRecipes(){
   var existing=await loadRecipes(null);
@@ -2932,6 +2995,11 @@ async function seedMissingRecipes(){
         await insertIngredient({id:'ri-'+uid(),recipe_id:recId,ingredient:ing.i,oz:ing.oz||null,ml:ing.ml||null,notes:ing.notes||null,sort_order:j+1});
       }
     }
+  }
+  // Si se sembraron recetas y la cocina está activa, refrescar inmediatamente
+  if(toSeed.length>0&&typeof refreshKitchenRecipeNames==='function'){
+    await refreshKitchenRecipeNames();
+    if(typeof renderKitchen==='function'){var cv=document.querySelector('.view.active');if(cv&&cv.id==='view-cocina')renderKitchen();}
   }
   return toSeed.length;
 }
