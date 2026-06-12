@@ -115,24 +115,29 @@ function sfetch(p){return fetch(SU+p,{headers:SH}).then(function(r){return r.jso
 // ══ SESIÓN COMPARTIDA ══
 var TL_AUTH_KEY='tl_auth';
 function tlGetAuth(){try{var s=JSON.parse(localStorage.getItem(TL_AUTH_KEY)||'null');if(!s||!s.id)return null;if(Date.now()-(s.ts||0)>12*60*60*1000){localStorage.removeItem(TL_AUTH_KEY);return null;}return s;}catch(e){return null;}}
-function tlSetAuth(u){try{localStorage.setItem(TL_AUTH_KEY,JSON.stringify({id:u.id,username:u.username,role:u.role,ts:Date.now()}));}catch(e){}}
+function tlSetAuth(u){try{localStorage.setItem(TL_AUTH_KEY,JSON.stringify({id:u.id,username:u.username,role:u.role,can_inventory:!!u.can_inventory,ts:Date.now()}));}catch(e){}}
 function tlClearAuth(){try{localStorage.removeItem(TL_AUTH_KEY);}catch(e){}}
 
 // Catálogo de apps. admin=todas; otros roles solo Órdenes.
 var APPS=[
   {key:'ordenes',  title:'Órdenes',  desc:'Mesas, comandas y cobro',     ico:'🧾', href:'/ordenes',   roles:'*'},
   {key:'finanzas', title:'Finanzas', desc:'Ingresos, egresos y reportes', ico:'📊', href:'/finanzas',  roles:['admin']},
-  {key:'inventario', title:'Inventario', desc:'Stock de productos e insumos',  ico:'📦', href:'/inventario', roles:['admin']},
+  {key:'inventario', title:'Inventario', desc:'Stock de productos e insumos',  ico:'📦', href:'/inventario', roles:['admin'], inv_access:true},
   {key:'lealtad',    title:'Lealtad',    desc:'Clientes, visitas y premios',   ico:'💳', href:'/staff',      roles:['admin']}
 ];
 
-function canSee(app,role){ return app.roles==='*' || app.roles.indexOf(role)>=0; }
+function canSee(app,user){
+  if(app.roles==='*')return true;
+  if(app.roles.indexOf(user.role)>=0)return true;
+  if(app.inv_access&&user.can_inventory)return true;
+  return false;
+}
 
 // Decide a dónde entra el usuario:
 //  - 1 sola app permitida  -> redirección automática (sin tarjetas)
 //  - varias apps           -> mostrar el hub con tarjetas
 function enterFor(user){
-  var allowed=APPS.filter(function(a){return canSee(a,user.role);});
+  var allowed=APPS.filter(function(a){return canSee(a,user);});
   if(allowed.length===1){ location.href=allowed[0].href; return; }
   if(allowed.length===0){ gid('err').textContent='Tu usuario no tiene apps asignadas'; return; }
   renderHub(user,allowed);
@@ -145,7 +150,7 @@ function renderHub(user,allowed){
   gid('whoName').textContent=user.username;
   gid('whoRole').textContent='· '+(user.role||'');
   var c=gid('cards');c.innerHTML='';
-  (allowed||APPS.filter(function(a){return canSee(a,user.role);})).forEach(function(a){
+  (allowed||APPS.filter(function(a){return canSee(a,user);})).forEach(function(a){
     var el=document.createElement('a');
     el.className='app';el.href=a.href;
     el.innerHTML='<div class="ico">'+a.ico+'</div><div class="tx"><h3>'+a.title+'</h3><p>'+a.desc+'</p></div><div class="arr">→</div>';

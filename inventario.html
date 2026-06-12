@@ -224,6 +224,9 @@ select.finput{cursor:pointer}
     <input class="finput" id="fStock" type="number" min="0" step="any" placeholder="0">
     <label class="flbl">Mínimo (alerta de stock bajo)</label>
     <input class="finput" id="fMin" type="number" min="0" step="any" placeholder="0">
+    <label class="flbl">Deducción por venta</label>
+    <input class="finput" id="fDeduct" type="number" min="0" step="any" placeholder="1">
+    <label class="flbl" style="margin-top:3px;font-size:8px;color:var(--faint)">Cantidad que se descuenta del stock cada vez que se vende una unidad de este producto</label>
     <label class="flbl">Notas (opcional)</label>
     <input class="finput" id="fNotes" type="text" placeholder="">
     <div class="ma">
@@ -264,9 +267,9 @@ select.finput{cursor:pointer}
       <div class="mov-list" id="movList"><div style="color:var(--faint);font-size:12px;padding:8px 0">Cargando…</div></div>
     </div>
 
-    <div class="det-acts">
+    <div class="det-acts" id="detActs">
       <button class="det-act edit" onclick="openEditFromDetail()">✏️ Editar</button>
-      <button class="det-act del" onclick="deleteItem()">🗑 Eliminar</button>
+      <button class="det-act del" id="detDelBtn" onclick="deleteItem()">🗑 Eliminar</button>
     </div>
     <div class="ma" style="margin-top:10px">
       <button class="btn btn-g" onclick="closeDetail()">Cerrar</button>
@@ -396,7 +399,7 @@ function openAddModal(){
   gid('formTitle').textContent='Agregar al inventario';
   gid('formSub').textContent='Nuevo ingrediente o producto';
   gid('fName').value='';gid('fCat').value='General';gid('fUnit').value='ml';
-  gid('fStock').value='0';gid('fMin').value='0';gid('fNotes').value='';
+  gid('fStock').value='0';gid('fMin').value='0';gid('fDeduct').value='1';gid('fNotes').value='';
   gid('formModal').classList.add('show');
   setTimeout(function(){gid('fName').focus();},250);
 }
@@ -407,7 +410,7 @@ function openEditModal(id){
   gid('formTitle').textContent='Editar producto';
   gid('formSub').textContent=it.name;
   gid('fName').value=it.name;gid('fCat').value=it.category;gid('fUnit').value=it.unit;
-  gid('fStock').value=it.stock;gid('fMin').value=it.min_stock;gid('fNotes').value=it.notes||'';
+  gid('fStock').value=it.stock;gid('fMin').value=it.min_stock;gid('fDeduct').value=it.deduct_per_sale!=null?it.deduct_per_sale:1;gid('fNotes').value=it.notes||'';
   gid('formModal').classList.add('show');
   setTimeout(function(){gid('fName').focus();},250);
 }
@@ -417,7 +420,7 @@ gid('formModal').addEventListener('click',function(e){if(e.target===gid('formMod
 async function saveItem(){
   var name=gid('fName').value.trim();
   if(!name){showToast('Escribe un nombre');return;}
-  var data={name:name,category:gid('fCat').value,unit:gid('fUnit').value,stock:parseFloat(gid('fStock').value)||0,min_stock:parseFloat(gid('fMin').value)||0,notes:gid('fNotes').value.trim(),active:true,updated_at:new Date().toISOString()};
+  var data={name:name,category:gid('fCat').value,unit:gid('fUnit').value,stock:parseFloat(gid('fStock').value)||0,min_stock:parseFloat(gid('fMin').value)||0,deduct_per_sale:parseFloat(gid('fDeduct').value)||1,notes:gid('fNotes').value.trim(),active:true,updated_at:new Date().toISOString()};
   if(editingId){
     await spatch('/rest/v1/inventory_items?id=eq.'+editingId,data);
     var idx=allItems.findIndex(function(x){return x.id===editingId;});
@@ -504,8 +507,9 @@ async function setStockDirect(){
 }
 
 function openEditFromDetail(){
+  var id=detailId;  // capturar ANTES de closeDetail() que lo anula
   closeDetail();
-  openEditModal(detailId||'');
+  openEditModal(id);
 }
 
 // ── DELETE ──
@@ -544,8 +548,13 @@ async function logMovement(itemId,qty,reason,by){
   var users=await sfetch('/rest/v1/app_users?id=eq.'+encodeURIComponent(auth.id)+'&select=*');
   var found=Array.isArray(users)?users.find(function(u){return u.active;}):null;
   if(!found){localStorage.removeItem(TL_AUTH_KEY);tlGoLogin();return;}
-  if(found.role!=='admin'){showToast('Solo administradores pueden acceder');setTimeout(function(){tlGoLogin();},1500);return;}
+  if(found.role!=='admin'&&!found.can_inventory){showToast('Sin acceso al inventario');setTimeout(function(){tlGoLogin();},1500);return;}
   loggedUser=found;
+  // Restringir destructivas para no-admin
+  var isAdmin=(found.role==='admin');
+  if(!isAdmin){
+    var db=gid('detDelBtn');if(db)db.style.display='none';
+  }
   await loadItems();
   renderCatTabs();
   renderList();

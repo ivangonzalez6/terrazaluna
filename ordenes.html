@@ -846,6 +846,13 @@ h2.sec::after{content:'';flex:1;height:1px;background:var(--line);margin-left:6p
       <option value="caja">Caja</option>
       <option value="admin">Admin</option>
     </select>
+    <label style="display:flex;align-items:center;gap:10px;margin-top:14px;padding:11px 13px;border:1px solid var(--line);border-radius:10px;background:#fff;cursor:pointer">
+      <input type="checkbox" id="ufCanInventory" style="width:18px;height:18px;accent-color:var(--gold);flex-shrink:0">
+      <span style="flex:1">
+        <span style="display:block;font-size:13px;font-weight:600;color:var(--ink)">Acceso a Inventario</span>
+        <span style="display:block;font-size:11px;color:var(--faint);margin-top:2px">Permite levantar y editar inventario sin ser admin</span>
+      </span>
+    </label>
     <div style="font-size:11px;color:var(--danger);margin-top:6px;min-height:15px" id="ufErr"></div>
     <div class="ma"><button class="btn btn-g" id="ufCancel">Cancelar</button><button class="btn btn-p" id="ufSave">Guardar</button></div>
   </div>
@@ -3126,6 +3133,18 @@ var INV_PRODUCT_MAP={
 
 // Caché de ingredientes cargados de BD (recipe_ingredients)
 var _invRecipeCache={};
+// Caché de deduct_per_sale por itemId
+var _invDeductCache={};
+async function _getDeductAmt(itemId){
+  if(_invDeductCache[itemId]!==undefined)return _invDeductCache[itemId];
+  try{
+    var rows=await fetch(SU+'/rest/v1/inventory_items?id=eq.'+encodeURIComponent(itemId)+'&select=deduct_per_sale',{headers:SH}).then(function(r){return r.json();});
+    var v=(Array.isArray(rows)&&rows[0])?parseFloat(rows[0].deduct_per_sale)||1:1;
+    _invDeductCache[itemId]=v;return v;
+  }catch(e){_invDeductCache[itemId]=1;return 1;}
+}
+// IDs de alimentos que usan deduct_per_sale (no ml de receta)
+var INV_FOOD_IDS=['inv-alitas','inv-boneless','inv-hotcakes','inv-papas','inv-salchichas','inv-pastel-choc'];
 
 async function _getRecipeIngredients(itemName){
   var key=itemName.toLowerCase();
@@ -3162,11 +3181,17 @@ function deductInventory(itemName,qty){
       var lc=itemName.toLowerCase().replace(/\s+\(\d+ lt\)|\s+\(½ lt\)/,'').trim();
       // 1. Checar mapeo directo de producto
       var direct=INV_PRODUCT_MAP[lc];
-      if(direct){await _patchInvStock(direct.id,-direct.qty*qty);return;}
-      // 2. Alitas / Boneless (prefijo)
-      if(lc.startsWith('alitas')){await _patchInvStock('inv-alitas',-1*qty);return;}
-      if(lc.startsWith('boneless')){await _patchInvStock('inv-boneless',-1*qty);return;}
-      if(lc.startsWith('hot cakes')){await _patchInvStock('inv-hotcakes',-1*qty);return;}
+      if(direct){
+        var dAmt=direct.qty;
+        if(INV_FOOD_IDS.indexOf(direct.id)>=0)dAmt=await _getDeductAmt(direct.id);
+        await _patchInvStock(direct.id,-dAmt*qty);return;
+      }
+      // 2. Alitas / Boneless / Papas / Salchichas (prefijo) — usa deduct_per_sale
+      if(lc.startsWith('alitas')){var d1=await _getDeductAmt('inv-alitas');await _patchInvStock('inv-alitas',-d1*qty);return;}
+      if(lc.startsWith('boneless')){var d2=await _getDeductAmt('inv-boneless');await _patchInvStock('inv-boneless',-d2*qty);return;}
+      if(lc.startsWith('hot cakes')){var d3=await _getDeductAmt('inv-hotcakes');await _patchInvStock('inv-hotcakes',-d3*qty);return;}
+      if(lc.startsWith('papas')){var d4=await _getDeductAmt('inv-papas');await _patchInvStock('inv-papas',-d4*qty);return;}
+      if(lc.startsWith('salchichas')){var d5=await _getDeductAmt('inv-salchichas');await _patchInvStock('inv-salchichas',-d5*qty);return;}
       // 3. Buscar receta en BD y descontar ingredientes con ml
       var ings=await _getRecipeIngredients(itemName);
       if(ings&&ings.length){
@@ -3409,14 +3434,14 @@ gid('recFSave').addEventListener('click',async function(){
 // ══ ADMIN USUARIOS ══
 gid('adminUsersBtn').addEventListener('click',async function(){var ok=await requireAdmin('Contraseña de administrador');if(!ok)return;appUsers=await loadUsers();var ap=await loadConfig('admin_password');if(ap)adminPass=ap;renderUserList();setRole('users');});
 gid('backToStats').addEventListener('click',function(){setRole('stats');});
-gid('addUserBtn').addEventListener('click',function(){editingUserId=null;gid('ufTitle').textContent='Nuevo usuario';gid('ufSub').textContent='';gid('ufUser').value='';gid('ufPass').value='';gid('ufPassLabel').textContent='Contraseña';gid('ufRole').value='mesero';gid('ufErr').textContent='';gid('userFormModal').classList.add('show');setTimeout(function(){gid('ufUser').focus();},250);});
+gid('addUserBtn').addEventListener('click',function(){editingUserId=null;gid('ufTitle').textContent='Nuevo usuario';gid('ufSub').textContent='';gid('ufUser').value='';gid('ufPass').value='';gid('ufPassLabel').textContent='Contraseña';gid('ufRole').value='mesero';gid('ufCanInventory').checked=false;gid('ufErr').textContent='';gid('userFormModal').classList.add('show');setTimeout(function(){gid('ufUser').focus();},250);});
 gid('ufCancel').addEventListener('click',function(){gid('userFormModal').classList.remove('show');editingUserId=null;});
 gid('ufSave').addEventListener('click',async function(){
-  var u=gid('ufUser').value.trim(),p=gid('ufPass').value,r=gid('ufRole').value;
+  var u=gid('ufUser').value.trim(),p=gid('ufPass').value,r=gid('ufRole').value,ci=gid('ufCanInventory').checked;
   if(!u){gid('ufErr').textContent='Ingresa un nombre de usuario';return;}
   if(!editingUserId&&!p){gid('ufErr').textContent='Ingresa una contraseña';return;}
-  if(editingUserId){var data={username:u,role:r};if(p)data.user_password=p;await updateUser(editingUserId,data);for(var i=0;i<appUsers.length;i++){if(appUsers[i].id===editingUserId){Object.assign(appUsers[i],data);break;}}}
-  else{var exists=false;for(var j=0;j<appUsers.length;j++){if(appUsers[j].username===u){exists=true;break;}}if(exists){gid('ufErr').textContent='Ese usuario ya existe';return;}var nu={id:uid(),username:u,user_password:p,role:r,active:true};await insertUser(nu);appUsers.push(nu);}
+  if(editingUserId){var data={username:u,role:r,can_inventory:ci};if(p)data.user_password=p;await updateUser(editingUserId,data);for(var i=0;i<appUsers.length;i++){if(appUsers[i].id===editingUserId){Object.assign(appUsers[i],data);break;}}}
+  else{var exists=false;for(var j=0;j<appUsers.length;j++){if(appUsers[j].username===u){exists=true;break;}}if(exists){gid('ufErr').textContent='Ese usuario ya existe';return;}var nu={id:uid(),username:u,user_password:p,role:r,active:true,can_inventory:ci};await insertUser(nu);appUsers.push(nu);}
   gid('userFormModal').classList.remove('show');editingUserId=null;renderUserList();showToast('✓ Usuario guardado');
 });
 function renderUserList(){
@@ -3425,9 +3450,9 @@ function renderUserList(){
   var rl={mesero:'Mesero',cocina:'Cocina',caja:'Caja',admin:'Admin'};
   appUsers.forEach(function(u){
     var el=document.createElement('div');el.className='u-item';
-    el.innerHTML='<div class="u-av '+(u.active?'':'blocked')+'">'+ini(u.username)+'</div><div class="u-info"><div class="u-name">'+esc(u.username)+(!u.active?'<span class="blocked-badge">Bloqueado</span>':'')+'</div><div class="u-role">'+(rl[u.role]||u.role)+'</div></div><div class="u-acts"><button class="u-btn u-edit">Editar</button><button class="u-btn u-block">'+(u.active?'Bloquear':'Desbloquear')+'</button>'+(u.id!=='user-admin-01'?'<button class="u-btn u-del">Eliminar</button>':'')+'</div>';
+    el.innerHTML='<div class="u-av '+(u.active?'':'blocked')+'">'+ini(u.username)+'</div><div class="u-info"><div class="u-name">'+esc(u.username)+(!u.active?'<span class="blocked-badge">Bloqueado</span>':'')+'</div><div class="u-role">'+(rl[u.role]||u.role)+(u.can_inventory&&u.role!=='admin'?' · <span style="color:var(--gold);font-size:10px">📦 Inventario</span>':'')+'</div></div><div class="u-acts"><button class="u-btn u-edit">Editar</button><button class="u-btn u-block">'+(u.active?'Bloquear':'Desbloquear')+'</button>'+(u.id!=='user-admin-01'?'<button class="u-btn u-del">Eliminar</button>':'')+'</div>';
     (function(user){
-      el.querySelector('.u-edit').addEventListener('click',function(){editingUserId=user.id;gid('ufTitle').textContent='Editar usuario';gid('ufSub').textContent=user.username;gid('ufUser').value=user.username;gid('ufPass').value='';gid('ufPassLabel').textContent='Contraseña (dejar en blanco para no cambiar)';gid('ufRole').value=user.role;gid('ufErr').textContent='';gid('userFormModal').classList.add('show');setTimeout(function(){gid('ufUser').focus();},250);});
+      el.querySelector('.u-edit').addEventListener('click',function(){editingUserId=user.id;gid('ufTitle').textContent='Editar usuario';gid('ufSub').textContent=user.username;gid('ufUser').value=user.username;gid('ufPass').value='';gid('ufPassLabel').textContent='Contraseña (dejar en blanco para no cambiar)';gid('ufRole').value=user.role;gid('ufCanInventory').checked=!!user.can_inventory;gid('ufErr').textContent='';gid('userFormModal').classList.add('show');setTimeout(function(){gid('ufUser').focus();},250);});
       el.querySelector('.u-block').addEventListener('click',async function(){var na=!user.active;await updateUser(user.id,{active:na});user.active=na;renderUserList();showToast(na?'Usuario desbloqueado':'Usuario bloqueado');});
       var db=el.querySelector('.u-del');if(db)db.addEventListener('click',function(){openConfirm('Eliminar usuario','¿Eliminar a '+user.username+'?','Eliminar',async function(){await deleteUser(user.id);appUsers=appUsers.filter(function(x){return x.id!==user.id;});renderUserList();showToast('Usuario eliminado');});});
     })(u);
