@@ -295,6 +295,14 @@ h2.sec::after{content:'';flex:1;height:1px;background:var(--line);margin-left:6p
 .hi-eb:active{background:var(--gold);color:#fff}
 .hi-db{font-size:10px;letter-spacing:.1em;text-transform:uppercase;padding:4px 10px;border:1px solid var(--danger);border-radius:6px;color:var(--danger);font-weight:600}
 .hi-db:active{background:var(--danger);color:#fff}
+.hi-vb{font-size:10px;letter-spacing:.1em;text-transform:uppercase;padding:4px 10px;border:1px solid var(--line2);border-radius:6px;color:var(--dim);font-weight:600}
+.hi-vb:active{border-color:var(--faint);color:var(--ink)}
+.hd-item{display:flex;align-items:baseline;gap:6px;padding:7px 0;border-bottom:1px dashed var(--line);font-size:13px}
+.hd-q{font-weight:700;color:var(--gold);min-width:22px;text-align:right;flex-shrink:0}
+.hd-n{flex:1;color:var(--ink)}
+.hd-note{font-size:11px;color:var(--faint);font-style:italic}
+.hd-p{font-weight:600;color:var(--dim);flex-shrink:0}
+.hd-person{font-size:10px;color:var(--faint);background:var(--bg);border:1px solid var(--line);border-radius:4px;padding:1px 5px;margin-left:4px;flex-shrink:0}
 .act-bar{display:flex;gap:7px;margin:18px 0 0;flex-wrap:wrap}
 .act-bar .btn{flex:1;min-width:100px;padding:10px;font-size:10px}
 .admin-item{display:flex;align-items:flex-start;gap:10px;padding:12px 14px;border:1px solid var(--line);border-radius:12px;background:#fff;margin-bottom:8px}
@@ -798,6 +806,17 @@ h2.sec::after{content:'';flex:1;height:1px;background:var(--line);margin-left:6p
     </div>
     <div style="font-size:11px;color:var(--danger);margin-top:6px;min-height:15px" id="pwErr"></div>
     <div class="ma"><button class="btn btn-g" id="pwCancel">Cancelar</button><button class="btn btn-p" id="pwOk">Confirmar</button></div>
+  </div>
+</div>
+<div class="mb" id="histDetailModal">
+  <div class="modal" style="max-height:85vh;overflow-y:auto;padding-bottom:32px">
+    <h3>Detalle de cuenta</h3><div class="msub" id="hdSaleDesc"></div>
+    <div id="hdItems" style="margin:10px 0"></div>
+    <div style="margin-top:12px;padding-top:10px;border-top:1px solid var(--line2);display:flex;justify-content:space-between;align-items:center">
+      <span style="font-size:10px;letter-spacing:.2em;text-transform:uppercase;color:var(--faint)">Total</span>
+      <span id="hdTotal" style="font-family:'Cormorant Garamond',serif;font-size:20px;font-weight:600;color:var(--gold)"></span>
+    </div>
+    <div class="ma"><button class="btn btn-g" id="hdClose">Cerrar</button></div>
   </div>
 </div>
 <div class="mb" id="editSaleModal">
@@ -1879,7 +1898,7 @@ function doCloseTable(t){
     if(o.discounts&&o.discounts.length)o.discounts.forEach(function(d){all.push({n:d.label,p:d.amount,q:1,note:'Descuento 2×1',pm:fallbackPm});});
     var pb=o.persons?o.persons.map(function(p){return{name:p.name,total:pTotal(p),count:pCount(p),paid:!!p.paid,paymentMethod:p.paymentMethod||fallbackPm};}):[];
     var totalClosed=tblSubtotal(t)+tblDiscount(t);
-    var rec={id:uid(),table:t,tableNote:o.tableNote||'',openedAt:o.openedAt||Date.now(),closedAt:Date.now(),total:totalClosed,itemCount:all.length,items:all,persons:pb,paymentMethod:fallbackPm};
+    var rec={id:uid(),table:t,tableNote:o.tableNote||'',openedAt:o.openedAt||Date.now(),closedAt:Date.now(),total:totalClosed,itemCount:all.reduce(function(s,it){return s+(it.q||1);},0),items:all,persons:pb,paymentMethod:fallbackPm};
     appHistory.unshift(rec);
     _closedRecently[String(t)]=Date.now();
     delete orders[t];
@@ -2189,18 +2208,34 @@ function renderStats(){
   f.forEach(function(h){
     var d=new Date(h.closedAt),ds=d.toLocaleDateString('es-MX',{day:'2-digit',month:'short'})+' '+d.getHours().toString().padStart(2,'0')+':'+d.getMinutes().toString().padStart(2,'0');
     var el=document.createElement('div');el.className='hi';
-    el.innerHTML='<div class="hi-top"><div><div class="hi-tbl">'+(typeof h.table==='number'?'Mesa '+h.table.toString().padStart(2,'0'):esc(String(h.table).charAt(0).toUpperCase()+String(h.table).slice(1)))+(h.tableNote?' <span style="font-size:11px;font-weight:400;color:var(--faint)">· '+esc(h.tableNote)+'</span>':'')+'</div><div class="hi-date">'+ds+'</div></div><div><div class="hi-tot">'+money(h.total)+'</div><div class="hi-it">'+h.itemCount+' prod.'+(h.editNote?' · <em style="color:var(--gold)">'+esc(h.editNote)+'</em>':'')+'</div></div></div>'+(isDay?'<div class="hi-acts"><button class="hi-eb" data-id="'+h.id+'">Editar</button><button class="hi-db" data-id="'+h.id+'">Eliminar</button></div>':'');
-    if(isDay){
-      (function(rec){
+    el.innerHTML='<div class="hi-top"><div><div class="hi-tbl">'+(typeof h.table==='number'?'Mesa '+h.table.toString().padStart(2,'0'):esc(String(h.table).charAt(0).toUpperCase()+String(h.table).slice(1)))+(h.tableNote?' <span style="font-size:11px;font-weight:400;color:var(--faint)">· '+esc(h.tableNote)+'</span>':'')+'</div><div class="hi-date">'+ds+'</div></div><div><div class="hi-tot">'+money(h.total)+'</div><div class="hi-it">'+h.itemCount+' prod.'+(h.editNote?' · <em style="color:var(--gold)">'+esc(h.editNote)+'</em>':'')+'</div></div></div><div class="hi-acts"><button class="hi-vb" data-id="'+h.id+'">Ver</button>'+(isDay?'<button class="hi-eb" data-id="'+h.id+'">Editar</button><button class="hi-db" data-id="'+h.id+'">Eliminar</button>':'')+'</div>';
+    (function(rec){
+      el.querySelector('.hi-vb').addEventListener('click',function(e){e.stopPropagation();showHistDetail(rec);});
+      if(isDay){
         el.querySelector('.hi-eb').addEventListener('click',async function(){var ok=await askPass('Contraseña para editar');if(!ok)return;openEditSale(rec);});
         el.querySelector('.hi-db').addEventListener('click',async function(){var ok=await askPass('Contraseña para eliminar');if(!ok)return;openConfirm('Eliminar venta',(typeof rec.table==='number'?'Mesa '+rec.table:String(rec.table).charAt(0).toUpperCase()+String(rec.table).slice(1))+' · '+money(rec.total)+'. No se puede deshacer.','Eliminar',async function(){await deleteHist(rec.id);appHistory=appHistory.filter(function(x){return x.id!==rec.id;});renderStats();showToast('Venta eliminada');});});
-      })(h);
-    }else{(function(rec){el.addEventListener('click',function(){showHistDetail(rec);});})(h);}
+      }
+    })(h);
     list.appendChild(el);
   });
 }
-function showHistDetail(h){var m=(typeof h.table==='number'?'Mesa '+h.table:String(h.table).charAt(0).toUpperCase()+String(h.table).slice(1))+' · '+new Date(h.closedAt).toLocaleString('es-MX')+'\n';if(h.persons&&h.persons.length){m+='\nPor persona:\n';h.persons.forEach(function(p){m+='  '+p.name+': '+money(p.total)+(p.paid?' (Pagado)':'')+'\n';});}m+='\nProductos:\n';h.items.forEach(function(it){m+='  '+it.q+'× '+it.n+(it.person?' ('+it.person+')':'')+(it.note?' – '+it.note:'')+' · '+money(it.p*it.q)+'\n';});m+='\nTotal: '+money(h.total);alert(m);}
+function showHistDetail(h){
+  var tbl=typeof h.table==='number'?'Mesa '+h.table.toString().padStart(2,'0'):String(h.table).charAt(0).toUpperCase()+String(h.table).slice(1);
+  var d=new Date(h.closedAt);
+  var ds=d.toLocaleDateString('es-MX',{weekday:'short',day:'2-digit',month:'short'})+' '+d.getHours().toString().padStart(2,'0')+':'+d.getMinutes().toString().padStart(2,'0');
+  gid('hdSaleDesc').textContent=tbl+' · '+ds;
+  gid('hdTotal').textContent=money(h.total);
+  var html='';
+  (h.items||[]).forEach(function(it){
+    html+='<div class="hd-item"><span class="hd-q">'+it.q+'×</span><span class="hd-n">'+esc(it.n)+(it.note?'<span class="hd-note"> "'+esc(it.note)+'"</span>':'')+'</span>'+(it.person?'<span class="hd-person">'+esc(it.person)+'</span>':'')+'<span class="hd-p">'+money(it.p*it.q)+'</span></div>';
+  });
+  if(!html)html='<div style="color:var(--faint);font-size:13px;padding:10px 0">Sin productos registrados</div>';
+  gid('hdItems').innerHTML=html;
+  gid('histDetailModal').classList.add('show');
+}
 function openEditSale(h){editSaleId=h.id;gid('esSaleDesc').textContent=(typeof h.table==='number'?'Mesa '+h.table:String(h.table).charAt(0).toUpperCase()+String(h.table).slice(1))+' · '+new Date(h.closedAt).toLocaleString('es-MX');gid('esTotal').value=h.total;gid('esNote').value=h.editNote||'';gid('editSaleModal').classList.add('show');setTimeout(function(){gid('esTotal').focus();},250);}
+gid('hdClose').addEventListener('click',function(){gid('histDetailModal').classList.remove('show');});
+gid('histDetailModal').addEventListener('click',function(e){if(e.target===gid('histDetailModal'))gid('histDetailModal').classList.remove('show');});
 gid('esCancel').addEventListener('click',function(){gid('editSaleModal').classList.remove('show');editSaleId=null;});
 gid('esSave').addEventListener('click',async function(){if(!editSaleId)return;var nt=parseFloat(gid('esTotal').value);if(isNaN(nt)||nt<0){showToast('Total inválido');return;}var note=gid('esNote').value.trim();await updateHist(editSaleId,nt,note);var r=null;for(var i=0;i<appHistory.length;i++){if(appHistory[i].id===editSaleId){r=appHistory[i];break;}}if(r){r.total=nt;r.editNote=note;}await updateFinanceMovements(editSaleId,nt,r&&r.paymentMethod);gid('editSaleModal').classList.remove('show');editSaleId=null;renderStats();showToast('✓ Venta actualizada');});
 document.querySelectorAll('.per-tab').forEach(function(btn){btn.addEventListener('click',async function(){var p=btn.getAttribute('data-period');if(p!=='day'){var ok=await askPass('Contraseña para ver '+pLabel(p).toLowerCase());if(!ok)return;}curPeriod=p;renderStats();});});
@@ -3285,7 +3320,7 @@ async function doAutoCloseTable(t){
   });
   if(o.discounts&&o.discounts.length)o.discounts.forEach(function(d){all.push({n:d.label,p:d.amount,q:1,note:'Descuento 2×1',pm:'efectivo'});});
   var pb=o.persons?o.persons.map(function(p){return{name:p.name,total:pTotal(p),count:pCount(p),paid:true,paymentMethod:p.paymentMethod||'efectivo'};}):[];
-  var rec={id:uid(),table:t,tableNote:o.tableNote||'',openedAt:o.openedAt||Date.now(),closedAt:Date.now(),total:totalClosed,itemCount:all.length,items:all,persons:pb,paymentMethod:'efectivo'};
+  var rec={id:uid(),table:t,tableNote:o.tableNote||'',openedAt:o.openedAt||Date.now(),closedAt:Date.now(),total:totalClosed,itemCount:all.reduce(function(s,it){return s+(it.q||1);},0),items:all,persons:pb,paymentMethod:'efectivo'};
   appHistory.unshift(rec);
   _closedRecently[String(t)]=Date.now();
   delete orders[t];
