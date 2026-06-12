@@ -1550,7 +1550,9 @@ gid('crvAdd').addEventListener('click',async function(){
     if(!orders[curTable].items)orders[curTable].items=[];
     orders[curTable].items.push(newItem);
   }
+  var _crvItemName=_crvItem?_crvItem.n:'';
   gid('cerveceraModal').classList.remove('show');_crvItem=null;_crvTarget=null;_crvStyle=null;_crvSize=null;
+  deductInventory(_crvItemName||finalName,1);
   await saveOrders(orders);updateCartBar();updateBadges();
   showToast('✓ '+finalName+' agregada');
 });
@@ -1573,6 +1575,7 @@ gid('noteSave').addEventListener('click',async function(){
     if(!per)return;if(!per.items)per.items=[];
     var ex=null;for(var j=0;j<per.items.length;j++){if(per.items[j].n===pendItem.n&&(per.items[j].note||'')===note){ex=per.items[j];break;}}
     if(ex)ex.q+=1;else per.items.push({id:uid(),n:pendItem.n,p:pendItem.p,q:1,note:note,addedAt:Date.now(),status:'pending'});
+    deductInventory(pendItem.n,1);
     // If this table had everything delivered, new item resets the order clock
     _resetOrderTimeIfNeeded(curTable);
     gid('noteModal').classList.remove('show');pendItem=null;
@@ -1581,6 +1584,7 @@ gid('noteSave').addEventListener('click',async function(){
     var items=orders[curTable].items,exG=null;
     for(var k=0;k<items.length;k++){if(items[k].n===pendItem.n&&(items[k].note||'')===note){exG=items[k];break;}}
     if(exG)exG.q+=1;else items.push({id:uid(),n:pendItem.n,p:pendItem.p,q:1,note:note,addedAt:Date.now(),status:'pending'});
+    deductInventory(pendItem.n,1);
     // If this table had everything delivered, new item resets the order clock
     _resetOrderTimeIfNeeded(curTable);
     gid('noteModal').classList.remove('show');pendItem=null;
@@ -1599,6 +1603,7 @@ function quickAdd(it,target){
     if(!per)return;if(!per.items)per.items=[];
     var ex=null;for(var j=0;j<per.items.length;j++){if(per.items[j].n===it.n&&(per.items[j].note||'')===''){ex=per.items[j];break;}}
     if(ex)ex.q+=1;else per.items.push({id:uid(),n:it.n,p:it.p,q:1,note:'',addedAt:Date.now(),status:'pending'});
+    deductInventory(it.n,1);
     _resetOrderTimeIfNeeded(curTable);
     saveOrders(orders).then(function(){updateBadges();});
     showToast('✓ '+it.n+' → '+getPName());
@@ -1606,6 +1611,7 @@ function quickAdd(it,target){
     var items=orders[curTable].items,exG=null;
     for(var k=0;k<items.length;k++){if(items[k].n===it.n&&(items[k].note||'')===''){exG=items[k];break;}}
     if(exG)exG.q+=1;else items.push({id:uid(),n:it.n,p:it.p,q:1,note:'',addedAt:Date.now(),status:'pending'});
+    deductInventory(it.n,1);
     _resetOrderTimeIfNeeded(curTable);
     saveOrders(orders).then(function(){updateCartBar();updateBadges();});
     showToast('✓ '+it.n);
@@ -3038,6 +3044,154 @@ async function seedMissingRecipes(){
     if(typeof renderKitchen==='function'){var cv=document.querySelector('.view.active');if(cv&&cv.id==='view-cocina')renderKitchen();}
   }
   return toSeed.length;
+}
+
+// ══ INVENTARIO: DESCUENTO AUTOMÁTICO ══
+// Mapeo ingrediente de receta → id de inventory_item
+var INV_ING_MAP={
+  'ron blanco':'inv-ron-blanco','ron':'inv-ron-blanco','ron añejo':'inv-ron-anejo',
+  'vodka':'inv-vodka',
+  'tequila blanco':'inv-tequila','tequila':'inv-tequila',
+  'ginebra':'inv-ginebra',
+  'whisky':'inv-whisky',
+  'mezcal':'inv-mezcal',
+  'brandy':'inv-brandy',
+  'campari':'inv-campari',
+  'licor de hierbas (43)':'inv-licor43','licor 43':'inv-licor43',
+  'licor de café':'inv-licor-cafe',
+  'licor de naranja':'inv-licor-naranja',
+  'curazao azul':'inv-curazao','curazao':'inv-curazao',
+  'limoncello':'inv-limoncello',
+  'granadina':'inv-granadina',
+  'almíbar':'inv-almibar','almibar':'inv-almibar',
+  'almíbar de miel':'inv-almibar-miel',
+  'jugo de limón':'inv-jugo-limon','jugo limón':'inv-jugo-limon',
+  'jugo de naranja':'inv-jugo-naranja',
+  'jugo de piña':'inv-jugo-piña',
+  'jugo de arándanos':'inv-jugo-aran',
+  'frutos rojos mixtos':'inv-frutos-r','frutos rojos':'inv-frutos-r',
+  'arándanos':'inv-arandanos',
+  'pulpa de maracuyá':'inv-maracuya','maracuyá':'inv-maracuya',
+  'puré de mango':'inv-mango',
+  'crema de coco':'inv-coco-crema',
+  'agua mineral':'inv-agua-min',
+  'agua tónica':'inv-agua-tonica',
+  'refresco de cola':'inv-refresco','refresco de toronja':'inv-refresco',
+  'refresco de lima-limón':'inv-refresco','refresco de toronja (squirt)':'inv-refresco',
+  'clamato':'inv-clamato',
+  'leche entera':'inv-leche',
+  'leche condensada':'inv-leche-cond',
+  'leche evaporada':'inv-leche-evap',
+  'café espresso':'inv-espresso',
+};
+// Mapeo directo nombre de producto del menú → {id, qty, unit}
+var INV_PRODUCT_MAP={
+  // Cervezas
+  'carta blanca':{id:'inv-cb',qty:1},'indio':{id:'inv-indio',qty:1},
+  'tecate':{id:'inv-tecate',qty:1},'victoria':{id:'inv-victoria',qty:1},
+  'xx lager':{id:'inv-xx',qty:1},'modelo':{id:'inv-modelo',qty:1},
+  'modelo oscura':{id:'inv-modelo-osc',qty:1},'bohemia cristal':{id:'inv-bohemia',qty:1},
+  'corona':{id:'inv-corona',qty:1},'michelob ultra':{id:'inv-michelob',qty:1},
+  // Shots (45ml por shot)
+  'sueño azteca':{id:'inv-sueño-azteca',qty:45},
+  'cabrito':{id:'inv-cabrito',qty:45},
+  'josé cuervo especial blanco':{id:'inv-jc-blanco',qty:45},
+  'josé cuervo especial reposado':{id:'inv-jc-reposado',qty:45},
+  'black jack':{id:'inv-blackjack',qty:45},
+  "cardigan's":{id:'inv-cardigans',qty:45},'cardigans':{id:'inv-cardigans',qty:45},
+  'black zebra':{id:'inv-blackzebra',qty:45},
+  'johnnie walker red label':{id:'inv-jw-red',qty:45},
+  "buchanan's deluxe 12 años":{id:'inv-buchanan12',qty:45},
+  "buchanan's masters 15 años":{id:'inv-buchanan15',qty:45},
+  'glenfiddich vat 01':{id:'inv-glenfiddich',qty:45},
+  'glenmorangie 16 años':{id:'inv-glenmorangie',qty:45},
+  'havana club 3 años':{id:'inv-havana3',qty:45},
+  'havana club ritual cubano':{id:'inv-havana-ritual',qty:45},
+  'black tears':{id:'inv-black-tears',qty:45},
+  'bacardí carta blanca':{id:'inv-bacardi-blanco',qty:45},
+  'bacardí spiced':{id:'inv-bacardi-spiced',qty:45},
+  'captain morgan':{id:'inv-captain',qty:45},
+  'baraima blanco':{id:'inv-baraima',qty:45},
+  'caney blanco':{id:'inv-caney',qty:45},
+  'santa cruz del norte':{id:'inv-santacruz',qty:45},
+  'brandy presidente':{id:'inv-pdte-brandy',qty:45},
+  'torres 10':{id:'inv-torres10',qty:45},
+  'mezcal el chiniquil':{id:'inv-mezcal-chiniq',qty:45},
+  'mezcal ancestral':{id:'inv-mezcal-anc',qty:45},
+  // Comida
+  'papas a la francesa':{id:'inv-papas',qty:1},
+  'salchichas con chiltepín':{id:'inv-salchichas',qty:1},
+  'pastel de chocolate':{id:'inv-pastel-choc',qty:1},
+};
+
+// Caché de ingredientes cargados de BD (recipe_ingredients)
+var _invRecipeCache={};
+
+async function _getRecipeIngredients(itemName){
+  var key=itemName.toLowerCase();
+  if(_invRecipeCache[key]!==undefined)return _invRecipeCache[key];
+  try{
+    var rows=await fetch(SU+'/rest/v1/recipe_ingredients?select=ingredient,ml,oz&recipe_id=in.(select id from recipes where item_name=eq.'+encodeURIComponent(itemName)+')',{headers:SH}).then(function(r){return r.json();}).catch(function(){return null;});
+    // Buscar vía recipes directamente
+    var recs=await fetch(SU+'/rest/v1/recipes?item_name=eq.'+encodeURIComponent(itemName)+'&select=id',{headers:SH}).then(function(r){return r.json();}).catch(function(){return null;});
+    if(!Array.isArray(recs)||!recs.length){_invRecipeCache[key]=null;return null;}
+    var recId=recs[0].id;
+    var ings=await fetch(SU+'/rest/v1/recipe_ingredients?recipe_id=eq.'+encodeURIComponent(recId)+'&select=ingredient,ml,oz',{headers:SH}).then(function(r){return r.json();}).catch(function(){return null;});
+    _invRecipeCache[key]=Array.isArray(ings)?ings:null;
+    return _invRecipeCache[key];
+  }catch(e){_invRecipeCache[key]=null;return null;}
+}
+
+async function _patchInvStock(itemId,delta){
+  try{
+    // Obtener stock actual
+    var rows=await fetch(SU+'/rest/v1/inventory_items?id=eq.'+encodeURIComponent(itemId)+'&select=stock',{headers:SH}).then(function(r){return r.json();});
+    if(!Array.isArray(rows)||!rows.length)return;
+    var cur=parseFloat(rows[0].stock)||0;
+    var newStock=Math.max(0,cur+delta);
+    await fetch(SU+'/rest/v1/inventory_items?id=eq.'+encodeURIComponent(itemId),{method:'PATCH',headers:Object.assign({},SH,{'Prefer':'return=minimal'}),body:JSON.stringify({stock:newStock,updated_at:new Date().toISOString()})});
+    // Registrar movimiento
+    await fetch(SU+'/rest/v1/inventory_movements',{method:'POST',headers:Object.assign({},SH,{'Prefer':'return=minimal'}),body:JSON.stringify({id:'mov-'+(Date.now().toString(36)+Math.random().toString(36).slice(2,5)),item_id:itemId,quantity:delta,reason:'order',reference:'Venta mesa '+(curTable||''),created_by:loggedUser?loggedUser.username:'sistema',created_at:new Date().toISOString()})});
+  }catch(e){/* silencioso */}
+}
+
+function deductInventory(itemName,qty){
+  // Fire-and-forget: no bloquea la UI
+  (async function(){
+    try{
+      var lc=itemName.toLowerCase().replace(/\s+\(\d+ lt\)|\s+\(½ lt\)/,'').trim();
+      // 1. Checar mapeo directo de producto
+      var direct=INV_PRODUCT_MAP[lc];
+      if(direct){await _patchInvStock(direct.id,-direct.qty*qty);return;}
+      // 2. Alitas / Boneless (prefijo)
+      if(lc.startsWith('alitas')){await _patchInvStock('inv-alitas',-1*qty);return;}
+      if(lc.startsWith('boneless')){await _patchInvStock('inv-boneless',-1*qty);return;}
+      if(lc.startsWith('hot cakes')){await _patchInvStock('inv-hotcakes',-1*qty);return;}
+      // 3. Buscar receta en BD y descontar ingredientes con ml
+      var ings=await _getRecipeIngredients(itemName);
+      if(ings&&ings.length){
+        for(var i=0;i<ings.length;i++){
+          var ing=ings[i];
+          if(!ing.ml||ing.ml<=0)continue;
+          var invId=INV_ING_MAP[(ing.ingredient||'').toLowerCase().trim()];
+          if(!invId)continue;
+          await _patchInvStock(invId,-ing.ml*qty);
+        }
+        return;
+      }
+      // 4. Sin receta y sin mapeo: intentar SEED_RECIPES en memoria
+      var sr=SEED_RECIPES.find(function(r){return r.n.toLowerCase()===lc;});
+      if(sr&&sr.ings){
+        for(var j=0;j<sr.ings.length;j++){
+          var si=sr.ings[j];
+          if(!si.ml||si.ml<=0)continue;
+          var sid=INV_ING_MAP[(si.i||'').toLowerCase().trim()];
+          if(!sid)continue;
+          await _patchInvStock(sid,-si.ml*qty);
+        }
+      }
+    }catch(e){/* silencioso */}
+  })();
 }
 
 // ── Abrir admin recetario ──

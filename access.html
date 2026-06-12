@@ -122,7 +122,8 @@ function tlClearAuth(){try{localStorage.removeItem(TL_AUTH_KEY);}catch(e){}}
 var APPS=[
   {key:'ordenes',  title:'Órdenes',  desc:'Mesas, comandas y cobro',     ico:'🧾', href:'/ordenes',   roles:'*'},
   {key:'finanzas', title:'Finanzas', desc:'Ingresos, egresos y reportes', ico:'📊', href:'/finanzas',  roles:['admin']},
-  {key:'lealtad',  title:'Lealtad',  desc:'Clientes, visitas y premios',  ico:'💳', href:'/staff',          roles:['admin']}
+  {key:'inventario', title:'Inventario', desc:'Stock de productos e insumos',  ico:'📦', href:'/inventario', roles:['admin']},
+  {key:'lealtad',    title:'Lealtad',    desc:'Clientes, visitas y premios',   ico:'💳', href:'/staff',      roles:['admin']}
 ];
 
 function canSee(app,role){ return app.roles==='*' || app.roles.indexOf(role)>=0; }
