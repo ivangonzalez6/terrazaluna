@@ -1096,6 +1096,7 @@ var MENU_CACHE_TTL=5*60*1000; // 5 minutos
 function _menuCacheValid(){return MENU.length>0&&(Date.now()-_menuCacheTs)<MENU_CACHE_TTL;}
 function invalidateMenuCache(){_menuCacheTs=0;} // llamar tras guardar cambios en admin
 
+
 function loadOrders(){return sfetch('/rest/v1/orders?id=eq.current&select=data').then(function(r){return(r&&r[0])?r[0].data:{};});}
 async function saveOrders(o){
   if(!isOnline()){showSaveErr('Sin conexión — orden no guardada');return Promise.resolve();}
@@ -2278,7 +2279,10 @@ async function rebuildMenuFromDB(){
   });
   MENU=newMenu;
   _menuCacheTs=Date.now();
-  if(MENU.length)curCat=MENU[0].cat;
+  if(MENU.length){
+    if(!MENU.find(function(g){return g.cat===curCat;}))curCat=MENU[0].cat;
+    if(!MENU.find(function(g){return g.cat===pMenuCat;}))pMenuCat=MENU[0].cat;
+  }
 }
 
 // ══ SUPABASE MENÚ ══
