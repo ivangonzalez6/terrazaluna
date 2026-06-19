@@ -270,16 +270,7 @@ async function registrar(){
 }
 
 function mostrarResultado(c){
-  document.getElementById('formCard').style.display='none';
-  const r=document.getElementById('result');r.style.display='block';
-  document.getElementById('welcomeName').textContent=`¡Hola, ${c.nombre.split(' ')[0]}!`;
-  const url=`${location.origin}/cliente?id=${c.id}`;
-  const qd=document.getElementById('qrcode');qd.innerHTML='';
-  new QRCode(qd,{text:url,width:180,height:180,colorDark:'#1a1610',colorLight:'#ffffff',correctLevel:QRCode.CorrectLevel.M});
-  const sellos=c.sellos||0;
-  const sr=document.getElementById('stampsRow');sr.innerHTML='';
-  for(let i=0;i<10;i++){const s=document.createElement('span');s.className='stamp '+(i<sellos?'full':'empty');s.textContent='🍹';sr.appendChild(s)}
-  document.getElementById('progressFill').style.width=(Math.min(sellos,10)*10)+'%';
+  window.location.href=`${location.origin}/cliente?id=${c.id}`;
 }
 
 function verTarjeta(){if(currentId)window.open('/cliente?id='+currentId,'_blank')}

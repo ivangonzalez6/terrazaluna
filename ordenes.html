@@ -3781,33 +3781,54 @@ async function startLoyaltyQrScan(){
   var area=gid('loyaltyQrScanArea'),video=gid('loyaltyQrVideo'),btn=gid('loyaltyQrToggleBtn'),status=gid('loyaltyQrStatus');
   if(!area||!video)return;
   try{
-    _loyaltyQrStream=await navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:'environment'},width:{ideal:1280},height:{ideal:720}}});
+    // Intentar cámara trasera; si falla, cualquier cámara disponible
+    try{
+      _loyaltyQrStream=await navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:'environment'}}});
+    }catch(e){
+      _loyaltyQrStream=await navigator.mediaDevices.getUserMedia({video:true});
+    }
     video.srcObject=_loyaltyQrStream;
     area.style.display='block';
     if(btn)btn.innerHTML='📷 Cerrar cámara';
-    // Asegurar que el video arranque aunque autoplay esté restringido
+    if(status)status.textContent='Apunta al código QR de la tarjeta…';
+    await new Promise(function(res){video.onloadedmetadata=res;});
     try{await video.play();}catch(e){}
-    // Escanear frames cada 200 ms
-    _loyaltyQrInterval=setInterval(function(){
-      var canvas=gid('loyaltyQrCanvas');
-      if(!canvas||!video||video.readyState<video.HAVE_ENOUGH_DATA||video.videoWidth===0)return;
-      canvas.width=video.videoWidth;canvas.height=video.videoHeight;
-      var ctx=canvas.getContext('2d');
-      ctx.drawImage(video,0,0,canvas.width,canvas.height);
-      var img=ctx.getImageData(0,0,canvas.width,canvas.height);
-      try{
-        var code=jsQR(img.data,img.width,img.height,{inversionAttempts:'attemptBoth'});
-        if(code&&code.data){
-          if(status)status.textContent='✓ QR detectado';
-          stopLoyaltyQrScan();
-          handleLoyaltyQrResult(code.data.trim());
-        }else{
-          if(status)status.textContent='Apunta al código QR de la tarjeta…';
-        }
-      }catch(e){}
-    },200);
+
+    // ── Método 1: BarcodeDetector (nativo, más confiable en Android/Chrome) ──
+    if('BarcodeDetector' in window){
+      var bdet=new BarcodeDetector({formats:['qr_code']});
+      _loyaltyQrInterval=setInterval(async function(){
+        if(!video||video.readyState<2||video.paused||video.videoWidth===0)return;
+        try{
+          var codes=await bdet.detect(video);
+          if(codes.length&&codes[0].rawValue){
+            if(status)status.textContent='✓ QR detectado';
+            stopLoyaltyQrScan();
+            handleLoyaltyQrResult(codes[0].rawValue.trim());
+          }
+        }catch(e){}
+      },200);
+    } else {
+      // ── Método 2: jsQR (fallback canvas) ──
+      _loyaltyQrInterval=setInterval(function(){
+        if(!video||video.readyState<video.HAVE_ENOUGH_DATA||video.videoWidth===0)return;
+        var canvas=gid('loyaltyQrCanvas');if(!canvas)return;
+        canvas.width=video.videoWidth;canvas.height=video.videoHeight;
+        var ctx=canvas.getContext('2d');
+        ctx.drawImage(video,0,0,canvas.width,canvas.height);
+        var img=ctx.getImageData(0,0,canvas.width,canvas.height);
+        try{
+          var code=jsQR(img.data,img.width,img.height,{inversionAttempts:'attemptBoth'});
+          if(code&&code.data){
+            if(status)status.textContent='✓ QR detectado';
+            stopLoyaltyQrScan();
+            handleLoyaltyQrResult(code.data.trim());
+          }
+        }catch(e){}
+      },200);
+    }
   }catch(e){
-    setLoyaltyScanMsg('No se pudo acceder a la cámara. Verifica los permisos.','err');
+    setLoyaltyScanMsg('No se pudo acceder a la cámara. Verifica los permisos del navegador.','err');
   }
 }
 
