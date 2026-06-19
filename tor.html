@@ -1,0 +1,771 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>Verdad o Reto · Terraza Luna</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;0,700;1,300;1,400;1,500&family=Inter+Tight:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+:root{
+  --bg:#f8f4eb;
+  --bg2:#ffffff;
+  --bg3:#faf5e8;
+  --ink:#1a1610;
+  --dim:#4a4337;
+  --faint:#7a7264;
+  --line:#ddd4be;
+  --line2:#c8b898;
+  --gold:#8a6420;
+  --golds:#6b4d18;
+  --gold-light:#f0e4c4;
+  --gold-pale:#faf5e8;
+  --truth:#1d4ed8;
+  --truth-bg:#eff6ff;
+  --truth-border:#bfdbfe;
+  --dare:#9b1c1c;
+  --dare-bg:#fff1f2;
+  --dare-border:#fecdd3;
+}
+html,body{
+  min-height:100%;
+  background:var(--bg);
+  color:var(--ink);
+  font-family:'Inter Tight',sans-serif;
+  overflow-x:hidden;
+}
+body::before{
+  content:'';
+  position:fixed;inset:0;
+  background:
+    radial-gradient(ellipse 80vw 60vh at 90% -5%,rgba(138,100,32,.06) 0%,transparent 60%),
+    radial-gradient(ellipse 60vw 50vh at -5% 100%,rgba(138,100,32,.04) 0%,transparent 60%);
+  pointer-events:none;z-index:0;
+}
+
+/* ── SCREENS ── */
+.screen{
+  position:fixed;inset:0;
+  display:flex;flex-direction:column;align-items:center;
+  padding:24px 20px 32px;
+  overflow-y:auto;
+  transition:opacity .3s,transform .3s;
+  z-index:1;
+}
+.screen.hidden{opacity:0;pointer-events:none;transform:scale(.97)}
+.inner{width:100%;max-width:420px;display:flex;flex-direction:column;gap:14px;margin:auto}
+
+/* ── TYPOGRAPHY ── */
+.hero-title{
+  font-family:'Cormorant Garamond',serif;
+  font-size:clamp(48px,10vw,72px);
+  font-weight:400;letter-spacing:.15em;text-transform:uppercase;
+  color:var(--ink);line-height:1;text-align:center;
+}
+.hero-ornament{
+  display:flex;align-items:center;justify-content:center;gap:14px;
+  margin:10px 0 6px;
+}
+.hero-ornament::before,.hero-ornament::after{
+  content:'';flex:1;max-width:70px;height:1px;
+  background:linear-gradient(90deg,transparent,var(--gold));
+}
+.hero-ornament::after{background:linear-gradient(270deg,transparent,var(--gold));}
+.hero-ornament-inner{
+  font-family:'Cormorant Garamond',serif;
+  font-size:17px;color:var(--gold);letter-spacing:.2em;font-style:italic;
+}
+.section-title{
+  font-family:'Cormorant Garamond',serif;
+  font-size:clamp(26px,5vw,36px);font-weight:600;
+  letter-spacing:.08em;text-transform:uppercase;color:var(--ink);
+}
+.section-label{
+  font-size:10px;letter-spacing:.3em;text-transform:uppercase;
+  color:var(--gold);font-weight:600;
+}
+.section-line{
+  display:flex;align-items:center;gap:10px;margin:4px 0 2px;
+}
+.section-line::before,.section-line::after{
+  content:'';flex:1;height:1px;
+  background:linear-gradient(90deg,transparent,var(--line2));
+}
+.section-line::after{background:linear-gradient(270deg,transparent,var(--line2));}
+.section-line-dot{width:5px;height:5px;border-radius:50%;background:var(--gold);flex-shrink:0;}
+
+/* ── CARDS ── */
+.card{
+  background:var(--bg2);border:1px solid var(--line);
+  border-radius:16px;padding:20px;
+  transition:box-shadow .2s;
+}
+
+/* ── INPUTS ── */
+input,select{
+  width:100%;background:var(--bg3);border:1px solid var(--line);
+  border-radius:10px;color:var(--ink);font-size:15px;
+  font-family:'Inter Tight',sans-serif;padding:13px 15px;
+  outline:none;transition:border .2s;
+}
+input:focus,select:focus{border-color:var(--gold);}
+input::placeholder{color:var(--faint);}
+
+/* ── BUTTONS ── */
+.btn{
+  display:flex;align-items:center;justify-content:center;gap:10px;
+  width:100%;padding:15px;border-radius:12px;border:none;
+  font-size:13px;font-weight:600;cursor:pointer;
+  transition:all .15s;font-family:'Inter Tight',sans-serif;
+  letter-spacing:.08em;text-transform:uppercase;
+}
+.btn:active{transform:scale(.97);}
+.btn:disabled{opacity:.45;cursor:not-allowed;transform:none;}
+.btn+.btn{margin-top:8px;}
+.btn-gold{background:var(--gold);color:#fff;}
+.btn-gold:hover{background:var(--golds);}
+.btn-outline{
+  background:transparent;color:var(--dim);
+  border:1px solid var(--line2);font-size:12px;
+}
+.btn-outline:hover{border-color:var(--gold);color:var(--gold);}
+.btn-truth{
+  background:var(--truth-bg);color:var(--truth);
+  border:1.5px solid var(--truth-border);
+  font-size:16px;padding:22px;border-radius:14px;
+  letter-spacing:.06em;text-transform:uppercase;
+}
+.btn-truth:hover{background:#dbeafe;border-color:var(--truth);}
+.btn-dare{
+  background:var(--dare-bg);color:var(--dare);
+  border:1.5px solid var(--dare-border);
+  font-size:16px;padding:22px;border-radius:14px;
+  letter-spacing:.06em;text-transform:uppercase;
+}
+.btn-dare:hover{background:#ffe4e6;border-color:var(--dare);}
+.btn-next{
+  background:var(--gold);color:#fff;
+  font-size:14px;padding:18px;border-radius:12px;
+  letter-spacing:.08em;
+}
+.btn-next:hover{background:var(--golds);}
+
+/* ── MODE CARDS ── */
+.mode-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+.mode-card{
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  gap:8px;padding:20px 12px;
+  background:var(--bg3);border:2px solid var(--line);
+  border-radius:14px;cursor:pointer;transition:all .2s;
+  text-align:center;
+}
+.mode-card:hover{border-color:var(--line2);}
+.mode-card.active{border-color:var(--gold);background:var(--gold-light);}
+.mode-card-icon{font-size:28px;line-height:1;}
+.mode-card-label{
+  font-family:'Cormorant Garamond',serif;
+  font-size:18px;font-weight:600;letter-spacing:.06em;
+  text-transform:uppercase;color:var(--ink);
+}
+.mode-card-sub{font-size:10px;color:var(--faint);letter-spacing:.05em;line-height:1.4;}
+.mode-card.active .mode-card-label{color:var(--gold);}
+.mode-card.active .mode-card-sub{color:var(--golds);}
+
+/* ── STEPPER ── */
+.stepper{
+  display:flex;align-items:center;justify-content:space-between;gap:16px;
+  background:var(--bg3);border:1px solid var(--line);
+  border-radius:12px;padding:10px 16px;
+}
+.stepper-val{
+  font-family:'Cormorant Garamond',serif;
+  font-size:36px;font-weight:600;color:var(--gold);
+  min-width:40px;text-align:center;line-height:1;
+}
+.stepper-btn{
+  background:transparent;border:1px solid var(--line2);color:var(--gold);
+  font-size:20px;cursor:pointer;width:40px;height:40px;border-radius:50%;
+  display:flex;align-items:center;justify-content:center;
+  transition:all .15s;font-family:'Cormorant Garamond',serif;
+}
+.stepper-btn:hover{background:var(--gold-light);border-color:var(--gold);}
+.stepper-btn:active{transform:scale(.93);}
+
+/* ── LEVEL TABS ── */
+.level-tabs{display:flex;gap:6px;flex-wrap:wrap;}
+.ltab{
+  flex:1;min-width:68px;padding:9px 6px;
+  border-radius:10px;border:1px solid var(--line);
+  background:var(--bg3);color:var(--faint);
+  font-size:11px;font-weight:600;cursor:pointer;
+  text-align:center;transition:all .2s;
+  font-family:'Inter Tight',sans-serif;letter-spacing:.05em;text-transform:uppercase;
+}
+.ltab.active{border-color:var(--gold);color:var(--gold);background:var(--gold-light);}
+.ltab:hover:not(.active){border-color:var(--line2);color:var(--dim);}
+
+/* ── GAME CODE ── */
+.game-code{
+  font-family:'Cormorant Garamond',serif;
+  font-size:52px;font-weight:600;letter-spacing:.2em;
+  color:var(--gold);text-align:center;
+  padding:18px;background:var(--gold-pale);
+  border-radius:14px;border:1px dashed var(--line2);line-height:1;
+}
+.share-url{
+  font-size:11px;color:var(--faint);text-align:center;
+  word-break:break-all;padding:10px 12px;
+  background:var(--bg3);border-radius:10px;
+  border:1px solid var(--line);margin-top:8px;
+}
+
+/* ── PLAYER PILLS ── */
+.player-pills{display:flex;flex-direction:column;gap:8px;max-height:35vh;overflow-y:auto;}
+.player-pill{
+  display:flex;align-items:center;gap:12px;
+  padding:10px 14px;background:var(--bg3);
+  border-radius:10px;border:1px solid var(--line);
+}
+.player-pill-name{font-size:14px;font-weight:500;color:var(--ink);}
+
+/* ── AVATARS ── */
+.avatar{
+  width:36px;height:36px;border-radius:50%;flex-shrink:0;
+  display:flex;align-items:center;justify-content:center;
+  font-size:12px;font-weight:700;color:#fff;
+  font-family:'Cormorant Garamond',serif;
+}
+.avatar-big{
+  width:88px;height:88px;border-radius:50%;
+  display:flex;align-items:center;justify-content:center;
+  font-size:30px;font-weight:600;color:#fff;
+  font-family:'Cormorant Garamond',serif;
+  box-shadow:0 4px 20px rgba(0,0,0,.12);
+}
+
+/* ── NAMES GRID ── */
+.names-grid{display:flex;flex-direction:column;gap:10px;max-height:45vh;overflow-y:auto;padding-right:2px;}
+.player-row{display:flex;align-items:center;gap:10px;}
+
+/* ── TURN SCREEN ── */
+#screen-game{background:var(--bg);justify-content:center;gap:24px;}
+.player-big{display:flex;flex-direction:column;align-items:center;gap:14px;}
+.turn-name{
+  font-family:'Cormorant Garamond',serif;
+  font-size:36px;font-weight:600;text-align:center;
+  color:var(--ink);letter-spacing:.04em;
+}
+.turn-sub{
+  font-size:11px;letter-spacing:.2em;text-transform:uppercase;
+  color:var(--faint);margin-top:2px;font-weight:500;
+}
+.choices{display:flex;flex-direction:column;gap:12px;width:100%;max-width:380px;}
+
+/* ── CARD SCREEN (dark reveal) ── */
+#screen-card{background:linear-gradient(180deg,#2a1f0e 0%,#1a1610 100%);}
+#screen-card::before{
+  content:'';position:fixed;top:-100px;right:-80px;
+  width:320px;height:320px;border-radius:50%;
+  background:radial-gradient(circle,rgba(212,168,75,.12),transparent 70%);
+  pointer-events:none;
+}
+.card-reveal{
+  display:flex;flex-direction:column;align-items:center;
+  justify-content:center;flex:1;width:100%;max-width:420px;
+  gap:6px;padding:8px 0;
+}
+.card-type-badge{
+  display:inline-flex;align-items:center;gap:8px;
+  padding:8px 22px;border-radius:999px;
+  font-size:11px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;
+  margin-bottom:16px;font-family:'Inter Tight',sans-serif;
+}
+.badge-truth{background:rgba(219,234,254,.15);color:#93c5fd;border:1px solid rgba(147,197,253,.35);}
+.badge-dare{background:rgba(254,226,226,.15);color:#fca5a5;border:1px solid rgba(252,165,165,.35);}
+.card-text{
+  font-family:'Cormorant Garamond',serif;
+  font-size:clamp(20px,5vw,28px);font-weight:500;
+  text-align:center;line-height:1.5;color:#f0e4c4;
+  padding:0 8px;max-width:380px;letter-spacing:.01em;
+}
+.level-chip{
+  font-size:10px;font-weight:600;letter-spacing:.2em;
+  text-transform:uppercase;padding:5px 14px;
+  border-radius:999px;margin-top:20px;
+  font-family:'Inter Tight',sans-serif;
+}
+.chip-familiar{background:rgba(134,239,172,.12);color:#86efac;}
+.chip-light{background:rgba(147,197,253,.12);color:#93c5fd;}
+.chip-hot{background:rgba(212,175,55,.12);color:#d4af37;}
+.chip-extremo{background:rgba(252,165,165,.12);color:#fca5a5;}
+.card-next-wrap{width:100%;max-width:420px;margin-top:20px;padding-bottom:8px;}
+
+/* ── ROUND BADGE ── */
+.round-badge{
+  position:fixed;top:16px;right:16px;
+  background:rgba(250,245,232,.95);border:1px solid var(--line2);
+  border-radius:999px;padding:5px 14px;font-size:10px;
+  color:var(--dim);font-weight:600;letter-spacing:.1em;text-transform:uppercase;
+  backdrop-filter:blur(8px);z-index:10;
+}
+#screen-card .round-badge{
+  background:rgba(42,31,14,.9);border-color:rgba(212,175,55,.3);color:#c9a35b;
+}
+
+/* ── MODE BADGE ── */
+.mode-badge{
+  position:fixed;top:16px;left:16px;
+  background:rgba(250,245,232,.95);border:1px solid var(--line2);
+  border-radius:999px;padding:5px 12px;font-size:10px;
+  color:var(--gold);font-weight:600;letter-spacing:.08em;text-transform:uppercase;
+  backdrop-filter:blur(8px);z-index:10;
+}
+#screen-card .mode-badge{
+  background:rgba(42,31,14,.9);border-color:rgba(212,175,55,.3);color:#c9a35b;
+}
+
+/* ── TOAST ── */
+.toast{
+  position:fixed;bottom:24px;left:50%;
+  transform:translateX(-50%) translateY(20px);
+  background:var(--ink);border:1px solid var(--gold);
+  border-radius:10px;padding:9px 18px;
+  font-size:12px;letter-spacing:.06em;color:var(--gold-light);
+  opacity:0;pointer-events:none;transition:all .3s;z-index:999;
+  white-space:nowrap;font-weight:600;
+}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+
+/* ── BRAND FOOTER ── */
+.brand-footer{
+  text-align:center;margin-top:4px;
+  padding-top:8px;border-top:1px solid var(--line);
+}
+.brand-name{
+  font-family:'Cormorant Garamond',serif;
+  font-size:15px;letter-spacing:.2em;text-transform:uppercase;color:var(--dim);
+}
+
+/* ── SCROLLBAR ── */
+::-webkit-scrollbar{width:4px;}
+::-webkit-scrollbar-track{background:transparent;}
+::-webkit-scrollbar-thumb{background:var(--line2);border-radius:4px;}
+
+@media(max-width:400px){
+  .hero-title{letter-spacing:.1em;}
+  .btn-truth,.btn-dare{font-size:15px;padding:19px;}
+  .game-code{font-size:42px;}
+  .mode-card-icon{font-size:24px;}
+  .mode-card-label{font-size:16px;}
+}
+</style>
+</head>
+<body>
+
+<!-- ══ BIENVENIDA ══ -->
+<div class="screen" id="screen-welcome">
+  <div class="inner" style="padding:16px 0">
+    <div style="text-align:center;padding:8px 0 4px">
+      <div class="section-label">Terraza Luna</div>
+      <h1 class="hero-title">Verdad<br>o Reto</h1>
+      <div class="hero-ornament">
+        <div class="hero-ornament-inner">El clásico de las noches épicas</div>
+      </div>
+    </div>
+
+    <button class="btn btn-gold" onclick="goSetup()">Nuevo juego</button>
+
+    <div class="card">
+      <div class="section-label" style="margin-bottom:10px">Unirse con código</div>
+      <div style="display:flex;gap:8px">
+        <input id="joinCode" placeholder="Ej: XBTA2" maxlength="6"
+          style="text-transform:uppercase;letter-spacing:.25em;font-size:17px;font-weight:600;text-align:center">
+        <button class="btn btn-outline" style="width:auto;padding:0 18px;min-width:80px;white-space:nowrap" onclick="joinGame()">Entrar</button>
+      </div>
+    </div>
+
+    <div class="brand-footer">
+      <div class="brand-name">Terraza Luna</div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ CONFIGURACIÓN ══ -->
+<div class="screen hidden" id="screen-setup">
+  <div class="inner">
+    <div>
+      <div class="section-label">Nuevo juego</div>
+      <h2 class="section-title">Configuración</h2>
+      <div class="section-line"><div class="section-line-dot"></div></div>
+    </div>
+
+    <div class="card">
+      <div class="section-label" style="margin-bottom:12px">Modalidad</div>
+      <div class="mode-grid">
+        <div class="mode-card active" id="modePresencial" onclick="setMode('presencial')">
+          <div class="mode-card-icon">🏠</div>
+          <div class="mode-card-label">En persona</div>
+          <div class="mode-card-sub">Retos físicos y presenciales</div>
+        </div>
+        <div class="mode-card" id="modeDistancia" onclick="setMode('distancia')">
+          <div class="mode-card-icon">📱</div>
+          <div class="mode-card-label">A distancia</div>
+          <div class="mode-card-sub">Retos por videollamada o chat</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="section-label" style="margin-bottom:12px">Número de jugadores</div>
+      <div class="stepper">
+        <button class="stepper-btn" onclick="changeCount(-1)">−</button>
+        <span class="stepper-val" id="countVal">4</span>
+        <button class="stepper-btn" onclick="changeCount(1)">+</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="section-label" style="margin-bottom:12px">Nivel del juego</div>
+      <div class="level-tabs">
+        <button class="ltab active" data-level="mixto" onclick="setLevel(this)">Mixto</button>
+        <button class="ltab" data-level="familiar" onclick="setLevel(this)">Familiar</button>
+        <button class="ltab" data-level="light" onclick="setLevel(this)">Light</button>
+        <button class="ltab" data-level="hot" onclick="setLevel(this)">Hot 🌶</button>
+        <button class="ltab" data-level="extremo" onclick="setLevel(this)">Extremo 🔥</button>
+      </div>
+    </div>
+
+    <button class="btn btn-gold" onclick="goNames()">Continuar</button>
+    <button class="btn btn-outline" onclick="show('welcome')">← Volver</button>
+  </div>
+</div>
+
+<!-- ══ NOMBRES ══ -->
+<div class="screen hidden" id="screen-names">
+  <div class="inner">
+    <div>
+      <div class="section-label">Nuevo juego</div>
+      <h2 class="section-title">¿Quiénes juegan?</h2>
+      <div class="section-line"><div class="section-line-dot"></div></div>
+    </div>
+    <div class="card">
+      <div class="section-label" style="margin-bottom:12px">Nombres de los jugadores</div>
+      <div class="names-grid" id="namesGrid"></div>
+    </div>
+    <button class="btn btn-gold" id="createBtn" onclick="createGame()">Crear juego</button>
+    <button class="btn btn-outline" onclick="show('setup')">← Volver</button>
+  </div>
+</div>
+
+<!-- ══ LOBBY ══ -->
+<div class="screen hidden" id="screen-lobby">
+  <div class="inner">
+    <div style="text-align:center">
+      <div class="section-label" style="margin-bottom:10px">Código del juego</div>
+      <div class="game-code" id="lobbyCode">-----</div>
+      <div class="share-url" id="shareUrl"></div>
+      <button class="btn btn-outline" style="margin-top:8px;width:auto;padding:9px 22px;font-size:11px;margin-left:auto;margin-right:auto" onclick="copyLink()">Copiar link</button>
+    </div>
+    <div class="card">
+      <div class="section-label" style="margin-bottom:12px">Jugadores (<span id="lobbyCount">0</span>)</div>
+      <div class="player-pills" id="lobbyPlayers"></div>
+    </div>
+    <div class="card" style="display:flex;gap:16px;align-items:center">
+      <div style="flex:1">
+        <div class="section-label" style="margin-bottom:4px">Nivel</div>
+        <div id="lobbyLevelLabel" style="font-family:'Cormorant Garamond',serif;font-size:20px;font-weight:600;color:var(--ink)"></div>
+      </div>
+      <div>
+        <div class="section-label" style="margin-bottom:4px">Modalidad</div>
+        <div id="lobbyModeLabel" style="font-family:'Cormorant Garamond',serif;font-size:20px;font-weight:600;color:var(--ink)"></div>
+      </div>
+    </div>
+    <button class="btn btn-gold" id="startBtn" onclick="startGame()">Iniciar juego</button>
+    <button class="btn btn-outline" style="font-size:11px;padding:11px" onclick="window.location.href=window.location.pathname">← Inicio</button>
+  </div>
+</div>
+
+<!-- ══ TURNO ══ -->
+<div class="screen hidden" id="screen-game">
+  <div class="round-badge" id="roundBadge">Ronda 1</div>
+  <div class="mode-badge" id="gameModeLabel"></div>
+  <div class="player-big">
+    <div class="avatar-big" id="turnAvatar">?</div>
+    <div style="text-align:center">
+      <div class="turn-name" id="turnName">Jugador</div>
+      <div class="turn-sub">Es tu turno · ¿Qué eliges?</div>
+    </div>
+  </div>
+  <div class="choices">
+    <button class="btn btn-truth" onclick="pickCard('truth')">🫦 Verdad</button>
+    <button class="btn btn-dare" onclick="pickCard('dare')">🎯 Reto</button>
+  </div>
+</div>
+
+<!-- ══ CARTA ══ -->
+<div class="screen hidden" id="screen-card">
+  <div class="round-badge" id="cardRoundBadge">Ronda 1</div>
+  <div class="mode-badge" id="cardModeLabel"></div>
+  <div class="card-reveal">
+    <div class="avatar-big" id="cardAvatar" style="width:64px;height:64px;font-size:22px;margin-bottom:10px"></div>
+    <div id="cardBadge"></div>
+    <div class="card-text" id="cardText">…</div>
+    <div id="cardLevel"></div>
+  </div>
+  <div class="card-next-wrap">
+    <button class="btn btn-next" id="nextBtn" onclick="nextTurn()">Siguiente →</button>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const SB='https://biuaxkpyujypiigxolwt.supabase.co';
+const SK='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJpdWF4a3B5dWp5cGlpZ3hvbHd0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk5MDY1ODUsImV4cCI6MjA5NTQ4MjU4NX0.4MJ2WfTo6tDNImcN0E5RCy4ilU2-sXnmRb6_BB85YaQ';
+const COLORS=['#E74C3C','#3498DB','#2ECC71','#F39C12','#9B59B6','#1ABC9C','#E67E22','#E91E63','#00BCD4','#FF6B6B'];
+const LEVELS={
+  familiar:{label:'Familiar',chip:'chip-familiar'},
+  light:{label:'Light',chip:'chip-light'},
+  hot:{label:'Hot 🌶',chip:'chip-hot'},
+  extremo:{label:'Extremo 🔥',chip:'chip-extremo'},
+  mixto:{label:'Mixto',chip:'chip-light'}
+};
+const MODES={presencial:{label:'En persona',icon:'🏠'},distancia:{label:'A distancia',icon:'📱'}};
+
+// ── State ──
+let playerCount=4, selectedLevel='mixto', selectedMode='presencial', game=null;
+let allQ=[], allD=[], usedQIdx=[], usedDIdx=[];
+
+// ── API ──
+const h=()=>({'apikey':SK,'Authorization':'Bearer '+SK,'Content-Type':'application/json'});
+async function sbGet(t,f){var r=await fetch(SB+'/rest/v1/'+t+(f||''),{headers:h()});return r.json();}
+async function sbPost(t,b){var r=await fetch(SB+'/rest/v1/'+t,{method:'POST',headers:Object.assign({},h(),{'Prefer':'return=representation'}),body:JSON.stringify(b)});return r.json();}
+async function sbPatch(t,b){return fetch(SB+'/rest/v1/'+t,{method:'PATCH',headers:Object.assign({},h(),{'Prefer':'return=minimal'}),body:JSON.stringify(b)});}
+
+// ── Helpers ──
+function show(s){document.querySelectorAll('.screen').forEach(function(el){el.classList.toggle('hidden',el.id!=='screen-'+s);});}
+function toast(m,dur){var t=document.getElementById('toast');t.textContent=m;t.classList.add('show');clearTimeout(t._t);t._t=setTimeout(function(){t.classList.remove('show');},dur||2200);}
+function esc(s){return String(s).replace(/[&<>"']/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];});}
+function uid5(){return Math.random().toString(36).substr(2,6).toUpperCase();}
+function ini(n){return n.trim().substring(0,2).toUpperCase();}
+function col(i){return COLORS[i%COLORS.length];}
+function setRoundBadge(r){document.querySelectorAll('.round-badge').forEach(function(el){el.textContent='Ronda '+(r||1);});}
+function setModeBadges(mode){
+  var m=MODES[mode]||MODES.presencial;
+  var label=m.icon+' '+m.label;
+  document.querySelectorAll('.mode-badge').forEach(function(el){el.textContent=label;});
+}
+
+// ── Setup ──
+function goSetup(){show('setup');}
+function setMode(m){
+  selectedMode=m;
+  document.getElementById('modePresencial').classList.toggle('active',m==='presencial');
+  document.getElementById('modeDistancia').classList.toggle('active',m==='distancia');
+}
+function changeCount(d){playerCount=Math.max(2,Math.min(10,playerCount+d));document.getElementById('countVal').textContent=playerCount;}
+function setLevel(btn){selectedLevel=btn.dataset.level;document.querySelectorAll('.ltab').forEach(function(b){b.classList.toggle('active',b===btn);});}
+function goNames(){
+  show('names');
+  var g=document.getElementById('namesGrid');g.innerHTML='';
+  for(var i=0;i<playerCount;i++){
+    var row=document.createElement('div');row.className='player-row';
+    row.innerHTML='<div class="avatar" style="background:'+col(i)+'">'+(i+1)+'</div><input placeholder="Jugador '+(i+1)+'" maxlength="20">';
+    g.appendChild(row);
+  }
+  setTimeout(function(){var f=document.querySelector('#namesGrid input');if(f)f.focus();},200);
+}
+
+// ── Create game ──
+async function createGame(){
+  var inputs=document.querySelectorAll('#namesGrid input');
+  var players=[];
+  inputs.forEach(function(inp,i){
+    players.push({name:(inp.value.trim()||'Jugador '+(i+1)),color:col(i)});
+  });
+  var btn=document.getElementById('createBtn');btn.disabled=true;btn.textContent='Creando…';
+  var id=uid5();
+  try{
+    await sbPost('tor_games',{id:id,players:players,level:selectedLevel,mode:selectedMode,status:'lobby',current_player_index:0,round:1});
+    game={id:id,players:players,level:selectedLevel,mode:selectedMode,status:'lobby',current_player_index:0,round:1,current_card:null};
+    showLobby();
+  }catch(e){toast('Error al crear partida');btn.disabled=false;btn.textContent='Crear juego';}
+}
+
+// ── Lobby ──
+function showLobby(){
+  document.getElementById('lobbyCode').textContent=game.id;
+  var url=window.location.origin+window.location.pathname+'?id='+game.id;
+  document.getElementById('shareUrl').textContent=url;
+  renderLobbyPlayers();
+  document.getElementById('lobbyLevelLabel').textContent=LEVELS[game.level]?LEVELS[game.level].label:game.level;
+  var gm=game.mode||'presencial';
+  document.getElementById('lobbyModeLabel').textContent=(MODES[gm]?MODES[gm].icon+' '+MODES[gm].label:'En persona');
+  show('lobby');
+  startRealtime();
+}
+function renderLobbyPlayers(){
+  var pp=document.getElementById('lobbyPlayers');pp.innerHTML='';
+  document.getElementById('lobbyCount').textContent=game.players.length;
+  game.players.forEach(function(p){
+    var d=document.createElement('div');d.className='player-pill';
+    d.innerHTML='<div class="avatar" style="background:'+p.color+'">'+ini(p.name)+'</div><span class="player-pill-name">'+esc(p.name)+'</span>';
+    pp.appendChild(d);
+  });
+}
+function copyLink(){
+  var url=window.location.origin+window.location.pathname+'?id='+game.id;
+  navigator.clipboard.writeText(url).then(function(){toast('Link copiado');}).catch(function(){toast(url);});
+}
+
+// ── Join ──
+async function joinGame(){
+  var code=document.getElementById('joinCode').value.trim().toUpperCase();
+  if(!code){toast('Ingresa el código');return;}
+  try{
+    var rows=await sbGet('tor_games','?id=eq.'+code+'&select=*');
+    if(!rows||!rows.length){toast('Código no encontrado');return;}
+    game=rows[0];
+    if(game.status==='lobby'){showLobby();}
+    else if(game.status==='playing'){loadCardsAndPlay();}
+    else{toast('El juego ya terminó');}
+  }catch(e){toast('Error de conexión');}
+}
+
+// ── Start ──
+async function startGame(){
+  var btn=document.getElementById('startBtn');btn.disabled=true;btn.textContent='Iniciando…';
+  await sbPatch('tor_games?id=eq.'+game.id,{status:'playing',current_player_index:0,round:1,current_card:null});
+  game.status='playing';game.current_player_index=0;game.round=1;game.current_card=null;
+  await loadCardsAndPlay();
+  btn.disabled=false;btn.textContent='Iniciar juego';
+}
+
+// ── Load cards ──
+async function loadCardsAndPlay(){
+  if(!allQ.length||!allD.length){
+    var lvl=game.level;
+    var mode=game.mode||'presencial';
+    var qf=lvl==='mixto'?'?order=id.asc':'?level=eq.'+lvl+'&order=id.asc';
+    var df=lvl==='mixto'
+      ?'?mode=eq.'+mode+'&order=id.asc'
+      :'?level=eq.'+lvl+'&mode=eq.'+mode+'&order=id.asc';
+    var [qs,ds]=await Promise.all([sbGet('tor_questions',qf),sbGet('tor_dares',df)]);
+    allQ=shuffle(qs||[]);allD=shuffle(ds||[]);
+    usedQIdx=[];usedDIdx=[];
+  }
+  setModeBadges(game.mode||'presencial');
+  showTurn();
+}
+
+function shuffle(arr){
+  for(var i=arr.length-1;i>0;i--){var j=Math.floor(Math.random()*(i+1));var t=arr[i];arr[i]=arr[j];arr[j]=t;}
+  return arr;
+}
+
+// ── Turn ──
+function showTurn(){
+  show('game');
+  var p=game.players[game.current_player_index||0];
+  document.getElementById('turnAvatar').textContent=ini(p.name);
+  document.getElementById('turnAvatar').style.background=p.color;
+  document.getElementById('turnName').textContent=p.name;
+  setRoundBadge(game.round);
+  setModeBadges(game.mode||'presencial');
+  document.querySelectorAll('.btn-truth,.btn-dare').forEach(function(b){b.disabled=false;});
+}
+
+// ── Pick card ──
+async function pickCard(type){
+  document.querySelectorAll('.btn-truth,.btn-dare').forEach(function(b){b.disabled=true;});
+  var pool=type==='truth'?allQ:allD;
+  var usedIdx=type==='truth'?usedQIdx:usedDIdx;
+  if(usedIdx.length>=pool.length){
+    if(type==='truth')usedQIdx=[];else usedDIdx=[];
+    usedIdx=type==='truth'?usedQIdx:usedDIdx;
+    toast('Cartas mezcladas de nuevo');
+  }
+  var available=pool.filter(function(_,i){return usedIdx.indexOf(i)<0;});
+  var pick=available[Math.floor(Math.random()*available.length)];
+  var pickIdx=pool.indexOf(pick);
+  usedIdx.push(pickIdx);
+  var card={type:type,text:pick.text,level:pick.level};
+  game.current_card=card;
+  sbPatch('tor_games?id=eq.'+game.id,{current_card:card,current_player_index:game.current_player_index,round:game.round,updated_at:new Date().toISOString()});
+  showCard(card);
+}
+
+function showCard(card){
+  show('card');
+  var p=game.players[game.current_player_index||0];
+  document.getElementById('cardAvatar').textContent=ini(p.name);
+  document.getElementById('cardAvatar').style.background=p.color;
+  document.getElementById('cardText').textContent=card.text;
+  var isT=card.type==='truth';
+  document.getElementById('cardBadge').innerHTML='<div class="card-type-badge '+(isT?'badge-truth':'badge-dare')+'">'+(isT?'🫦 Verdad':'🎯 Reto')+'</div>';
+  var lv=card.level||'familiar';
+  var lc=LEVELS[lv]?LEVELS[lv].chip:'chip-familiar';
+  document.getElementById('cardLevel').innerHTML='<div class="level-chip '+lc+'">'+lv.toUpperCase()+'</div>';
+  setRoundBadge(game.round);
+  setModeBadges(game.mode||'presencial');
+}
+
+// ── Next turn ──
+async function nextTurn(){
+  var n=game.players.length;
+  var next=(game.current_player_index+1)%n;
+  var newRound=game.round+(next===0?1:0);
+  game.current_player_index=next;
+  game.round=newRound;
+  game.current_card=null;
+  await sbPatch('tor_games?id=eq.'+game.id,{current_player_index:next,round:newRound,current_card:null,updated_at:new Date().toISOString()});
+  showTurn();
+}
+
+// ── Realtime ──
+var _ws=null,_wsRef=0,_wsHb=null;
+function startRealtime(){
+  if(_ws)return;
+  try{
+    var wsUrl=SB.replace('https://','wss://')+'/realtime/v1/websocket?apikey='+SK+'&vsn=1.0.0';
+    _ws=new WebSocket(wsUrl);
+    _ws.onopen=function(){
+      _ws.send(JSON.stringify({topic:'realtime:public:tor_games:id=eq.'+game.id,event:'phx_join',payload:{config:{postgres_changes:[{event:'UPDATE',schema:'public',table:'tor_games',filter:'id=eq.'+game.id}]}},ref:String(++_wsRef)}));
+      _wsHb=setInterval(function(){if(_ws.readyState===1)_ws.send(JSON.stringify({topic:'phoenix',event:'heartbeat',payload:{},ref:String(++_wsRef)}));},25000);
+    };
+    _ws.onmessage=function(m){
+      try{
+        var d=JSON.parse(m.data);
+        if(d&&d.event==='postgres_changes'&&d.payload&&d.payload.record){
+          var rec=d.payload.record;
+          game=Object.assign(game,rec);
+          syncDisplay();
+        }
+      }catch(e){}
+    };
+    _ws.onclose=function(){clearInterval(_wsHb);_ws=null;setTimeout(startRealtime,4000);};
+    _ws.onerror=function(){try{_ws.close();}catch(e){}};
+  }catch(e){}
+}
+
+function syncDisplay(){
+  var cur=document.querySelector('.screen:not(.hidden)');
+  if(!cur)return;
+  var id=cur.id;
+  if(game.status==='playing'){
+    if(game.current_card){showCard(game.current_card);}
+    else{showTurn();}
+  }else if(game.status==='lobby'&&id!=='screen-lobby'){showLobby();}
+}
+
+// ── Init ──
+(function(){
+  var p=new URLSearchParams(window.location.search);
+  var id=p.get('id');
+  if(id){document.getElementById('joinCode').value=id;joinGame();}
+})();
+</script>
+</body>
+</html>
