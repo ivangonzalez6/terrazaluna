@@ -134,6 +134,15 @@ textarea{resize:none;line-height:1.5;}
 .round-badge{position:fixed;top:16px;right:16px;background:rgba(250,245,232,.95);border:1px solid var(--line2);border-radius:999px;padding:5px 14px;font-size:10px;color:var(--dim);font-weight:600;letter-spacing:.1em;text-transform:uppercase;backdrop-filter:blur(8px);z-index:10;}
 #screen-card .round-badge{background:rgba(42,31,14,.9);border-color:rgba(212,175,55,.2);color:#c9a35b;}
 
+/* ── LEVEL BADGE (top-left durante el juego) ── */
+.level-badge{position:fixed;top:16px;left:16px;background:rgba(250,245,232,.95);border:1px solid var(--line2);border-radius:999px;padding:5px 14px;font-size:10px;color:var(--gold);font-weight:600;letter-spacing:.1em;text-transform:uppercase;backdrop-filter:blur(8px);z-index:10;}
+#screen-card .level-badge{background:rgba(42,31,14,.9);border-color:rgba(212,175,55,.2);color:#c9a35b;}
+
+/* ── WELCOME MODAL ── */
+.welcome-sheet{text-align:center;padding:36px 24px 32px;}
+.welcome-sheet .overlay-title{font-size:28px;letter-spacing:.08em;}
+.welcome-user-name{font-family:'Cormorant Garamond',serif;font-size:38px;font-weight:600;color:var(--gold);letter-spacing:.06em;margin-top:10px;line-height:1.2;}
+
 /* ── GAME BOTTOM BAR ── */
 .game-bar{position:fixed;bottom:0;left:0;right:0;z-index:20;background:rgba(248,244,235,.97);border-top:1px solid var(--line);backdrop-filter:blur(12px);padding:10px 16px 14px;display:flex;align-items:center;gap:8px;}
 #screen-card .game-bar{background:rgba(26,22,16,.97);border-top-color:rgba(212,175,55,.15);}
@@ -329,6 +338,7 @@ textarea{resize:none;line-height:1.5;}
 
 <!-- ══ TURNO ══ -->
 <div class="screen hidden" id="screen-game">
+  <div class="level-badge" id="levelBadge">Mixto</div>
   <div class="round-badge" id="roundBadge">Ronda 1</div>
   <div class="player-big">
     <div class="avatar-big" id="turnAvatar">?</div>
@@ -347,13 +357,13 @@ textarea{resize:none;line-height:1.5;}
       <div class="game-bar-val" id="barCode1">------</div>
     </div>
     <button class="game-bar-btn" onclick="openInviteOverlay()">Invitar</button>
-    <button class="game-bar-btn" onclick="shareGame()">Compartir</button>
     <button class="game-bar-btn" onclick="openOptionsOverlay()">Opciones</button>
   </div>
 </div>
 
 <!-- ══ CARTA ══ -->
 <div class="screen hidden" id="screen-card">
+  <div class="level-badge" id="cardLevelBadge">Mixto</div>
   <div class="round-badge" id="cardRoundBadge">Ronda 1</div>
   <div class="card-reveal">
     <div class="avatar-big" id="cardAvatar" style="width:64px;height:64px;font-size:22px;margin-bottom:10px"></div>
@@ -370,7 +380,6 @@ textarea{resize:none;line-height:1.5;}
       <div class="game-bar-val" id="barCode2">------</div>
     </div>
     <button class="game-bar-btn" onclick="openInviteOverlay()">Invitar</button>
-    <button class="game-bar-btn" onclick="shareGame()">Compartir</button>
     <button class="game-bar-btn" onclick="openOptionsOverlay()">Opciones</button>
   </div>
 </div>
@@ -412,10 +421,6 @@ textarea{resize:none;line-height:1.5;}
   <div class="overlay-sheet">
     <div class="overlay-title">Opciones</div>
     <div class="overlay-sub">Acciones durante el juego</div>
-    <div class="menu-item" onclick="closeOverlay('optionsOverlay');shareGame()">
-      <div><div class="menu-item-label">Compartir</div><div class="menu-item-sub">Manda el link por WhatsApp o redes</div></div>
-      <div class="menu-item-arrow">›</div>
-    </div>
     <div class="menu-item" onclick="closeOverlay('optionsOverlay');openAddPlayerOverlay()">
       <div><div class="menu-item-label">Agregar jugador</div><div class="menu-item-sub">Entra en el siguiente turno</div></div>
       <div class="menu-item-arrow">›</div>
@@ -471,11 +476,19 @@ textarea{resize:none;line-height:1.5;}
   </div>
 </div>
 
+<!-- Bienvenida (auto-dismiss 1s) -->
+<div class="overlay hidden" id="welcomeOverlay" style="align-items:center;justify-content:center;padding:0 20px;">
+  <div class="overlay-sheet welcome-sheet" style="border-radius:20px;max-width:320px;width:100%;">
+    <div class="overlay-title welcome-sheet">¡Bienvenid@!</div>
+    <div class="welcome-user-name" id="welcomeName"></div>
+  </div>
+</div>
+
 <!-- Registro: teléfono -->
 <div class="overlay hidden" id="regOverlay">
   <div class="overlay-sheet">
     <div class="overlay-title">¡Bienvenido!</div>
-    <div class="overlay-sub">Para empezar ingresa tu número de teléfono. Solo lo pedimos una vez.</div>
+    <div class="overlay-sub">Ingresa tu número para personalizar tu experiencia y llevar registro de las preguntas que ya viste.</div>
     <input id="regPhone" type="tel" placeholder="+52 999 000 0000" maxlength="20" onkeydown="if(event.key==='Enter')submitPhone()" style="letter-spacing:.05em;font-size:17px;text-align:center">
     <div id="regPhoneError" style="font-size:11px;color:#c0392b;margin-top:6px;min-height:16px;letter-spacing:.02em"></div>
     <button class="btn btn-gold" style="margin-top:10px" onclick="submitPhone()">Continuar</button>
@@ -511,6 +524,8 @@ const LEVELS={
 // ── State ──
 var playerCount=4, selectedLevel='mixto', selectedMode='presencial', selectedCardType='truth', game=null;
 var _pendingPhone='';
+var _userPhone='', _userSeenQ=[], _userSeenD=[];
+var _INACTIVITY_MS=10*60*1000; // 10 minutos
 // Card pools
 var allQ=[], allD=[];         // main / fallback pool
 var allQComm=[], allDComm=[]; // community pool
@@ -533,6 +548,10 @@ function uid5(){return Math.random().toString(36).substr(2,6).toUpperCase();}
 function ini(n){return n.trim().substring(0,2).toUpperCase();}
 function col(i){return COLORS[i%COLORS.length];}
 function setRoundBadge(r){document.querySelectorAll('.round-badge').forEach(function(el){el.textContent='Ronda '+(r||1);});}
+function updateLevelBadge(){
+  var lbl=game?(LEVELS[game.level]?LEVELS[game.level].label:game.level):'';
+  document.querySelectorAll('.level-badge').forEach(function(el){el.textContent=lbl;});
+}
 function setBarCodes(id){document.getElementById('barCode1').textContent=id||'------';document.getElementById('barCode2').textContent=id||'------';}
 function gameUrl(){var base=window.location.origin+window.location.pathname;return game?base+'?id='+game.id:base;}
 function shuffle(arr){for(var i=arr.length-1;i>0;i--){var j=Math.floor(Math.random()*(i+1));var t=arr[i];arr[i]=arr[j];arr[j]=t;}return arr;}
@@ -549,11 +568,54 @@ function shareGame(){
   }
 }
 
+// ── Session ──
+function touchActivity(){localStorage.setItem('tor_last_activity',Date.now().toString());}
+function isSessionExpired(){
+  var last=parseInt(localStorage.getItem('tor_last_activity')||'0');
+  if(!last)return false;
+  return (Date.now()-last)>_INACTIVITY_MS;
+}
+
+// ── Welcome modal ──
+function showWelcomeModal(name){
+  document.getElementById('welcomeName').textContent=name;
+  document.getElementById('welcomeOverlay').classList.remove('hidden');
+  setTimeout(function(){document.getElementById('welcomeOverlay').classList.add('hidden');},1100);
+}
+
+// ── User seen history ──
+async function loadUserSeen(){
+  if(!_userPhone)return;
+  try{
+    var rows=await sbGet('tor_user_seen','?phone=eq.'+encodeURIComponent(_userPhone)+'&select=card_type,card_id');
+    _userSeenQ=(rows||[]).filter(function(r){return r.card_type==='q';}).map(function(r){return r.card_id;});
+    _userSeenD=(rows||[]).filter(function(r){return r.card_type==='d';}).map(function(r){return r.card_id;});
+  }catch(e){}
+}
+function markCardSeen(cardId,isQ){
+  if(!_userPhone||!cardId)return;
+  var type=isQ?'q':'d';
+  if(isQ){if(_userSeenQ.indexOf(cardId)<0)_userSeenQ.push(cardId);}
+  else{if(_userSeenD.indexOf(cardId)<0)_userSeenD.push(cardId);}
+  sbPost('tor_user_seen',{phone:_userPhone,card_type:type,card_id:cardId}).catch(function(){});
+}
+
 // ── User registration ──
 function goSetup(){
   resetPools();game=null;stopRealtime();
   var saved=JSON.parse(localStorage.getItem('tor_user')||'null');
-  if(saved){show('setup');return;}
+  if(saved&&!isSessionExpired()){
+    _userPhone=saved.phone;
+    loadUserSeen();
+    show('setup');
+    return;
+  }
+  // Sesión expirada o usuario no registrado
+  if(isSessionExpired()){
+    localStorage.removeItem('tor_user');
+    localStorage.removeItem('tor_last_activity');
+  }
+  _userPhone='';_userSeenQ=[];_userSeenD=[];
   document.getElementById('regPhone').value='';
   document.getElementById('regPhoneError').textContent='';
   document.getElementById('regOverlay').classList.remove('hidden');
@@ -566,11 +628,18 @@ async function submitPhone(){
   try{
     var rows=await sbGet('tor_users','?phone=eq.'+encodeURIComponent(phone)+'&select=id,name');
     if(rows&&rows.length){
-      localStorage.setItem('tor_user',JSON.stringify({phone:phone,name:rows[0].name}));
+      // Usuario registrado
+      _userPhone=phone;
+      var name=rows[0].name;
+      localStorage.setItem('tor_user',JSON.stringify({phone:phone,name:name}));
+      touchActivity();
       document.getElementById('regOverlay').classList.add('hidden');
       show('setup');
+      showWelcomeModal(name);
+      loadUserSeen();
       return;
     }
+    // Número no registrado → pedir nombre
     _pendingPhone=phone;
     document.getElementById('regOverlay').classList.add('hidden');
     document.getElementById('regName').value='';
@@ -584,9 +653,13 @@ async function submitName(){
   if(!name){toast('Escribe tu nombre');return;}
   try{
     await sbPost('tor_users',{phone:_pendingPhone,name:name});
+    _userPhone=_pendingPhone;
+    _userSeenQ=[];_userSeenD=[];
     localStorage.setItem('tor_user',JSON.stringify({phone:_pendingPhone,name:name}));
+    touchActivity();
     document.getElementById('regNameOverlay').classList.add('hidden');
     show('setup');
+    showWelcomeModal(name);
   }catch(e){toast('Error al guardar, intenta de nuevo');}
 }
 function setMode(m){selectedMode=m;document.getElementById('modePresencial').classList.toggle('active',m==='presencial');document.getElementById('modeDistancia').classList.toggle('active',m==='distancia');}
@@ -618,6 +691,9 @@ async function createGame(){
     }
   });
   if(hasError){toast('Completa todos los nombres');return;}
+  // Verificar nombres únicos
+  var nameSet=new Set(players.map(function(p){return p.name.toLowerCase();}));
+  if(nameSet.size!==players.length){toast('No puede haber nombres repetidos');return;}
   var btn=document.getElementById('createBtn');btn.disabled=true;btn.textContent='Creando…';
   var id=uid5();
   try{
@@ -711,7 +787,25 @@ async function loadCardsAndPlay(){
     allQ=shuffle(res2[0]||[]);allD=shuffle(res2[1]||[]);
     commQDone=true;commDDone=true;
   }
+  // Filtrar cartas ya vistas por este usuario
+  if(_userPhone&&_userSeenQ.length){
+    var fq=allQ.filter(function(c){return _userSeenQ.indexOf(c.id)<0;});
+    if(fq.length>0)allQ=fq;
+  }
+  if(_userPhone&&_userSeenD.length){
+    var fd=allD.filter(function(c){return _userSeenD.indexOf(c.id)<0;});
+    if(fd.length>0)allD=fd;
+  }
+  if(_userPhone&&_userSeenQ.length&&allQComm.length){
+    var fqc=allQComm.filter(function(c){return _userSeenQ.indexOf(c.id)<0;});
+    if(fqc.length>0)allQComm=fqc;
+  }
+  if(_userPhone&&_userSeenD.length&&allDComm.length){
+    var fdc=allDComm.filter(function(c){return _userSeenD.indexOf(c.id)<0;});
+    if(fdc.length>0)allDComm=fdc;
+  }
   setBarCodes(game.id);
+  updateLevelBadge();
   showTurn();
 }
 
@@ -762,6 +856,7 @@ function showTurn(){
   document.getElementById('turnName').textContent=p.name;
   setRoundBadge(game.round);
   setBarCodes(game.id);
+  updateLevelBadge();
   document.querySelectorAll('.btn-truth,.btn-dare').forEach(function(b){b.disabled=false;});
 }
 
@@ -773,6 +868,9 @@ async function pickCard(type){
   var cardLevel=result.level||pick.level||'familiar';
   var card={type:type,text:pick.text,level:cardLevel};
   game.current_card=card;
+  // Registrar carta vista y actividad
+  markCardSeen(pick.id, type==='truth');
+  touchActivity();
   sbPatch('tor_games?id=eq.'+game.id,{current_card:card,current_player_index:game.current_player_index,round:game.round});
   showCard(card);
 }
@@ -791,6 +889,7 @@ function showCard(card){
   document.getElementById('cardLevel').innerHTML='<div class="level-chip '+info.chip+'">'+info.label+'</div>';
   setRoundBadge(game.round);
   setBarCodes(game.id);
+  updateLevelBadge();
 }
 
 // ── Next turn ──
