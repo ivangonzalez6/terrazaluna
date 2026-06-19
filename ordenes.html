@@ -3791,26 +3791,30 @@ async function startLoyaltyQrScan(){
     area.style.display='block';
     if(btn)btn.innerHTML='📷 Cerrar cámara';
     if(status)status.textContent='Apunta al código QR de la tarjeta…';
-    await new Promise(function(res){video.onloadedmetadata=res;});
+    // Iniciar reproducción (no esperar loadedmetadata — puede ya haber disparado)
     try{await video.play();}catch(e){}
+    var _qrHandled=false; // evitar doble disparo
 
     // ── Método 1: BarcodeDetector (nativo, más confiable en Android/Chrome) ──
     if('BarcodeDetector' in window){
       var bdet=new BarcodeDetector({formats:['qr_code']});
       _loyaltyQrInterval=setInterval(async function(){
-        if(!video||video.readyState<2||video.paused||video.videoWidth===0)return;
+        if(_qrHandled)return;
+        if(!video||video.paused||video.videoWidth===0)return;
         try{
           var codes=await bdet.detect(video);
-          if(codes.length&&codes[0].rawValue){
+          if(codes.length&&codes[0].rawValue&&!_qrHandled){
+            _qrHandled=true;
             if(status)status.textContent='✓ QR detectado';
             stopLoyaltyQrScan();
             handleLoyaltyQrResult(codes[0].rawValue.trim());
           }
         }catch(e){}
-      },200);
+      },250);
     } else {
       // ── Método 2: jsQR (fallback canvas) ──
       _loyaltyQrInterval=setInterval(function(){
+        if(_qrHandled)return;
         if(!video||video.readyState<video.HAVE_ENOUGH_DATA||video.videoWidth===0)return;
         var canvas=gid('loyaltyQrCanvas');if(!canvas)return;
         canvas.width=video.videoWidth;canvas.height=video.videoHeight;
@@ -3819,13 +3823,14 @@ async function startLoyaltyQrScan(){
         var img=ctx.getImageData(0,0,canvas.width,canvas.height);
         try{
           var code=jsQR(img.data,img.width,img.height,{inversionAttempts:'attemptBoth'});
-          if(code&&code.data){
+          if(code&&code.data&&!_qrHandled){
+            _qrHandled=true;
             if(status)status.textContent='✓ QR detectado';
             stopLoyaltyQrScan();
             handleLoyaltyQrResult(code.data.trim());
           }
         }catch(e){}
-      },200);
+      },250);
     }
   }catch(e){
     setLoyaltyScanMsg('No se pudo acceder a la cámara. Verifica los permisos del navegador.','err');

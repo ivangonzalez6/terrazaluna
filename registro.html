@@ -254,16 +254,16 @@ async function registrar(){
   document.getElementById('formMsg').innerHTML='';
   try{
     const ex=await api('GET','loyalty_clients',null,`?whatsapp=eq.${encodeURIComponent(wa)}&select=*`);
-    let c;
-    if(ex&&ex.length>0){c=ex[0];showMsg('¡Ya tienes tarjeta! Aquí está tu QR.','ok')}
-    else{
-      const payload={nombre,whatsapp:wa,
-        fecha_nacimiento:fechaNac||null,
-        email:email||null,
-        como_nos_conocio:conocio||null};
-      const res=await api('POST','loyalty_clients',payload);
-      c=Array.isArray(res)?res[0]:res;
+    if(ex&&ex.length>0){
+      showMsg('⚠️ Este número ya está registrado. Si el cliente ya tiene tarjeta, puede ingresar desde el link que recibió o buscarlo en la app.','err');
+      return;
     }
+    const payload={nombre,whatsapp:wa,
+      fecha_nacimiento:fechaNac||null,
+      email:email||null,
+      como_nos_conocio:conocio||null};
+    const res=await api('POST','loyalty_clients',payload);
+    const c=Array.isArray(res)?res[0]:res;
     currentId=c.id;mostrarResultado(c);
   }catch(e){showMsg('Error al registrar. Intenta de nuevo.','err');console.error(e)}
   finally{btn.disabled=false;btn.textContent='Obtener mi tarjeta →'}
