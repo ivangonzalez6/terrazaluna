@@ -1565,7 +1565,7 @@ gid('crvAdd').addEventListener('click',async function(){
     finalName=_crvItem.n+' '+_crvStyle+' ('+sizeLabel+')';
     finalPrice=_crvSize==='full'?half*2:half;
   }
-  var newItem={id:uid(),n:finalName,p:finalPrice,q:1,note:note,addedAt:Date.now(),status:'pending'};
+  var newItem={id:uid(),n:finalName,p:finalPrice,q:1,note:note,addedAt:Date.now(),status:'pending',addedBy:loggedUser?loggedUser.username:''};
   initTbl(curTable);_resetOrderTimeIfNeeded(curTable);
   if(_crvTarget==='person'&&curPersonId){
     var ps=orders[curTable].persons;
@@ -1598,7 +1598,7 @@ gid('noteSave').addEventListener('click',async function(){
     for(var i=0;i<persons.length;i++){if(persons[i].id===curPersonId){per=persons[i];break;}}
     if(!per)return;if(!per.items)per.items=[];
     var ex=null;for(var j=0;j<per.items.length;j++){if(per.items[j].n===pendItem.n&&(per.items[j].note||'')===note){ex=per.items[j];break;}}
-    if(ex)ex.q+=1;else per.items.push({id:uid(),n:pendItem.n,p:pendItem.p,q:1,note:note,addedAt:Date.now(),status:'pending'});
+    if(ex)ex.q+=1;else per.items.push({id:uid(),n:pendItem.n,p:pendItem.p,q:1,note:note,addedAt:Date.now(),status:'pending',addedBy:loggedUser?loggedUser.username:''});
     deductInventory(pendItem.n,1);
     // If this table had everything delivered, new item resets the order clock
     _resetOrderTimeIfNeeded(curTable);
@@ -1607,7 +1607,7 @@ gid('noteSave').addEventListener('click',async function(){
   }else{
     var items=orders[curTable].items,exG=null;
     for(var k=0;k<items.length;k++){if(items[k].n===pendItem.n&&(items[k].note||'')===note){exG=items[k];break;}}
-    if(exG)exG.q+=1;else items.push({id:uid(),n:pendItem.n,p:pendItem.p,q:1,note:note,addedAt:Date.now(),status:'pending'});
+    if(exG)exG.q+=1;else items.push({id:uid(),n:pendItem.n,p:pendItem.p,q:1,note:note,addedAt:Date.now(),status:'pending',addedBy:loggedUser?loggedUser.username:''});
     deductInventory(pendItem.n,1);
     // If this table had everything delivered, new item resets the order clock
     _resetOrderTimeIfNeeded(curTable);
@@ -1626,7 +1626,7 @@ function quickAdd(it,target){
     for(var i=0;i<persons.length;i++){if(persons[i].id===curPersonId){per=persons[i];break;}}
     if(!per)return;if(!per.items)per.items=[];
     var ex=null;for(var j=0;j<per.items.length;j++){if(per.items[j].n===it.n&&(per.items[j].note||'')===''){ex=per.items[j];break;}}
-    if(ex)ex.q+=1;else per.items.push({id:uid(),n:it.n,p:it.p,q:1,note:'',addedAt:Date.now(),status:'pending'});
+    if(ex)ex.q+=1;else per.items.push({id:uid(),n:it.n,p:it.p,q:1,note:'',addedAt:Date.now(),status:'pending',addedBy:loggedUser?loggedUser.username:''});
     deductInventory(it.n,1);
     _resetOrderTimeIfNeeded(curTable);
     saveOrders(orders).then(function(){updateBadges();});
@@ -1634,7 +1634,7 @@ function quickAdd(it,target){
   }else{
     var items=orders[curTable].items,exG=null;
     for(var k=0;k<items.length;k++){if(items[k].n===it.n&&(items[k].note||'')===''){exG=items[k];break;}}
-    if(exG)exG.q+=1;else items.push({id:uid(),n:it.n,p:it.p,q:1,note:'',addedAt:Date.now(),status:'pending'});
+    if(exG)exG.q+=1;else items.push({id:uid(),n:it.n,p:it.p,q:1,note:'',addedAt:Date.now(),status:'pending',addedBy:loggedUser?loggedUser.username:''});
     deductInventory(it.n,1);
     _resetOrderTimeIfNeeded(curTable);
     saveOrders(orders).then(function(){updateCartBar();updateBadges();});
@@ -2245,7 +2245,7 @@ async function renderKitchen(){
     var ticket=document.createElement('div');
     // Fully-delivered tables get a muted style but stay visible
     ticket.className='ticket'+(isNew&&!allDel?' new-t':'')+(allDel?' ticket-done':'');
-    var linesHTML=allItems.map(function(it){var st=it.status||'pending';var hasRec=!!kitchenRecipeNames[it.n.toLowerCase()];return'<div class="tl '+(st==='delivered'?'del ':'')+ '" data-table="'+t+'" data-id="'+it.id+'" data-pid="'+(it._pid||'')+'"><span class="tl-q">'+it.q+'×</span><span class="tl-n">'+esc(it.n)+(it.note?'<span class="tl-note">↳ '+esc(it.note)+'</span>':'')+( it._pl?'<span class="tl-per" style="color:'+it._pc+'">↳ '+esc(it._pl)+'</span>':'')+'</span>'+(hasRec?'<span class="tl-st"><button class="sb recipe" data-item-name="'+esc(it.n)+'">Receta</button></span>':'<span></span>')+(st==='pending'?'<span class="tl-st"><button class="sb pend">Entregar</button></span>':'<span class="tl-st" style="gap:4px;flex-direction:column;align-items:flex-end">'+(it.takenBy?'<span class="tl-usr">'+kIni(it.takenBy)+'</span>':'')+'<button class="sb deld">✓ Listo</button></span>')+'</div>';}).join('');
+    var linesHTML=allItems.map(function(it){var st=it.status||'pending';var hasRec=!!kitchenRecipeNames[it.n.toLowerCase()];return'<div class="tl '+(st==='delivered'?'del ':'')+ '" data-table="'+t+'" data-id="'+it.id+'" data-pid="'+(it._pid||'')+'"><span class="tl-q">'+it.q+'×</span><span class="tl-n">'+esc(it.n)+(it.note?'<span class="tl-note">↳ '+esc(it.note)+'</span>':'')+( it._pl?'<span class="tl-per" style="color:'+it._pc+'">↳ '+esc(it._pl)+'</span>':'')+(it.addedBy?'<span class="tl-usr">'+kIni(it.addedBy)+'</span>':'')+'</span>'+(hasRec?'<span class="tl-st"><button class="sb recipe" data-item-name="'+esc(it.n)+'">Receta</button></span>':'<span></span>')+(st==='pending'?'<span class="tl-st"><button class="sb pend">Entregar</button></span>':'<span class="tl-st"><button class="sb deld">✓ Listo</button></span>')+'</div>';}).join('');
     var doneLabel=allDel?'<span class="ticket-done-badge">Todo entregado · esperando cierre</span>':'';
     ticket.innerHTML='<div class="t-head"><div><div class="t-tbl">Mesa '+t.toString().padStart(2,'0')+'</div>'+(o.tableNote?'<div class="t-note">↳ '+esc(o.tableNote)+'</div>':'')+'</div><div style="text-align:right"><div class="t-time">'+hh+':'+mm+' · '+min+'min</div><div class="t-prog">'+(pend>0?'<span class="bp">'+pend+' pend.</span>':'')+(del>0?'<span class="bd">'+del+' ✓</span>':'')+'</div></div></div>'+doneLabel+'<div><div class="t-hrow"><span>Cant</span><span>Producto</span><span></span><span>Status</span></div>'+linesHTML+'</div><div class="t-foot"><span style="font-size:9px;letter-spacing:.2em;color:var(--faint);text-transform:uppercase">'+allItems.reduce(function(s,it){return s+it.q;},0)+' productos</span><span class="t-tot">'+money(tot)+'</span></div>';
     ticket.querySelectorAll('.sb:not(.recipe)').forEach(function(btn){
@@ -2254,7 +2254,7 @@ async function renderKitchen(){
         var o2=orders[tbl];if(!o2)return;var item=null;
         if(pid){var pp=null;if(o2.persons)for(var i=0;i<o2.persons.length;i++){if(o2.persons[i].id===pid){pp=o2.persons[i];break;}}if(pp&&pp.items)for(var j=0;j<pp.items.length;j++){if(pp.items[j].id===iid){item=pp.items[j];break;}}}
         else if(o2.items)for(var k=0;k<o2.items.length;k++){if(o2.items[k].id===iid){item=o2.items[k];break;}}
-        if(!item)return;var wasDelivered=item.status==='delivered';item.status=wasDelivered?'pending':'delivered';if(!wasDelivered){item.takenBy=loggedUser?loggedUser.username:'';}else{delete item.takenBy;}btn.disabled=true;await saveOrders(orders,tbl);btn.disabled=false;renderKitchen();showToast(item.status==='delivered'?'✓ Entregado':'Marcado pendiente');
+        if(!item)return;item.status=item.status==='delivered'?'pending':'delivered';btn.disabled=true;await saveOrders(orders,tbl);btn.disabled=false;renderKitchen();showToast(item.status==='delivered'?'✓ Entregado':'Marcado pendiente');
       });
     });
     ticket.querySelectorAll('.sb.recipe').forEach(function(btn){
@@ -3785,23 +3785,27 @@ async function startLoyaltyQrScan(){
     video.srcObject=_loyaltyQrStream;
     area.style.display='block';
     if(btn)btn.innerHTML='📷 Cerrar cámara';
-    // Escanear frames cada 250 ms
+    // Asegurar que el video arranque aunque autoplay esté restringido
+    try{await video.play();}catch(e){}
+    // Escanear frames cada 200 ms
     _loyaltyQrInterval=setInterval(function(){
       var canvas=gid('loyaltyQrCanvas');
-      if(!canvas||!video||video.readyState<video.HAVE_ENOUGH_DATA)return;
+      if(!canvas||!video||video.readyState<video.HAVE_ENOUGH_DATA||video.videoWidth===0)return;
       canvas.width=video.videoWidth;canvas.height=video.videoHeight;
       var ctx=canvas.getContext('2d');
       ctx.drawImage(video,0,0,canvas.width,canvas.height);
       var img=ctx.getImageData(0,0,canvas.width,canvas.height);
       try{
-        var code=jsQR(img.data,img.width,img.height,{inversionAttempts:'dontInvert'});
+        var code=jsQR(img.data,img.width,img.height,{inversionAttempts:'attemptBoth'});
         if(code&&code.data){
           if(status)status.textContent='✓ QR detectado';
           stopLoyaltyQrScan();
           handleLoyaltyQrResult(code.data.trim());
+        }else{
+          if(status)status.textContent='Apunta al código QR de la tarjeta…';
         }
       }catch(e){}
-    },250);
+    },200);
   }catch(e){
     setLoyaltyScanMsg('No se pudo acceder a la cámara. Verifica los permisos.','err');
   }
