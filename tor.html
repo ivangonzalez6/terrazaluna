@@ -20,7 +20,6 @@
 html,body{min-height:100%;background:var(--bg);color:var(--ink);font-family:'Inter Tight',sans-serif;overflow-x:hidden;}
 body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellipse 80vw 60vh at 90% -5%,rgba(138,100,32,.06) 0%,transparent 60%),radial-gradient(ellipse 60vw 50vh at -5% 100%,rgba(138,100,32,.04) 0%,transparent 60%);pointer-events:none;z-index:0;}
 
-/* ── SCREENS ── */
 .screen{position:fixed;inset:0;display:flex;flex-direction:column;align-items:center;padding:24px 20px 32px;overflow-y:auto;transition:opacity .3s,transform .3s;z-index:1;}
 .screen.hidden{opacity:0;pointer-events:none;transform:scale(.97)}
 .inner{width:100%;max-width:420px;display:flex;flex-direction:column;gap:14px;margin:auto}
@@ -43,9 +42,10 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
 .card{background:var(--bg2);border:1px solid var(--line);border-radius:16px;padding:20px;}
 
 /* ── INPUTS ── */
-input,select,textarea{width:100%;background:var(--bg3);border:1px solid var(--line);border-radius:10px;color:var(--ink);font-size:15px;font-family:'Inter Tight',sans-serif;padding:13px 15px;outline:none;transition:border .2s;}
+input,select,textarea{width:100%;background:var(--bg3);border:1px solid var(--line);border-radius:10px;color:var(--ink);font-size:15px;font-family:'Inter Tight',sans-serif;padding:13px 15px;outline:none;transition:border-color .2s;}
 input:focus,select:focus,textarea:focus{border-color:var(--gold);}
 input::placeholder,textarea::placeholder{color:var(--faint);}
+input.error{border-color:#fca5a5;background:#fff8f8;}
 textarea{resize:none;line-height:1.5;}
 
 /* ── BUTTONS ── */
@@ -57,31 +57,17 @@ textarea{resize:none;line-height:1.5;}
 .btn-gold:hover{background:var(--golds);}
 .btn-outline{background:transparent;color:var(--dim);border:1px solid var(--line2);font-size:12px;}
 .btn-outline:hover{border-color:var(--gold);color:var(--gold);}
-.btn-danger{background:transparent;color:#7c2d12;border:1px solid #fca5a5;font-size:12px;}
-.btn-danger:hover{background:#fff1f2;border-color:#f87171;}
-
-/* ── TRUTH / DARE BUTTONS ── */
-.btn-truth{
-  background:var(--bg2);color:var(--ink);
-  border:1.5px solid var(--line2);
-  font-size:16px;padding:22px;border-radius:14px;
-  letter-spacing:.1em;text-transform:uppercase;
-  font-family:'Cormorant Garamond',serif;font-weight:600;
-}
+.btn-danger{background:transparent;color:#7c2d12;border:1px solid rgba(252,165,165,.6);font-size:12px;}
+.btn-danger:hover{background:#fff1f2;}
+.btn-truth{background:var(--bg2);color:var(--ink);border:1.5px solid var(--line2);font-size:16px;padding:22px;border-radius:14px;letter-spacing:.1em;text-transform:uppercase;font-family:'Cormorant Garamond',serif;font-weight:600;width:100%;cursor:pointer;transition:all .15s;}
 .btn-truth:hover{background:var(--warm);border-color:var(--warm2);}
-.btn-dare{
-  background:var(--gold-light);color:var(--golds);
-  border:1.5px solid var(--line2);
-  font-size:16px;padding:22px;border-radius:14px;
-  letter-spacing:.1em;text-transform:uppercase;
-  font-family:'Cormorant Garamond',serif;font-weight:600;
-}
+.btn-dare{background:var(--gold-light);color:var(--golds);border:1.5px solid var(--line2);font-size:16px;padding:22px;border-radius:14px;letter-spacing:.1em;text-transform:uppercase;font-family:'Cormorant Garamond',serif;font-weight:600;width:100%;cursor:pointer;transition:all .15s;}
 .btn-dare:hover{background:var(--gold);color:#fff;border-color:var(--gold);}
+.btn-truth:disabled,.btn-dare:disabled{opacity:.45;cursor:not-allowed;}
 
 /* ── MODE CARDS ── */
 .mode-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
-.mode-card{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;padding:18px 12px;background:var(--bg3);border:2px solid var(--line);border-radius:14px;cursor:pointer;transition:all .2s;text-align:center;}
-.mode-card:hover{border-color:var(--line2);}
+.mode-card{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;padding:18px 12px;background:var(--bg3);border:2px solid var(--line);border-radius:14px;cursor:pointer;transition:all .2s;text-align:center;}
 .mode-card.active{border-color:var(--gold);background:var(--gold-light);}
 .mode-card-label{font-family:'Cormorant Garamond',serif;font-size:18px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--ink);}
 .mode-card-sub{font-size:10px;color:var(--faint);letter-spacing:.04em;line-height:1.4;}
@@ -96,8 +82,8 @@ textarea{resize:none;line-height:1.5;}
 .stepper-btn:active{transform:scale(.93);}
 
 /* ── LEVEL TABS ── */
-.level-tabs{display:flex;gap:6px;flex-wrap:wrap;}
-.ltab{flex:1;min-width:60px;padding:9px 6px;border-radius:10px;border:1px solid var(--line);background:var(--bg3);color:var(--faint);font-size:11px;font-weight:600;cursor:pointer;text-align:center;transition:all .2s;font-family:'Inter Tight',sans-serif;letter-spacing:.05em;text-transform:uppercase;}
+.level-tabs{display:flex;gap:5px;flex-wrap:wrap;}
+.ltab{flex:1;min-width:56px;padding:8px 4px;border-radius:10px;border:1px solid var(--line);background:var(--bg3);color:var(--faint);font-size:10px;font-weight:600;cursor:pointer;text-align:center;transition:all .2s;font-family:'Inter Tight',sans-serif;letter-spacing:.05em;text-transform:uppercase;}
 .ltab.active{border-color:var(--gold);color:var(--gold);background:var(--gold-light);}
 .ltab:hover:not(.active){border-color:var(--line2);color:var(--dim);}
 
@@ -127,18 +113,18 @@ textarea{resize:none;line-height:1.5;}
 
 /* ── CARD SCREEN ── */
 #screen-card{background:linear-gradient(180deg,#2a1f0e 0%,#1a1610 100%);}
-#screen-card::before{content:'';position:fixed;top:-100px;right:-80px;width:320px;height:320px;border-radius:50%;background:radial-gradient(circle,rgba(212,168,75,.1),transparent 70%);pointer-events:none;}
+#screen-card::before{content:'';position:fixed;top:-100px;right:-80px;width:320px;height:320px;border-radius:50%;background:radial-gradient(circle,rgba(212,168,75,.09),transparent 70%);pointer-events:none;}
 .card-reveal{display:flex;flex-direction:column;align-items:center;justify-content:center;flex:1;width:100%;max-width:420px;gap:6px;padding:8px 0;}
-.card-type-badge{display:inline-flex;align-items:center;padding:7px 20px;border-radius:999px;font-size:10px;font-weight:600;letter-spacing:.18em;text-transform:uppercase;margin-bottom:16px;font-family:'Inter Tight',sans-serif;}
-.badge-truth{background:rgba(248,244,235,.1);color:#e8dcc8;border:1px solid rgba(232,220,200,.25);}
-.badge-dare{background:rgba(212,175,55,.12);color:#d4af37;border:1px solid rgba(212,175,55,.3);}
+.card-type-badge{display:inline-flex;align-items:center;padding:7px 22px;border-radius:999px;font-size:10px;font-weight:600;letter-spacing:.18em;text-transform:uppercase;margin-bottom:16px;font-family:'Inter Tight',sans-serif;}
+.badge-truth{background:rgba(248,244,235,.1);color:#d4c9b0;border:1px solid rgba(212,201,176,.2);}
+.badge-dare{background:rgba(212,175,55,.12);color:#c9a35b;border:1px solid rgba(212,175,55,.25);}
 .card-text{font-family:'Cormorant Garamond',serif;font-size:clamp(20px,5vw,28px);font-weight:500;text-align:center;line-height:1.5;color:#f0e4c4;padding:0 8px;max-width:380px;letter-spacing:.01em;}
-.level-chip{font-size:10px;font-weight:600;letter-spacing:.2em;text-transform:uppercase;padding:5px 14px;border-radius:999px;margin-top:20px;font-family:'Inter Tight',sans-serif;}
-.chip-familiar{background:rgba(248,244,235,.1);color:#c8b898;}
+.level-chip{font-size:10px;font-weight:600;letter-spacing:.18em;text-transform:uppercase;padding:5px 14px;border-radius:999px;margin-top:20px;font-family:'Inter Tight',sans-serif;}
+.chip-familiar{background:rgba(212,201,176,.1);color:#c8b898;}
 .chip-light{background:rgba(200,184,152,.1);color:#c8b898;}
 .chip-hot{background:rgba(212,175,55,.12);color:#d4af37;}
 .chip-extremo{background:rgba(212,175,55,.18);color:#e8c86e;}
-.chip-comunidad{background:rgba(138,100,32,.15);color:#d4af37;}
+.chip-comunidad{background:rgba(138,100,32,.18);color:#d4af37;}
 .card-next-wrap{width:100%;max-width:420px;margin-top:20px;padding-bottom:8px;}
 .btn-next{background:var(--gold);color:#fff;font-size:13px;padding:17px;border-radius:12px;letter-spacing:.1em;text-transform:uppercase;display:flex;align-items:center;justify-content:center;width:100%;border:none;cursor:pointer;font-family:'Inter Tight',sans-serif;font-weight:600;transition:all .15s;}
 .btn-next:hover{background:var(--golds);}
@@ -146,7 +132,7 @@ textarea{resize:none;line-height:1.5;}
 
 /* ── ROUND BADGE ── */
 .round-badge{position:fixed;top:16px;right:16px;background:rgba(250,245,232,.95);border:1px solid var(--line2);border-radius:999px;padding:5px 14px;font-size:10px;color:var(--dim);font-weight:600;letter-spacing:.1em;text-transform:uppercase;backdrop-filter:blur(8px);z-index:10;}
-#screen-card .round-badge{background:rgba(42,31,14,.9);border-color:rgba(212,175,55,.25);color:#c9a35b;}
+#screen-card .round-badge{background:rgba(42,31,14,.9);border-color:rgba(212,175,55,.2);color:#c9a35b;}
 
 /* ── GAME BOTTOM BAR ── */
 .game-bar{position:fixed;bottom:0;left:0;right:0;z-index:20;background:rgba(248,244,235,.97);border-top:1px solid var(--line);backdrop-filter:blur(12px);padding:10px 16px 14px;display:flex;align-items:center;gap:8px;}
@@ -154,22 +140,32 @@ textarea{resize:none;line-height:1.5;}
 .game-bar-code{display:flex;flex-direction:column;flex:1;min-width:0;}
 .game-bar-label{font-size:9px;letter-spacing:.25em;text-transform:uppercase;color:var(--faint);font-weight:600;margin-bottom:1px;}
 .game-bar-val{font-family:'Cormorant Garamond',serif;font-size:20px;font-weight:600;letter-spacing:.18em;color:var(--gold);line-height:1.1;}
-#screen-card .game-bar-label{color:rgba(200,184,152,.5);}
+#screen-card .game-bar-label{color:rgba(200,184,152,.45);}
 #screen-card .game-bar-val{color:#c9a35b;}
 .game-bar-btn{display:flex;align-items:center;justify-content:center;padding:9px 13px;border-radius:10px;border:1px solid var(--line2);font-size:11px;font-weight:600;cursor:pointer;font-family:'Inter Tight',sans-serif;letter-spacing:.06em;text-transform:uppercase;flex-shrink:0;transition:all .15s;background:transparent;color:var(--dim);}
 .game-bar-btn:hover{border-color:var(--gold);color:var(--gold);}
 .game-bar-btn:active{transform:scale(.96);}
-#screen-card .game-bar-btn{border-color:rgba(212,175,55,.25);color:#c9a35b;background:rgba(212,175,55,.07);}
-#screen-card .game-bar-btn:hover{border-color:rgba(212,175,55,.5);background:rgba(212,175,55,.14);}
+#screen-card .game-bar-btn{border-color:rgba(212,175,55,.2);color:#c9a35b;background:rgba(212,175,55,.06);}
+#screen-card .game-bar-btn:hover{border-color:rgba(212,175,55,.45);background:rgba(212,175,55,.12);}
+
+/* ── END SCREEN ── */
+#screen-end{background:var(--bg);justify-content:center;}
+.end-ornament{display:flex;align-items:center;gap:14px;margin:14px 0;}
+.end-ornament::before,.end-ornament::after{content:'';flex:1;height:1px;background:linear-gradient(90deg,transparent,var(--line2));}
+.end-ornament::after{background:linear-gradient(270deg,transparent,var(--line2));}
+.end-ornament-dot{width:5px;height:5px;border-radius:50%;background:var(--gold);}
+.end-players{display:flex;flex-wrap:wrap;gap:10px;justify-content:center;margin:8px 0 16px;}
+.end-player{display:flex;flex-direction:column;align-items:center;gap:5px;}
+.end-player-name{font-size:11px;color:var(--dim);font-weight:500;max-width:64px;text-align:center;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
 
 /* ── OVERLAYS ── */
-.overlay{position:fixed;inset:0;z-index:100;background:rgba(26,22,16,.55);backdrop-filter:blur(4px);display:flex;align-items:flex-end;justify-content:center;padding:0 16px 20px;transition:opacity .25s;}
+.overlay{position:fixed;inset:0;z-index:100;background:rgba(26,22,16,.5);backdrop-filter:blur(4px);display:flex;align-items:flex-end;justify-content:center;padding:0 16px 20px;transition:opacity .25s;}
 .overlay.hidden{opacity:0;pointer-events:none;}
-.overlay-sheet{width:100%;max-width:420px;background:var(--bg2);border-radius:20px 20px 16px 16px;padding:24px 20px 20px;border:1px solid var(--line);box-shadow:0 -8px 40px rgba(26,22,16,.12);}
+.overlay-sheet{width:100%;max-width:420px;background:var(--bg2);border-radius:20px 20px 16px 16px;padding:24px 20px 20px;border:1px solid var(--line);box-shadow:0 -8px 40px rgba(26,22,16,.1);}
 .overlay-title{font-family:'Cormorant Garamond',serif;font-size:24px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--ink);margin-bottom:3px;}
-.overlay-sub{font-size:11px;letter-spacing:.05em;color:var(--faint);margin-bottom:16px;line-height:1.5;}
-.overlay-divider{height:1px;background:var(--line);margin:14px 0;}
-.overlay-close{margin-top:12px;width:100%;background:transparent;border:1px solid var(--line);border-radius:10px;padding:11px;font-size:12px;font-weight:600;cursor:pointer;color:var(--faint);font-family:'Inter Tight',sans-serif;letter-spacing:.08em;text-transform:uppercase;transition:all .15s;display:block;text-align:center;}
+.overlay-sub{font-size:11px;color:var(--faint);margin-bottom:16px;line-height:1.5;letter-spacing:.02em;}
+.overlay-divider{height:1px;background:var(--line);margin:12px 0;}
+.overlay-close{margin-top:10px;width:100%;background:transparent;border:1px solid var(--line);border-radius:10px;padding:11px;font-size:11px;font-weight:600;cursor:pointer;color:var(--faint);font-family:'Inter Tight',sans-serif;letter-spacing:.08em;text-transform:uppercase;transition:all .15s;display:block;text-align:center;}
 .overlay-close:hover{border-color:var(--line2);color:var(--dim);}
 
 /* Invite overlay */
@@ -179,34 +175,23 @@ textarea{resize:none;line-height:1.5;}
 .copy-btn:hover{background:var(--golds);}
 
 /* Options menu */
-.menu-item{display:flex;align-items:center;justify-content:space-between;padding:14px 16px;border-radius:12px;border:1px solid var(--line);background:var(--bg3);cursor:pointer;transition:all .15s;margin-bottom:8px;}
+.menu-item{display:flex;align-items:center;justify-content:space-between;padding:13px 16px;border-radius:12px;border:1px solid var(--line);background:var(--bg3);cursor:pointer;transition:all .15s;margin-bottom:8px;}
 .menu-item:hover{border-color:var(--line2);background:var(--warm);}
-.menu-item-label{font-size:14px;font-weight:600;color:var(--ink);letter-spacing:.02em;}
+.menu-item-label{font-size:14px;font-weight:600;color:var(--ink);}
 .menu-item-sub{font-size:11px;color:var(--faint);margin-top:2px;}
-.menu-item-arrow{font-size:16px;color:var(--faint);}
-.menu-item.danger{border-color:rgba(252,165,165,.4);background:#fff8f8;}
-.menu-item.danger:hover{background:#fff1f2;border-color:#fca5a5;}
+.menu-item-arrow{font-size:16px;color:var(--faint);margin-left:8px;}
+.menu-item.danger{border-color:rgba(252,165,165,.35);background:#fff8f8;}
+.menu-item.danger:hover{background:#fff1f2;border-color:rgba(248,113,113,.5);}
 .menu-item.danger .menu-item-label{color:#7c2d12;}
+.menu-item.danger .menu-item-sub{color:#c08080;}
 
-/* Add question form */
-.type-tabs{display:flex;gap:6px;margin-bottom:14px;}
-.type-tab{flex:1;padding:10px;border-radius:10px;border:1px solid var(--line);background:var(--bg3);color:var(--faint);font-size:12px;font-weight:600;cursor:pointer;text-align:center;transition:all .2s;font-family:'Inter Tight',sans-serif;letter-spacing:.08em;text-transform:uppercase;}
-.type-tab.active{border-color:var(--gold);color:var(--gold);background:var(--gold-light);}
-
-/* Add player form */
-.add-player-row{display:flex;gap:8px;}
+/* Add player / add card */
+.row-input{display:flex;gap:8px;}
 .btn-confirm-sm{background:var(--gold);color:#fff;border:none;border-radius:10px;padding:0 18px;font-size:12px;font-weight:600;cursor:pointer;font-family:'Inter Tight',sans-serif;letter-spacing:.06em;text-transform:uppercase;flex-shrink:0;white-space:nowrap;transition:background .15s;}
 .btn-confirm-sm:hover{background:var(--golds);}
-
-/* End screen */
-#screen-end{background:var(--bg);justify-content:center;gap:0;}
-.end-ornament{display:flex;align-items:center;gap:14px;margin:14px 0;}
-.end-ornament::before,.end-ornament::after{content:'';flex:1;height:1px;background:linear-gradient(90deg,transparent,var(--line2));}
-.end-ornament::after{background:linear-gradient(270deg,transparent,var(--line2));}
-.end-ornament-dot{width:5px;height:5px;border-radius:50%;background:var(--gold);}
-.end-players{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin:16px 0;}
-.end-player{display:flex;flex-direction:column;align-items:center;gap:4px;}
-.end-player-name{font-size:11px;color:var(--dim);font-weight:500;letter-spacing:.04em;max-width:60px;text-align:center;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.type-tabs{display:flex;gap:6px;margin-bottom:12px;}
+.type-tab{flex:1;padding:10px;border-radius:10px;border:1px solid var(--line);background:var(--bg3);color:var(--faint);font-size:12px;font-weight:600;cursor:pointer;text-align:center;transition:all .2s;font-family:'Inter Tight',sans-serif;letter-spacing:.08em;text-transform:uppercase;}
+.type-tab.active{border-color:var(--gold);color:var(--gold);background:var(--gold-light);}
 
 /* ── TOAST ── */
 .toast{position:fixed;bottom:80px;left:50%;transform:translateX(-50%) translateY(20px);background:var(--ink);border:1px solid var(--gold);border-radius:10px;padding:9px 18px;font-size:12px;letter-spacing:.06em;color:var(--gold-light);opacity:0;pointer-events:none;transition:all .3s;z-index:999;white-space:nowrap;font-weight:600;}
@@ -224,8 +209,8 @@ textarea{resize:none;line-height:1.5;}
   .hero-title{letter-spacing:.1em;}
   .btn-truth,.btn-dare{font-size:15px;padding:19px;}
   .game-code{font-size:42px;}
-  .mode-card-label{font-size:16px;}
   .game-bar-val{font-size:18px;}
+  .ltab{font-size:9px;min-width:48px;}
 }
 </style>
 </head>
@@ -237,15 +222,13 @@ textarea{resize:none;line-height:1.5;}
     <div style="text-align:center;padding:8px 0 4px">
       <div class="section-label">Terraza Luna</div>
       <h1 class="hero-title">Verdad<br>o Reto</h1>
-      <div class="hero-ornament">
-        <div class="hero-ornament-inner">El clásico de las noches épicas</div>
-      </div>
+      <div class="hero-ornament"><div class="hero-ornament-inner">El clásico de las noches épicas</div></div>
     </div>
     <button class="btn btn-gold" onclick="goSetup()">Nuevo juego</button>
     <div class="card">
       <div class="section-label" style="margin-bottom:10px">Unirse con código</div>
       <div style="display:flex;gap:8px">
-        <input id="joinCode" placeholder="Ej: XBTA2" maxlength="6" style="text-transform:uppercase;letter-spacing:.25em;font-size:17px;font-weight:600;text-align:center">
+        <input id="joinCode" placeholder="Ej: XBTA2" maxlength="6" style="text-transform:uppercase;letter-spacing:.25em;font-size:17px;font-weight:600;text-align:center" onkeydown="if(event.key==='Enter')joinGame()">
         <button class="btn btn-outline" style="width:auto;padding:0 18px;min-width:80px;white-space:nowrap" onclick="joinGame()">Entrar</button>
       </div>
     </div>
@@ -285,11 +268,12 @@ textarea{resize:none;line-height:1.5;}
     <div class="card">
       <div class="section-label" style="margin-bottom:12px">Nivel del juego</div>
       <div class="level-tabs">
-        <button class="ltab active" data-level="mixto" onclick="setLevel(this)">Mixto</button>
-        <button class="ltab" data-level="familiar" onclick="setLevel(this)">Familiar</button>
-        <button class="ltab" data-level="light" onclick="setLevel(this)">Light</button>
-        <button class="ltab" data-level="hot" onclick="setLevel(this)">Hot</button>
-        <button class="ltab" data-level="extremo" onclick="setLevel(this)">Extremo</button>
+        <button class="ltab active" data-level="mixto"     onclick="setLevel(this)">Mixto</button>
+        <button class="ltab"        data-level="familiar"  onclick="setLevel(this)">Familiar</button>
+        <button class="ltab"        data-level="light"     onclick="setLevel(this)">Light</button>
+        <button class="ltab"        data-level="hot"       onclick="setLevel(this)">Hot</button>
+        <button class="ltab"        data-level="extremo"   onclick="setLevel(this)">Extremo</button>
+        <button class="ltab"        data-level="comunidad" onclick="setLevel(this)">Comunidad</button>
       </div>
     </div>
     <button class="btn btn-gold" onclick="goNames()">Continuar</button>
@@ -306,7 +290,8 @@ textarea{resize:none;line-height:1.5;}
       <div class="section-line"><div class="section-line-dot"></div></div>
     </div>
     <div class="card">
-      <div class="section-label" style="margin-bottom:12px">Nombres de los jugadores</div>
+      <div class="section-label" style="margin-bottom:4px">Nombres de los jugadores</div>
+      <div style="font-size:10px;color:var(--faint);letter-spacing:.05em;margin-bottom:12px">Todos los nombres son obligatorios</div>
       <div class="names-grid" id="namesGrid"></div>
     </div>
     <button class="btn btn-gold" id="createBtn" onclick="createGame()">Crear juego</button>
@@ -338,7 +323,7 @@ textarea{resize:none;line-height:1.5;}
       </div>
     </div>
     <button class="btn btn-gold" id="startBtn" onclick="startGame()">Iniciar juego</button>
-    <button class="btn btn-outline" style="font-size:11px;padding:11px" onclick="window.location.href=window.location.pathname">Inicio</button>
+    <button class="btn btn-outline" style="font-size:11px;padding:11px" onclick="goHome()">Inicio</button>
   </div>
 </div>
 
@@ -353,8 +338,8 @@ textarea{resize:none;line-height:1.5;}
     </div>
   </div>
   <div class="choices">
-    <button class="btn btn-truth" onclick="pickCard('truth')">Verdad</button>
-    <button class="btn btn-dare" onclick="pickCard('dare')">Reto</button>
+    <button class="btn-truth" onclick="pickCard('truth')">Verdad</button>
+    <button class="btn-dare" onclick="pickCard('dare')">Reto</button>
   </div>
   <div class="game-bar">
     <div class="game-bar-code">
@@ -376,7 +361,7 @@ textarea{resize:none;line-height:1.5;}
     <div id="cardLevel"></div>
   </div>
   <div class="card-next-wrap">
-    <button class="btn-next" id="nextBtn" onclick="nextTurn()">Siguiente</button>
+    <button class="btn-next" onclick="nextTurn()">Siguiente</button>
   </div>
   <div class="game-bar">
     <div class="game-bar-code">
@@ -388,24 +373,24 @@ textarea{resize:none;line-height:1.5;}
   </div>
 </div>
 
-<!-- ══ FIN DEL JUEGO ══ -->
+<!-- ══ FIN ══ -->
 <div class="screen hidden" id="screen-end">
   <div class="inner" style="padding:16px 0;text-align:center">
     <div>
       <div class="section-label">Terraza Luna</div>
       <h2 class="section-title" style="margin-top:4px">Fin del juego</h2>
       <div class="end-ornament"><div class="end-ornament-dot"></div></div>
-      <div style="font-size:12px;color:var(--faint);letter-spacing:.15em;text-transform:uppercase;margin-bottom:8px" id="endStats"></div>
+      <div style="font-size:11px;color:var(--faint);letter-spacing:.15em;text-transform:uppercase;margin-bottom:4px" id="endStats"></div>
     </div>
     <div class="end-players" id="endPlayers"></div>
-    <div style="margin-top:8px;display:flex;flex-direction:column;gap:10px">
-      <button class="btn btn-gold" onclick="goSetup()">Nuevo juego</button>
-      <button class="btn btn-outline" onclick="window.location.href=window.location.pathname">Inicio</button>
-    </div>
+    <button class="btn btn-gold" onclick="goSetup()">Nuevo juego</button>
+    <button class="btn btn-outline" style="margin-top:8px" onclick="goHome()">Inicio</button>
   </div>
 </div>
 
-<!-- ══ OVERLAY: INVITAR ══ -->
+<!-- ══ OVERLAYS ══ -->
+
+<!-- Invitar -->
 <div class="overlay hidden" id="inviteOverlay" onclick="closeOverlay('inviteOverlay',event)">
   <div class="overlay-sheet">
     <div class="overlay-title">Invitar jugadores</div>
@@ -419,13 +404,13 @@ textarea{resize:none;line-height:1.5;}
   </div>
 </div>
 
-<!-- ══ OVERLAY: OPCIONES ══ -->
+<!-- Opciones -->
 <div class="overlay hidden" id="optionsOverlay" onclick="closeOverlay('optionsOverlay',event)">
   <div class="overlay-sheet">
     <div class="overlay-title">Opciones</div>
     <div class="overlay-sub">Acciones durante el juego</div>
     <div class="menu-item" onclick="closeOverlay('optionsOverlay');openAddPlayerOverlay()">
-      <div><div class="menu-item-label">Agregar jugador</div><div class="menu-item-sub">Suma a alguien en el siguiente turno</div></div>
+      <div><div class="menu-item-label">Agregar jugador</div><div class="menu-item-sub">Entra en el siguiente turno</div></div>
       <div class="menu-item-arrow">›</div>
     </div>
     <div class="menu-item" onclick="closeOverlay('optionsOverlay');openAddCardOverlay()">
@@ -441,12 +426,12 @@ textarea{resize:none;line-height:1.5;}
   </div>
 </div>
 
-<!-- ══ OVERLAY: AGREGAR JUGADOR ══ -->
+<!-- Agregar jugador -->
 <div class="overlay hidden" id="addPlayerOverlay" onclick="closeOverlay('addPlayerOverlay',event)">
   <div class="overlay-sheet">
     <div class="overlay-title">Agregar jugador</div>
     <div class="overlay-sub">El jugador entrará en el siguiente turno</div>
-    <div class="add-player-row">
+    <div class="row-input">
       <input id="newPlayerName" placeholder="Nombre del jugador…" maxlength="20" onkeydown="if(event.key==='Enter')confirmAddPlayer()">
       <button class="btn-confirm-sm" onclick="confirmAddPlayer()">Agregar</button>
     </div>
@@ -454,7 +439,7 @@ textarea{resize:none;line-height:1.5;}
   </div>
 </div>
 
-<!-- ══ OVERLAY: AGREGAR PREGUNTA/RETO ══ -->
+<!-- Agregar pregunta / reto -->
 <div class="overlay hidden" id="addCardOverlay" onclick="closeOverlay('addCardOverlay',event)">
   <div class="overlay-sheet">
     <div class="overlay-title">Agregar al juego</div>
@@ -469,12 +454,12 @@ textarea{resize:none;line-height:1.5;}
   </div>
 </div>
 
-<!-- ══ OVERLAY: CONFIRMAR FIN ══ -->
+<!-- Confirmar fin -->
 <div class="overlay hidden" id="endConfirmOverlay" onclick="closeOverlay('endConfirmOverlay',event)">
   <div class="overlay-sheet">
     <div class="overlay-title">Finalizar juego</div>
-    <div class="overlay-sub">Esta acción termina la partida para todos los jugadores. No se puede deshacer.</div>
-    <button class="btn btn-danger" style="width:100%;padding:14px;border-radius:12px;font-size:13px;letter-spacing:.08em;text-transform:uppercase;cursor:pointer;font-family:'Inter Tight',sans-serif;font-weight:600;" onclick="endGame()">Finalizar partida</button>
+    <div class="overlay-sub">Esta acción termina la partida para todos los jugadores y no se puede deshacer.</div>
+    <button class="btn btn-danger" style="width:100%;padding:14px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:13px;letter-spacing:.08em;text-transform:uppercase;cursor:pointer;font-family:'Inter Tight',sans-serif;font-weight:600;" onclick="endGame()">Finalizar partida</button>
     <button class="overlay-close" onclick="closeOverlay('endConfirmOverlay')">Cancelar</button>
   </div>
 </div>
@@ -484,22 +469,35 @@ textarea{resize:none;line-height:1.5;}
 <script>
 const SB='https://biuaxkpyujypiigxolwt.supabase.co';
 const SK='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJpdWF4a3B5dWp5cGlpZ3hvbHd0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk5MDY1ODUsImV4cCI6MjA5NTQ4MjU4NX0.4MJ2WfTo6tDNImcN0E5RCy4ilU2-sXnmRb6_BB85YaQ';
-const COLORS=['#c0392b','#2980b9','#27ae60','#d35400','#8e44ad','#16a085','#c0392b','#2c3e50','#1a7a4a','#7f6b4a'];
-const LEVELS={familiar:{label:'Familiar',chip:'chip-familiar'},light:{label:'Light',chip:'chip-light'},hot:{label:'Hot',chip:'chip-hot'},extremo:{label:'Extremo',chip:'chip-extremo'},mixto:{label:'Mixto',chip:'chip-light'},comunidad:{label:'Comunidad',chip:'chip-comunidad'}};
-const MODES={presencial:{label:'En persona'},distancia:{label:'A distancia'}};
+const COLORS=['#c0392b','#2980b9','#27ae60','#d35400','#8e44ad','#16a085','#7f6b4a','#2c3e50','#1a7a4a','#8a6420'];
+const LEVELS={
+  familiar:  {label:'Familiar',  chip:'chip-familiar'},
+  light:     {label:'Light',     chip:'chip-light'},
+  hot:       {label:'Hot',       chip:'chip-hot'},
+  extremo:   {label:'Extremo',   chip:'chip-extremo'},
+  mixto:     {label:'Mixto',     chip:'chip-light'},
+  comunidad: {label:'Comunidad', chip:'chip-comunidad'}
+};
 
-var playerCount=4,selectedLevel='mixto',selectedMode='presencial',game=null;
-var allQ=[],allD=[],usedQIdx=[],usedDIdx=[];
-var _lastUpdatedAt='',selectedCardType='truth';
+// ── State ──
+var playerCount=4, selectedLevel='mixto', selectedMode='presencial', selectedCardType='truth', game=null;
+// Card pools
+var allQ=[], allD=[];         // main / fallback pool
+var allQComm=[], allDComm=[]; // community pool
+var usedQIdx=[], usedDIdx=[], usedQCommIdx=[], usedDCommIdx=[];
+var commQDone=false, commDDone=false;
+// Realtime
 var _ws=null,_wsRef=0,_wsHb=null,_pollInterval=null;
 
+// ── API ──
 function h(){return{'apikey':SK,'Authorization':'Bearer '+SK,'Content-Type':'application/json'};}
 async function sbGet(t,f){var r=await fetch(SB+'/rest/v1/'+t+(f||''),{headers:h()});return r.json();}
 async function sbPost(t,b){var r=await fetch(SB+'/rest/v1/'+t,{method:'POST',headers:Object.assign({},h(),{'Prefer':'return=representation'}),body:JSON.stringify(b)});return r.json();}
 async function sbPatch(t,b){return fetch(SB+'/rest/v1/'+t,{method:'PATCH',headers:Object.assign({},h(),{'Prefer':'return=minimal'}),body:JSON.stringify(b)});}
 
+// ── Helpers ──
 function show(s){document.querySelectorAll('.screen').forEach(function(el){el.classList.toggle('hidden',el.id!=='screen-'+s);});}
-function toast(m,dur){var t=document.getElementById('toast');t.textContent=m;t.classList.add('show');clearTimeout(t._t);t._t=setTimeout(function(){t.classList.remove('show');},dur||2400);}
+function toast(m,dur){var t=document.getElementById('toast');t.textContent=m;t.classList.add('show');clearTimeout(t._t);t._t=setTimeout(function(){t.classList.remove('show');},dur||2600);}
 function esc(s){return String(s).replace(/[&<>"']/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];});}
 function uid5(){return Math.random().toString(36).substr(2,6).toUpperCase();}
 function ini(n){return n.trim().substring(0,2).toUpperCase();}
@@ -507,15 +505,11 @@ function col(i){return COLORS[i%COLORS.length];}
 function setRoundBadge(r){document.querySelectorAll('.round-badge').forEach(function(el){el.textContent='Ronda '+(r||1);});}
 function setBarCodes(id){document.getElementById('barCode1').textContent=id||'------';document.getElementById('barCode2').textContent=id||'------';}
 function gameUrl(){return window.location.origin+window.location.pathname+'?id='+(game?game.id:'');}
-function now(){return new Date().toISOString();}
+function shuffle(arr){for(var i=arr.length-1;i>0;i--){var j=Math.floor(Math.random()*(i+1));var t=arr[i];arr[i]=arr[j];arr[j]=t;}return arr;}
+function resetPools(){allQ=[];allD=[];allQComm=[];allDComm=[];usedQIdx=[];usedDIdx=[];usedQCommIdx=[];usedDCommIdx=[];commQDone=false;commDDone=false;}
 
 // ── Setup ──
-function goSetup(){
-  allQ=[];allD=[];usedQIdx=[];usedDIdx=[];game=null;
-  _lastUpdatedAt='';
-  stopRealtime();
-  show('setup');
-}
+function goSetup(){resetPools();game=null;stopRealtime();show('setup');}
 function setMode(m){selectedMode=m;document.getElementById('modePresencial').classList.toggle('active',m==='presencial');document.getElementById('modeDistancia').classList.toggle('active',m==='distancia');}
 function changeCount(d){playerCount=Math.max(2,Math.min(10,playerCount+d));document.getElementById('countVal').textContent=playerCount;}
 function setLevel(btn){selectedLevel=btn.dataset.level;document.querySelectorAll('.ltab').forEach(function(b){b.classList.toggle('active',b===btn);});}
@@ -524,17 +518,27 @@ function goNames(){
   var g=document.getElementById('namesGrid');g.innerHTML='';
   for(var i=0;i<playerCount;i++){
     var row=document.createElement('div');row.className='player-row';
-    row.innerHTML='<div class="avatar" style="background:'+col(i)+'">'+(i+1)+'</div><input placeholder="Jugador '+(i+1)+'" maxlength="20">';
+    row.innerHTML='<div class="avatar" style="background:'+col(i)+'">'+(i+1)+'</div><input placeholder="Nombre '+(i+1)+'" maxlength="20" oninput="this.classList.remove(\'error\')">';
     g.appendChild(row);
   }
   setTimeout(function(){var f=document.querySelector('#namesGrid input');if(f)f.focus();},200);
 }
 
-// ── Create ──
+// ── Create game ──
 async function createGame(){
   var inputs=document.querySelectorAll('#namesGrid input');
-  var players=[];
-  inputs.forEach(function(inp,i){players.push({name:(inp.value.trim()||'Jugador '+(i+1)),color:col(i)});});
+  var players=[], hasError=false;
+  inputs.forEach(function(inp,i){
+    var name=inp.value.trim();
+    if(!name){
+      inp.classList.add('error');
+      inp.focus();
+      hasError=true;
+    } else {
+      players.push({name:name,color:col(i)});
+    }
+  });
+  if(hasError){toast('Completa todos los nombres');return;}
   var btn=document.getElementById('createBtn');btn.disabled=true;btn.textContent='Creando…';
   var id=uid5();
   try{
@@ -550,7 +554,7 @@ function showLobby(){
   document.getElementById('shareUrl').textContent=gameUrl();
   renderLobbyPlayers();
   document.getElementById('lobbyLevelLabel').textContent=LEVELS[game.level]?LEVELS[game.level].label:game.level;
-  document.getElementById('lobbyModeLabel').textContent=MODES[game.mode||'presencial']?MODES[game.mode||'presencial'].label:'En persona';
+  document.getElementById('lobbyModeLabel').textContent=game.mode==='distancia'?'A distancia':'En persona';
   show('lobby');
   startRealtime();
   startPolling();
@@ -580,15 +584,14 @@ async function joinGame(){
     if(game.status==='lobby'){showLobby();}
     else if(game.status==='playing'){loadCardsAndPlay();}
     else if(game.status==='finished'){showEnd();}
-    else{toast('El juego ya terminó');}
+    else{show('welcome');} // 'closed' or unknown → welcome
   }catch(e){toast('Error de conexión');}
 }
 
 // ── Start ──
 async function startGame(){
   var btn=document.getElementById('startBtn');btn.disabled=true;btn.textContent='Iniciando…';
-  var n=now();_lastUpdatedAt=n;
-  await sbPatch('tor_games?id=eq.'+game.id,{status:'playing',current_player_index:0,round:1,current_card:null,updated_at:n});
+  await sbPatch('tor_games?id=eq.'+game.id,{status:'playing',current_player_index:0,round:1,current_card:null});
   game.status='playing';game.current_player_index=0;game.round=1;game.current_card=null;
   await loadCardsAndPlay();
   btn.disabled=false;btn.textContent='Iniciar juego';
@@ -596,19 +599,76 @@ async function startGame(){
 
 // ── Load cards ──
 async function loadCardsAndPlay(){
-  if(!allQ.length||!allD.length){
-    var lvl=game.level,mode=game.mode||'presencial';
+  // Only fetch if pools are empty
+  if(allQ.length||allQComm.length){setBarCodes(game.id);showTurn();return;}
+  var lvl=game.level, mode=game.mode||'presencial';
+  if(lvl==='comunidad'){
+    // Community cards first, then all oficial cards as fallback
+    var res=await Promise.all([
+      sbGet('tor_questions','?source=eq.comunidad&order=id.asc'),
+      sbGet('tor_dares','?source=eq.comunidad&mode=eq.'+mode+'&order=id.asc'),
+      sbGet('tor_questions','?source=eq.oficial&order=id.asc'),
+      sbGet('tor_dares','?source=eq.oficial&mode=eq.'+mode+'&order=id.asc')
+    ]);
+    allQComm=shuffle(res[0]||[]);
+    allDComm=shuffle(res[1]||[]);
+    allQ=shuffle(res[2]||[]);
+    allD=shuffle(res[3]||[]);
+    // If no community cards at all, use all cards as main pool
+    if(!allQComm.length){commQDone=true;}
+    if(!allDComm.length){commDDone=true;}
+    // If main pool also empty (no oficial cards), fall back to ALL
+    if(!allQ.length){
+      var r2=await Promise.all([sbGet('tor_questions','?order=id.asc'),sbGet('tor_dares','?mode=eq.'+mode+'&order=id.asc')]);
+      allQ=shuffle(r2[0]||[]);allD=shuffle(r2[1]||[]);
+    }
+  } else {
     var qf=lvl==='mixto'?'?order=id.asc':'?level=eq.'+lvl+'&order=id.asc';
     var df=lvl==='mixto'?'?mode=eq.'+mode+'&order=id.asc':'?level=eq.'+lvl+'&mode=eq.'+mode+'&order=id.asc';
-    var res=await Promise.all([sbGet('tor_questions',qf),sbGet('tor_dares',df)]);
-    allQ=shuffle(res[0]||[]);allD=shuffle(res[1]||[]);
-    usedQIdx=[];usedDIdx=[];
+    var res2=await Promise.all([sbGet('tor_questions',qf),sbGet('tor_dares',df)]);
+    allQ=shuffle(res2[0]||[]);allD=shuffle(res2[1]||[]);
+    commQDone=true;commDDone=true;
   }
   setBarCodes(game.id);
   showTurn();
 }
 
-function shuffle(arr){for(var i=arr.length-1;i>0;i--){var j=Math.floor(Math.random()*(i+1));var t=arr[i];arr[i]=arr[j];arr[j]=t;}return arr;}
+// ── Draw from correct pool ──
+function drawCard(type){
+  var isQ=type==='truth';
+  var commPool=isQ?allQComm:allDComm;
+  var commUsed=isQ?usedQCommIdx:usedDCommIdx;
+  var commDone=isQ?commQDone:commDDone;
+  var mainPool=isQ?allQ:allD;
+  var mainUsed=isQ?usedQIdx:usedDIdx;
+
+  // Try community pool first (if not done)
+  if(!commDone&&commPool.length>0){
+    if(commUsed.length<commPool.length){
+      var avail=commPool.filter(function(_,i){return commUsed.indexOf(i)<0;});
+      var pick=avail[Math.floor(Math.random()*avail.length)];
+      commUsed.push(commPool.indexOf(pick));
+      if(isQ)usedQCommIdx=commUsed;else usedDCommIdx=commUsed;
+      return {pick:pick,level:'comunidad'};
+    } else {
+      // Community exhausted → switch to main
+      if(isQ)commQDone=true;else commDDone=true;
+      toast('Preguntas de la comunidad agotadas');
+    }
+  }
+
+  // Main / fallback pool
+  if(mainUsed.length>=mainPool.length){
+    if(isQ)usedQIdx=[];else usedDIdx=[];
+    mainUsed=isQ?usedQIdx:usedDIdx;
+    toast('Cartas mezcladas de nuevo');
+  }
+  var avail2=mainPool.filter(function(_,i){return mainUsed.indexOf(i)<0;});
+  var pick2=avail2[Math.floor(Math.random()*avail2.length)];
+  mainUsed.push(mainPool.indexOf(pick2));
+  if(isQ)usedQIdx=mainUsed;else usedDIdx=mainUsed;
+  return {pick:pick2,level:null};
+}
 
 // ── Turn ──
 function showTurn(){
@@ -626,20 +686,12 @@ function showTurn(){
 // ── Pick card ──
 async function pickCard(type){
   document.querySelectorAll('.btn-truth,.btn-dare').forEach(function(b){b.disabled=true;});
-  var pool=type==='truth'?allQ:allD;
-  var usedIdx=type==='truth'?usedQIdx:usedDIdx;
-  if(usedIdx.length>=pool.length){
-    if(type==='truth')usedQIdx=[];else usedDIdx=[];
-    usedIdx=type==='truth'?usedQIdx:usedDIdx;
-    toast('Cartas mezcladas de nuevo');
-  }
-  var available=pool.filter(function(_,i){return usedIdx.indexOf(i)<0;});
-  var pick=available[Math.floor(Math.random()*available.length)];
-  usedIdx.push(pool.indexOf(pick));
-  var card={type:type,text:pick.text,level:pick.level};
+  var result=drawCard(type);
+  var pick=result.pick;
+  var cardLevel=result.level||pick.level||'familiar';
+  var card={type:type,text:pick.text,level:cardLevel};
   game.current_card=card;
-  var n=now();_lastUpdatedAt=n;
-  sbPatch('tor_games?id=eq.'+game.id,{current_card:card,current_player_index:game.current_player_index,round:game.round,updated_at:n});
+  sbPatch('tor_games?id=eq.'+game.id,{current_card:card,current_player_index:game.current_player_index,round:game.round});
   showCard(card);
 }
 
@@ -653,100 +705,88 @@ function showCard(card){
   var isT=card.type==='truth';
   document.getElementById('cardBadge').innerHTML='<div class="card-type-badge '+(isT?'badge-truth':'badge-dare')+'">'+(isT?'Verdad':'Reto')+'</div>';
   var lv=card.level||'familiar';
-  var lc=LEVELS[lv]?LEVELS[lv].chip:'chip-familiar';
-  document.getElementById('cardLevel').innerHTML='<div class="level-chip '+lc+'">'+(LEVELS[lv]?LEVELS[lv].label:lv)+'</div>';
+  var info=LEVELS[lv]||LEVELS.familiar;
+  document.getElementById('cardLevel').innerHTML='<div class="level-chip '+info.chip+'">'+info.label+'</div>';
   setRoundBadge(game.round);
   setBarCodes(game.id);
 }
 
 // ── Next turn ──
 async function nextTurn(){
-  var n2=game.players.length;
-  var next=(game.current_player_index+1)%n2;
+  var n=game.players.length;
+  var next=(game.current_player_index+1)%n;
   var newRound=game.round+(next===0?1:0);
   game.current_player_index=next;game.round=newRound;game.current_card=null;
-  var n=now();_lastUpdatedAt=n;
-  await sbPatch('tor_games?id=eq.'+game.id,{current_player_index:next,round:newRound,current_card:null,updated_at:n});
+  await sbPatch('tor_games?id=eq.'+game.id,{current_player_index:next,round:newRound,current_card:null});
   showTurn();
 }
 
-// ── End game ──
+// ── End game (finished — shows end screen for all) ──
 async function endGame(){
   closeOverlay('endConfirmOverlay');
-  var n=now();_lastUpdatedAt=n;
-  await sbPatch('tor_games?id=eq.'+game.id,{status:'finished',updated_at:n});
+  await sbPatch('tor_games?id=eq.'+game.id,{status:'finished'});
   game.status='finished';
   showEnd();
 }
 function showEnd(){
   stopRealtime();
-  document.getElementById('endStats').textContent='Ronda '+(game.round||1)+' · '+(game.players.length)+' jugadores';
+  document.getElementById('endStats').textContent='Ronda '+(game.round||1)+' · '+game.players.length+' jugadores';
   var ep=document.getElementById('endPlayers');ep.innerHTML='';
   game.players.forEach(function(p){
     var d=document.createElement('div');d.className='end-player';
-    d.innerHTML='<div class="avatar" style="background:'+p.color+';width:44px;height:44px;font-size:14px">'+ini(p.name)+'</div><div class="end-player-name">'+esc(p.name)+'</div>';
+    d.innerHTML='<div class="avatar" style="background:'+p.color+';width:46px;height:46px;font-size:14px">'+ini(p.name)+'</div><div class="end-player-name">'+esc(p.name)+'</div>';
     ep.appendChild(d);
   });
   show('end');
 }
 
+// ── Go home (closed — sends all to welcome) ──
+async function goHome(){
+  if(game&&(game.status==='playing'||game.status==='lobby')){
+    await sbPatch('tor_games?id=eq.'+game.id,{status:'closed'});
+  }
+  stopRealtime();
+  resetPools();
+  game=null;
+  show('welcome');
+}
+
 // ── Overlays ──
-function closeOverlay(id,e){
-  if(e&&e.target!==document.getElementById(id))return;
-  document.getElementById(id).classList.add('hidden');
-}
-function openInviteOverlay(){
-  document.getElementById('overlayCode').textContent=game?game.id:'------';
-  document.getElementById('overlayUrl').textContent=gameUrl();
-  document.getElementById('inviteOverlay').classList.remove('hidden');
-}
+function closeOverlay(id,e){if(e&&e.target!==document.getElementById(id))return;document.getElementById(id).classList.add('hidden');}
+function openInviteOverlay(){document.getElementById('overlayCode').textContent=game?game.id:'------';document.getElementById('overlayUrl').textContent=gameUrl();document.getElementById('inviteOverlay').classList.remove('hidden');}
 function openOptionsOverlay(){document.getElementById('optionsOverlay').classList.remove('hidden');}
-function openAddPlayerOverlay(){
-  document.getElementById('newPlayerName').value='';
-  document.getElementById('addPlayerOverlay').classList.remove('hidden');
-  setTimeout(function(){document.getElementById('newPlayerName').focus();},200);
-}
-function openAddCardOverlay(){
-  document.getElementById('newCardText').value='';
-  setCardType('truth');
-  document.getElementById('addCardOverlay').classList.remove('hidden');
-  setTimeout(function(){document.getElementById('newCardText').focus();},200);
-}
+function openAddPlayerOverlay(){document.getElementById('newPlayerName').value='';document.getElementById('addPlayerOverlay').classList.remove('hidden');setTimeout(function(){document.getElementById('newPlayerName').focus();},200);}
+function openAddCardOverlay(){document.getElementById('newCardText').value='';setCardType('truth');document.getElementById('addCardOverlay').classList.remove('hidden');setTimeout(function(){document.getElementById('newCardText').focus();},200);}
 function openEndConfirmOverlay(){document.getElementById('endConfirmOverlay').classList.remove('hidden');}
 
 // ── Add player ──
 async function confirmAddPlayer(){
   var name=document.getElementById('newPlayerName').value.trim();
   if(!name){toast('Escribe un nombre');return;}
-  var newPlayer={name:name,color:col(game.players.length)};
-  var updated=game.players.concat([newPlayer]);
-  var n=now();_lastUpdatedAt=n;
-  await sbPatch('tor_games?id=eq.'+game.id,{players:updated,updated_at:n});
+  var updated=game.players.concat([{name:name,color:col(game.players.length)}]);
+  await sbPatch('tor_games?id=eq.'+game.id,{players:updated});
   game.players=updated;
   closeOverlay('addPlayerOverlay');
   toast(name+' se unió al juego');
 }
 
 // ── Add question/dare ──
-function setCardType(type){
-  selectedCardType=type;
-  document.getElementById('tabTruth').classList.toggle('active',type==='truth');
-  document.getElementById('tabDare').classList.toggle('active',type==='dare');
-}
+function setCardType(type){selectedCardType=type;document.getElementById('tabTruth').classList.toggle('active',type==='truth');document.getElementById('tabDare').classList.toggle('active',type==='dare');}
 async function confirmAddCard(){
   var text=document.getElementById('newCardText').value.trim();
   if(!text){toast('Escribe el contenido');return;}
   var type=selectedCardType;
-  var lvl=(game.level==='mixto')?'familiar':game.level;
+  var lvl=(game.level==='mixto'||game.level==='comunidad')?'familiar':game.level;
   var newCard={text:text,level:lvl,source:'comunidad'};
   try{
-    // Save to DB
     if(type==='truth'){
       await sbPost('tor_questions',newCard);
-      allQ.push(newCard);
-    }else{
+      allQComm.push(newCard); // Add to community pool so it can be drawn this session
+      commQDone=false;        // Re-enable community pool for truths
+    } else {
       await sbPost('tor_dares',Object.assign({},newCard,{mode:game.mode||'presencial'}));
-      allD.push(newCard);
+      allDComm.push(newCard);
+      commDDone=false;
     }
     closeOverlay('addCardOverlay');
     toast('Guardada en De la comunidad');
@@ -754,14 +794,52 @@ async function confirmAddCard(){
 }
 
 // ══ REALTIME ══
+
+// Semantic comparison — only process if relevant state actually changed
+function stateChanged(rec){
+  if(!game)return true;
+  return(
+    rec.status!==game.status||
+    rec.current_player_index!==game.current_player_index||
+    rec.round!==game.round||
+    JSON.stringify(rec.current_card)!==JSON.stringify(game.current_card)||
+    (rec.players&&rec.players.length!==game.players.length)
+  );
+}
+
 function applyRemoteState(rec){
   if(!game||rec.id!==game.id)return;
-  var remoteUpdated=rec.updated_at||'';
-  if(remoteUpdated&&remoteUpdated===_lastUpdatedAt)return;
-  _lastUpdatedAt=remoteUpdated;
+  if(!stateChanged(rec))return;
   game=Object.assign(game,rec);
   syncDisplay();
 }
+
+function syncDisplay(){
+  // Status: closed → everyone goes to welcome
+  if(game.status==='closed'){
+    stopRealtime();
+    resetPools();
+    var g=game;game=null;
+    show('welcome');
+    return;
+  }
+  // Status: finished → show end screen
+  if(game.status==='finished'){
+    showEnd();
+    return;
+  }
+  var cur=document.querySelector('.screen:not(.hidden)');
+  if(!cur)return;
+  if(game.status==='playing'){
+    if(!allQ.length&&!allQComm.length){loadCardsAndPlay();return;}
+    if(game.current_card)showCard(game.current_card);
+    else showTurn();
+  } else if(game.status==='lobby'){
+    renderLobbyPlayers();
+    if(cur.id!=='screen-lobby')showLobby();
+  }
+}
+
 function startRealtime(){
   if(_ws)return;
   try{
@@ -774,35 +852,26 @@ function startRealtime(){
     _ws.onmessage=function(m){
       try{var d=JSON.parse(m.data);if(d&&d.event==='postgres_changes'&&d.payload&&d.payload.record)applyRemoteState(d.payload.record);}catch(e){}
     };
-    _ws.onclose=function(){clearInterval(_wsHb);_ws=null;if(game&&game.status!=='finished')setTimeout(startRealtime,5000);};
+    _ws.onclose=function(){clearInterval(_wsHb);_ws=null;if(game&&game.status!=='finished'&&game.status!=='closed')setTimeout(startRealtime,5000);};
     _ws.onerror=function(){try{_ws.close();}catch(e){}};
   }catch(e){}
 }
+
 function stopRealtime(){
   if(_ws){try{_ws.close();}catch(e){}_ws=null;}
   clearInterval(_wsHb);
   clearInterval(_pollInterval);_pollInterval=null;
 }
+
 function startPolling(){
   if(_pollInterval)return;
   _pollInterval=setInterval(async function(){
-    if(!game||game.status==='finished'){clearInterval(_pollInterval);_pollInterval=null;return;}
-    try{var rows=await sbGet('tor_games','?id=eq.'+game.id+'&select=*');if(rows&&rows.length)applyRemoteState(rows[0]);}catch(e){}
+    if(!game||game.status==='finished'||game.status==='closed'){clearInterval(_pollInterval);_pollInterval=null;return;}
+    try{
+      var rows=await sbGet('tor_games','?id=eq.'+game.id+'&select=id,status,current_player_index,round,current_card,players,updated_at');
+      if(rows&&rows.length)applyRemoteState(rows[0]);
+    }catch(e){}
   },2500);
-}
-function syncDisplay(){
-  var cur=document.querySelector('.screen:not(.hidden)');
-  if(!cur)return;
-  var id=cur.id;
-  if(game.status==='finished'){showEnd();return;}
-  if(game.status==='playing'){
-    if(!allQ.length||!allD.length){loadCardsAndPlay();return;}
-    if(game.current_card)showCard(game.current_card);
-    else showTurn();
-  }else if(game.status==='lobby'){
-    renderLobbyPlayers();
-    if(id!=='screen-lobby')showLobby();
-  }
 }
 
 // ── Init ──
