@@ -286,7 +286,7 @@ textarea{resize:none;line-height:1.5;}
       </div>
     </div>
     <button class="btn btn-gold" onclick="goNames()">Continuar</button>
-    <button class="btn btn-outline" onclick="show('welcome')">Volver</button>
+    <button class="btn btn-outline" onclick="goSalir()">Salir</button>
   </div>
 </div>
 
@@ -311,12 +311,6 @@ textarea{resize:none;line-height:1.5;}
 <!-- ══ LOBBY ══ -->
 <div class="screen hidden" id="screen-lobby">
   <div class="inner">
-    <div style="text-align:center">
-      <div class="section-label" style="margin-bottom:10px">Código del juego</div>
-      <div class="game-code" id="lobbyCode">-----</div>
-      <div class="share-url" id="shareUrl"></div>
-      <button class="btn btn-outline" style="margin-top:8px;width:auto;padding:9px 22px;font-size:11px;margin-left:auto;margin-right:auto" onclick="copyLink()">Copiar link</button>
-    </div>
     <div class="card">
       <div class="section-label" style="margin-bottom:12px">Jugadores (<span id="lobbyCount">0</span>)</div>
       <div class="player-pills" id="lobbyPlayers"></div>
@@ -332,7 +326,8 @@ textarea{resize:none;line-height:1.5;}
       </div>
     </div>
     <button class="btn btn-gold" id="startBtn" onclick="startGame()">Iniciar juego</button>
-    <button class="btn btn-outline" style="font-size:11px;padding:11px" onclick="goHome()">Inicio</button>
+    <button class="btn btn-outline" style="font-size:11px;padding:11px" onclick="openInviteOverlay()">Invitar</button>
+    <button class="btn btn-outline" style="font-size:11px;padding:11px" onclick="goSalir()">Salir</button>
   </div>
 </div>
 
@@ -395,7 +390,7 @@ textarea{resize:none;line-height:1.5;}
     </div>
     <div class="end-players" id="endPlayers"></div>
     <button class="btn btn-gold" onclick="goSetup()">Nuevo juego</button>
-    <button class="btn btn-outline" style="margin-top:8px" onclick="goHome()">Inicio</button>
+    <button class="btn btn-outline" style="margin-top:8px" onclick="goSalir()">Salir</button>
   </div>
 </div>
 
@@ -525,6 +520,7 @@ const LEVELS={
 var playerCount=4, selectedLevel='mixto', selectedMode='presencial', selectedCardType='truth', game=null;
 var _pendingPhone='';
 var _userPhone='', _userSeenQ=[], _userSeenD=[];
+var _lastPlayers=[];
 var _INACTIVITY_MS=10*60*1000; // 10 minutos
 // Card pools
 var allQ=[], allD=[];         // main / fallback pool
@@ -602,6 +598,12 @@ function markCardSeen(cardId,isQ){
 
 // ── User registration ──
 function goSetup(){
+  // Guardar jugadores de la sesión anterior para pre-llenar nombres
+  if(game&&game.players&&game.players.length){
+    _lastPlayers=game.players.map(function(p){return p.name;});
+    playerCount=game.players.length;
+    document.getElementById('countVal').textContent=playerCount;
+  }
   resetPools();game=null;stopRealtime();
   var saved=JSON.parse(localStorage.getItem('tor_user')||'null');
   if(saved&&!isSessionExpired()){
@@ -670,9 +672,11 @@ function goNames(){
   var g=document.getElementById('namesGrid');g.innerHTML='';
   for(var i=0;i<playerCount;i++){
     var row=document.createElement('div');row.className='player-row';
-    row.innerHTML='<div class="avatar" style="background:'+col(i)+'">'+(i+1)+'</div><input placeholder="Nombre '+(i+1)+'" maxlength="20" oninput="this.classList.remove(\'error\')">';
+    var savedName=_lastPlayers[i]?esc(_lastPlayers[i]):'';
+    row.innerHTML='<div class="avatar" style="background:'+col(i)+'">'+(i+1)+'</div><input placeholder="Nombre '+(i+1)+'" maxlength="20" value="'+savedName+'" oninput="this.classList.remove(\'error\')">';
     g.appendChild(row);
   }
+  _lastPlayers=[];
   setTimeout(function(){var f=document.querySelector('#namesGrid input');if(f)f.focus();},200);
 }
 
@@ -705,8 +709,6 @@ async function createGame(){
 
 // ── Lobby ──
 function showLobby(){
-  document.getElementById('lobbyCode').textContent=game.id;
-  document.getElementById('shareUrl').textContent=gameUrl();
   renderLobbyPlayers();
   document.getElementById('lobbyLevelLabel').textContent=LEVELS[game.level]?LEVELS[game.level].label:game.level;
   document.getElementById('lobbyModeLabel').textContent=game.mode==='distancia'?'A distancia':'En persona';
@@ -930,6 +932,21 @@ async function goHome(){
   stopRealtime();
   resetPools();
   game=null;
+  show('welcome');
+}
+
+// ── Salir: cierra sesión de juego + sesión local ──
+async function goSalir(){
+  if(game&&(game.status==='playing'||game.status==='lobby'||game.status==='finished')){
+    await sbPatch('tor_games?id=eq.'+game.id,{status:'closed'});
+  }
+  stopRealtime();
+  resetPools();
+  game=null;
+  _lastPlayers=[];
+  localStorage.removeItem('tor_user');
+  localStorage.removeItem('tor_last_activity');
+  _userPhone='';_userSeenQ=[];_userSeenD=[];
   show('welcome');
 }
 
