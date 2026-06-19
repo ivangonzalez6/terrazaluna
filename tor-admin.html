@@ -1,0 +1,1161 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Admin · Verdad o Reto · Terraza Luna</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&family=Inter+Tight:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+:root{
+  --bg:#f8f4eb;--bg2:#ffffff;--bg3:#faf5e8;
+  --ink:#1a1610;--dim:#4a4337;--faint:#7a7264;
+  --line:#ddd4be;--line2:#c8b898;
+  --gold:#8a6420;--golds:#6b4d18;
+  --gold-light:#f0e4c4;--gold-pale:#faf5e8;
+  --warm:#e8e0d0;
+  --danger:#7c2d12;--danger-bg:#fff1f2;--danger-border:rgba(252,165,165,.5);
+  --green:#14532d;--green-bg:#f0fdf4;--green-border:rgba(134,239,172,.5);
+  --blue:#1e3a5f;--blue-bg:#eff6ff;--blue-border:rgba(147,197,253,.5);
+}
+html,body{min-height:100%;background:var(--bg);color:var(--ink);font-family:'Inter Tight',sans-serif;overflow-x:hidden;}
+
+/* ── PIN SCREEN ── */
+#pin-screen{position:fixed;inset:0;z-index:1000;background:var(--bg);display:flex;align-items:center;justify-content:center;padding:24px;}
+#pin-screen.hidden{display:none;}
+.pin-box{width:100%;max-width:360px;text-align:center;}
+.pin-logo{font-family:'Cormorant Garamond',serif;font-size:13px;letter-spacing:.3em;text-transform:uppercase;color:var(--gold);margin-bottom:8px;}
+.pin-title{font-family:'Cormorant Garamond',serif;font-size:42px;font-weight:600;letter-spacing:.08em;color:var(--ink);margin-bottom:4px;}
+.pin-sub{font-size:11px;color:var(--faint);letter-spacing:.1em;text-transform:uppercase;margin-bottom:32px;}
+.pin-input{width:100%;background:var(--bg3);border:1.5px solid var(--line);border-radius:14px;color:var(--ink);font-size:28px;font-family:'Cormorant Garamond',serif;font-weight:600;padding:18px 20px;outline:none;text-align:center;letter-spacing:.4em;transition:border-color .2s;}
+.pin-input:focus{border-color:var(--gold);}
+.pin-input.error{border-color:#fca5a5;background:#fff8f8;}
+.pin-btn{width:100%;margin-top:12px;background:var(--gold);color:#fff;border:none;border-radius:12px;padding:16px;font-size:13px;font-weight:700;cursor:pointer;font-family:'Inter Tight',sans-serif;letter-spacing:.1em;text-transform:uppercase;transition:background .15s;}
+.pin-btn:hover{background:var(--golds);}
+.pin-err{font-size:12px;color:#c0392b;margin-top:8px;min-height:18px;letter-spacing:.02em;}
+
+/* ── LAYOUT ── */
+#app{display:flex;min-height:100vh;}
+#app.hidden{display:none;}
+
+/* Sidebar */
+.sidebar{width:260px;flex-shrink:0;background:var(--bg2);border-right:1px solid var(--line);display:flex;flex-direction:column;position:fixed;top:0;left:0;height:100vh;z-index:50;}
+.sidebar-header{padding:24px 20px 16px;border-bottom:1px solid var(--line);}
+.sidebar-logo{font-size:10px;letter-spacing:.3em;text-transform:uppercase;color:var(--gold);font-weight:600;}
+.sidebar-title{font-family:'Cormorant Garamond',serif;font-size:26px;font-weight:600;letter-spacing:.06em;color:var(--ink);margin-top:2px;}
+.sidebar-badge{display:inline-block;background:var(--gold-pale);border:1px solid var(--line2);border-radius:999px;font-size:9px;letter-spacing:.15em;text-transform:uppercase;color:var(--gold);font-weight:700;padding:3px 10px;margin-top:4px;}
+.sidebar-nav{flex:1;overflow-y:auto;padding:12px 10px;}
+.nav-section{font-size:9px;letter-spacing:.2em;text-transform:uppercase;color:var(--faint);font-weight:700;padding:8px 10px 4px;}
+.nav-item{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:10px;cursor:pointer;transition:all .15s;margin-bottom:2px;border:1px solid transparent;}
+.nav-item:hover{background:var(--bg3);border-color:var(--line);}
+.nav-item.active{background:var(--gold-light);border-color:var(--line2);}
+.nav-item-icon{font-size:16px;width:22px;text-align:center;}
+.nav-item-label{font-size:13px;font-weight:600;color:var(--ink);}
+.nav-item-count{margin-left:auto;background:var(--warm);border-radius:999px;font-size:10px;font-weight:700;color:var(--dim);padding:2px 8px;}
+.nav-item.active .nav-item-label{color:var(--gold);}
+.nav-item.active .nav-item-count{background:var(--gold);color:#fff;}
+.sidebar-footer{padding:14px 16px;border-top:1px solid var(--line);}
+.sidebar-footer-text{font-size:10px;color:var(--faint);letter-spacing:.05em;}
+.logout-btn{margin-top:6px;background:transparent;border:1px solid var(--line);border-radius:8px;padding:7px 12px;font-size:11px;font-weight:600;cursor:pointer;color:var(--faint);font-family:'Inter Tight',sans-serif;letter-spacing:.06em;text-transform:uppercase;transition:all .15s;width:100%;}
+.logout-btn:hover{border-color:var(--danger-border);color:var(--danger);}
+
+/* Main content */
+.main{flex:1;margin-left:260px;min-height:100vh;padding:32px;}
+
+/* ── PAGE HEADER ── */
+.page-header{margin-bottom:28px;}
+.page-label{font-size:10px;letter-spacing:.25em;text-transform:uppercase;color:var(--gold);font-weight:600;margin-bottom:4px;}
+.page-title{font-family:'Cormorant Garamond',serif;font-size:38px;font-weight:600;letter-spacing:.06em;color:var(--ink);}
+.page-sub{font-size:13px;color:var(--faint);margin-top:4px;}
+
+/* ── STATS GRID ── */
+.stats-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:14px;margin-bottom:28px;}
+.stat-card{background:var(--bg2);border:1px solid var(--line);border-radius:16px;padding:18px 20px;}
+.stat-val{font-family:'Cormorant Garamond',serif;font-size:44px;font-weight:600;color:var(--gold);line-height:1;}
+.stat-label{font-size:11px;color:var(--faint);letter-spacing:.1em;text-transform:uppercase;margin-top:4px;font-weight:600;}
+
+/* ── TOOLBAR ── */
+.toolbar{display:flex;align-items:center;gap:10px;margin-bottom:18px;flex-wrap:wrap;}
+.search-box{flex:1;min-width:200px;background:var(--bg3);border:1px solid var(--line);border-radius:10px;color:var(--ink);font-size:14px;font-family:'Inter Tight',sans-serif;padding:10px 14px;outline:none;transition:border-color .2s;}
+.search-box:focus{border-color:var(--gold);}
+.filter-select{background:var(--bg3);border:1px solid var(--line);border-radius:10px;color:var(--ink);font-size:13px;font-family:'Inter Tight',sans-serif;padding:10px 14px;outline:none;cursor:pointer;transition:border-color .2s;}
+.filter-select:focus{border-color:var(--gold);}
+.btn-add{background:var(--gold);color:#fff;border:none;border-radius:10px;padding:10px 18px;font-size:12px;font-weight:700;cursor:pointer;font-family:'Inter Tight',sans-serif;letter-spacing:.08em;text-transform:uppercase;transition:background .15s;white-space:nowrap;display:flex;align-items:center;gap:6px;}
+.btn-add:hover{background:var(--golds);}
+
+/* ── TABLE ── */
+.table-wrap{background:var(--bg2);border:1px solid var(--line);border-radius:16px;overflow:hidden;}
+table{width:100%;border-collapse:collapse;}
+th{background:var(--bg3);font-size:10px;letter-spacing:.15em;text-transform:uppercase;color:var(--faint);font-weight:700;padding:12px 16px;text-align:left;border-bottom:1px solid var(--line);}
+td{padding:13px 16px;border-bottom:1px solid var(--line);font-size:13px;color:var(--ink);vertical-align:middle;}
+tr:last-child td{border-bottom:none;}
+tr:hover td{background:var(--bg3);}
+.td-name{font-weight:600;font-size:14px;}
+.td-phone{font-family:'Cormorant Garamond',serif;font-size:16px;font-weight:600;color:var(--dim);letter-spacing:.05em;}
+.td-actions{display:flex;gap:6px;align-items:center;}
+
+/* ── PILLS ── */
+.pill{display:inline-flex;align-items:center;padding:3px 10px;border-radius:999px;font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;white-space:nowrap;}
+.pill-familiar{background:#f0fdf4;color:#14532d;border:1px solid rgba(134,239,172,.4);}
+.pill-light{background:#eff6ff;color:#1e3a5f;border:1px solid rgba(147,197,253,.4);}
+.pill-hot{background:#fff7ed;color:#9a3412;border:1px solid rgba(253,186,116,.4);}
+.pill-extremo{background:#fdf4ff;color:#7e22ce;border:1px solid rgba(216,180,254,.4);}
+.pill-comunidad{background:var(--gold-pale);color:var(--golds);border:1px solid var(--line2);}
+.pill-oficial{background:var(--bg3);color:var(--faint);border:1px solid var(--line);}
+.pill-truth{background:#eff6ff;color:#1e3a5f;border:1px solid rgba(147,197,253,.4);}
+.pill-dare{background:#fff7ed;color:#9a3412;border:1px solid rgba(253,186,116,.4);}
+.pill-count{background:var(--gold-pale);color:var(--golds);border:1px solid var(--line2);font-size:11px;padding:4px 12px;}
+
+/* ── ACTION BUTTONS ── */
+.btn-edit{background:transparent;border:1px solid var(--line2);color:var(--dim);border-radius:8px;padding:6px 12px;font-size:11px;font-weight:600;cursor:pointer;font-family:'Inter Tight',sans-serif;letter-spacing:.06em;text-transform:uppercase;transition:all .15s;white-space:nowrap;}
+.btn-edit:hover{border-color:var(--gold);color:var(--gold);background:var(--gold-pale);}
+.btn-delete{background:transparent;border:1px solid var(--danger-border);color:var(--danger);border-radius:8px;padding:6px 12px;font-size:11px;font-weight:600;cursor:pointer;font-family:'Inter Tight',sans-serif;letter-spacing:.06em;text-transform:uppercase;transition:all .15s;white-space:nowrap;}
+.btn-delete:hover{background:var(--danger-bg);}
+.btn-view{background:transparent;border:1px solid var(--line2);color:var(--dim);border-radius:8px;padding:6px 14px;font-size:11px;font-weight:600;cursor:pointer;font-family:'Inter Tight',sans-serif;letter-spacing:.06em;text-transform:uppercase;transition:all .15s;white-space:nowrap;}
+.btn-view:hover{border-color:var(--gold);color:var(--gold);background:var(--gold-pale);}
+
+/* ── LOADING / EMPTY ── */
+.loading{text-align:center;padding:48px;color:var(--faint);font-size:13px;letter-spacing:.1em;text-transform:uppercase;}
+.empty{text-align:center;padding:48px;color:var(--faint);}
+.empty-icon{font-size:40px;margin-bottom:12px;}
+.empty-text{font-size:13px;letter-spacing:.05em;}
+
+/* ── CARD TEXT CELL ── */
+.td-text{max-width:340px;line-height:1.5;color:var(--ink);}
+.td-text-truncated{max-width:340px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--ink);}
+
+/* ── CATEGORIES DISPLAY ── */
+.cat-pills{display:flex;flex-wrap:wrap;gap:4px;}
+.cat-stat{display:flex;align-items:center;gap:5px;}
+.cat-num{font-family:'Cormorant Garamond',serif;font-size:17px;font-weight:700;color:var(--gold);}
+
+/* ── MODAL ── */
+.modal-overlay{position:fixed;inset:0;z-index:200;background:rgba(26,22,16,.5);backdrop-filter:blur(4px);display:flex;align-items:center;justify-content:center;padding:20px;}
+.modal-overlay.hidden{display:none;}
+.modal{background:var(--bg2);border-radius:20px;width:100%;max-width:640px;max-height:90vh;display:flex;flex-direction:column;border:1px solid var(--line);box-shadow:0 20px 60px rgba(26,22,16,.15);}
+.modal-header{padding:24px 24px 16px;border-bottom:1px solid var(--line);}
+.modal-title{font-family:'Cormorant Garamond',serif;font-size:28px;font-weight:600;letter-spacing:.06em;color:var(--ink);}
+.modal-sub{font-size:12px;color:var(--faint);margin-top:2px;letter-spacing:.04em;}
+.modal-body{flex:1;overflow-y:auto;padding:20px 24px;}
+.modal-footer{padding:16px 24px;border-top:1px solid var(--line);display:flex;gap:8px;justify-content:flex-end;}
+.modal-label{font-size:10px;letter-spacing:.2em;text-transform:uppercase;color:var(--gold);font-weight:700;margin-bottom:6px;margin-top:16px;}
+.modal-label:first-child{margin-top:0;}
+.modal-val{font-size:14px;color:var(--ink);font-weight:500;}
+
+/* Form inside modal */
+.form-group{margin-bottom:14px;}
+.form-label{font-size:10px;letter-spacing:.2em;text-transform:uppercase;color:var(--gold);font-weight:700;margin-bottom:6px;display:block;}
+.form-input{width:100%;background:var(--bg3);border:1px solid var(--line);border-radius:10px;color:var(--ink);font-size:14px;font-family:'Inter Tight',sans-serif;padding:12px 14px;outline:none;transition:border-color .2s;}
+.form-input:focus{border-color:var(--gold);}
+.form-select{width:100%;background:var(--bg3);border:1px solid var(--line);border-radius:10px;color:var(--ink);font-size:14px;font-family:'Inter Tight',sans-serif;padding:12px 14px;outline:none;cursor:pointer;transition:border-color .2s;}
+.form-select:focus{border-color:var(--gold);}
+.form-textarea{width:100%;background:var(--bg3);border:1px solid var(--line);border-radius:10px;color:var(--ink);font-size:14px;font-family:'Inter Tight',sans-serif;padding:12px 14px;outline:none;resize:vertical;min-height:100px;line-height:1.5;transition:border-color .2s;}
+.form-textarea:focus{border-color:var(--gold);}
+.btn-primary{background:var(--gold);color:#fff;border:none;border-radius:10px;padding:11px 22px;font-size:12px;font-weight:700;cursor:pointer;font-family:'Inter Tight',sans-serif;letter-spacing:.08em;text-transform:uppercase;transition:background .15s;}
+.btn-primary:hover{background:var(--golds);}
+.btn-secondary{background:transparent;border:1px solid var(--line2);color:var(--dim);border-radius:10px;padding:11px 22px;font-size:12px;font-weight:600;cursor:pointer;font-family:'Inter Tight',sans-serif;letter-spacing:.08em;text-transform:uppercase;transition:all .15s;}
+.btn-secondary:hover{border-color:var(--gold);color:var(--gold);}
+.btn-danger-solid{background:var(--danger-bg);border:1px solid var(--danger-border);color:var(--danger);border-radius:10px;padding:11px 22px;font-size:12px;font-weight:700;cursor:pointer;font-family:'Inter Tight',sans-serif;letter-spacing:.08em;text-transform:uppercase;transition:all .15s;}
+.btn-danger-solid:hover{background:#fee2e2;}
+
+/* ── USER DETAIL SECTION ── */
+.detail-section{background:var(--bg3);border:1px solid var(--line);border-radius:14px;padding:16px 18px;margin-bottom:14px;}
+.detail-section-title{font-size:10px;letter-spacing:.2em;text-transform:uppercase;color:var(--gold);font-weight:700;margin-bottom:12px;}
+.co-player-grid{display:flex;flex-wrap:wrap;gap:8px;}
+.co-player-chip{display:flex;align-items:center;gap:6px;background:var(--bg2);border:1px solid var(--line);border-radius:999px;padding:5px 12px 5px 5px;}
+.co-player-avatar{width:24px;height:24px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;color:#fff;font-family:'Cormorant Garamond',serif;flex-shrink:0;}
+.co-player-name{font-size:12px;font-weight:600;color:var(--ink);}
+.games-list{display:flex;flex-direction:column;gap:6px;}
+.game-item{display:flex;align-items:center;justify-content:space-between;padding:8px 12px;background:var(--bg2);border:1px solid var(--line);border-radius:10px;}
+.game-item-id{font-family:'Cormorant Garamond',serif;font-size:18px;font-weight:600;letter-spacing:.15em;color:var(--gold);}
+.game-item-meta{font-size:11px;color:var(--faint);}
+
+/* ── TOAST ── */
+.toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(20px);background:var(--ink);border:1px solid var(--gold);border-radius:10px;padding:10px 20px;font-size:12px;letter-spacing:.06em;color:var(--gold-light);opacity:0;pointer-events:none;transition:all .3s;z-index:999;white-space:nowrap;font-weight:600;}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+
+/* ── PAGINATION ── */
+.pagination{display:flex;align-items:center;justify-content:flex-end;gap:6px;margin-top:14px;}
+.page-btn{background:var(--bg2);border:1px solid var(--line);border-radius:8px;padding:6px 12px;font-size:12px;font-weight:600;cursor:pointer;color:var(--dim);font-family:'Inter Tight',sans-serif;transition:all .15s;}
+.page-btn:hover:not(:disabled){border-color:var(--gold);color:var(--gold);}
+.page-btn:disabled{opacity:.4;cursor:not-allowed;}
+.page-btn.active{background:var(--gold);color:#fff;border-color:var(--gold);}
+.page-info{font-size:12px;color:var(--faint);margin-right:6px;}
+
+/* section hidden */
+.section{display:none;}
+.section.active{display:block;}
+
+@media(max-width:900px){
+  .sidebar{width:220px;}
+  .main{margin-left:220px;padding:20px;}
+}
+@media(max-width:680px){
+  .sidebar{position:relative;width:100%;height:auto;border-right:none;border-bottom:1px solid var(--line);}
+  #app{flex-direction:column;}
+  .main{margin-left:0;}
+  .sidebar-nav{display:flex;flex-wrap:wrap;padding:8px;}
+  .sidebar{height:auto;}
+}
+</style>
+</head>
+<body>
+
+<!-- ── PIN SCREEN ── -->
+<div id="pin-screen">
+  <div class="pin-box">
+    <div class="pin-logo">Terraza Luna</div>
+    <div class="pin-title">Verdad<br>o Reto</div>
+    <div class="pin-sub">Panel de administración</div>
+    <input id="pinInput" class="pin-input" type="password" placeholder="••••" maxlength="6" onkeydown="if(event.key==='Enter')checkPin()">
+    <div id="pinErr" class="pin-err"></div>
+    <button class="pin-btn" onclick="checkPin()">Entrar</button>
+  </div>
+</div>
+
+<!-- ── APP ── -->
+<div id="app" class="hidden">
+  <!-- Sidebar -->
+  <div class="sidebar">
+    <div class="sidebar-header">
+      <div class="sidebar-logo">Terraza Luna</div>
+      <div class="sidebar-title">VoR Admin</div>
+      <div class="sidebar-badge">Panel de Control</div>
+    </div>
+    <div class="sidebar-nav">
+      <div class="nav-section">Secciones</div>
+      <div class="nav-item active" id="nav-usuarios" onclick="showSection('usuarios')">
+        <div class="nav-item-icon">👥</div>
+        <div class="nav-item-label">Usuarios</div>
+        <div class="nav-item-count" id="cnt-usuarios">—</div>
+      </div>
+      <div class="nav-item" id="nav-preguntas" onclick="showSection('preguntas')">
+        <div class="nav-item-icon">❓</div>
+        <div class="nav-item-label">Preguntas</div>
+        <div class="nav-item-count" id="cnt-preguntas">—</div>
+      </div>
+      <div class="nav-item" id="nav-retos" onclick="showSection('retos')">
+        <div class="nav-item-icon">⚡</div>
+        <div class="nav-item-label">Retos</div>
+        <div class="nav-item-count" id="cnt-retos">—</div>
+      </div>
+      <div class="nav-item" id="nav-partidas" onclick="showSection('partidas')">
+        <div class="nav-item-icon">🎮</div>
+        <div class="nav-item-label">Partidas</div>
+        <div class="nav-item-count" id="cnt-partidas">—</div>
+      </div>
+    </div>
+    <div class="sidebar-footer">
+      <div class="sidebar-footer-text">Terraza Luna © 2025</div>
+      <button class="logout-btn" onclick="logout()">Cerrar sesión</button>
+    </div>
+  </div>
+
+  <!-- Main -->
+  <div class="main">
+
+    <!-- ── USUARIOS ── -->
+    <div class="section active" id="section-usuarios">
+      <div class="page-header">
+        <div class="page-label">Gestión</div>
+        <div class="page-title">Usuarios registrados</div>
+        <div class="page-sub">Teléfonos, nombres, categorías utilizadas y contenido añadido</div>
+      </div>
+      <div class="stats-grid" id="stats-usuarios"></div>
+      <div class="toolbar">
+        <input class="search-box" id="search-usuarios" placeholder="Buscar por nombre o teléfono…" oninput="filterUsuarios()">
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Nombre</th>
+              <th>Teléfono</th>
+              <th>Categorías jugadas</th>
+              <th>Preguntas vistas</th>
+              <th>Agregó</th>
+              <th>Partidas</th>
+              <th>Desde</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody id="tbody-usuarios"></tbody>
+        </table>
+        <div id="loading-usuarios" class="loading">Cargando usuarios…</div>
+        <div id="empty-usuarios" class="empty hidden"><div class="empty-icon">👤</div><div class="empty-text">Sin usuarios registrados</div></div>
+      </div>
+    </div>
+
+    <!-- ── PREGUNTAS ── -->
+    <div class="section" id="section-preguntas">
+      <div class="page-header">
+        <div class="page-label">Contenido</div>
+        <div class="page-title">Preguntas</div>
+        <div class="page-sub">Todas las preguntas de verdad — editar, eliminar o agregar nuevas</div>
+      </div>
+      <div class="stats-grid" id="stats-preguntas"></div>
+      <div class="toolbar">
+        <input class="search-box" id="search-preguntas" placeholder="Buscar pregunta…" oninput="filterPreguntas()">
+        <select class="filter-select" id="filter-preguntas-level" onchange="filterPreguntas()">
+          <option value="">Todos los niveles</option>
+          <option value="familiar">Familiar</option>
+          <option value="light">Light</option>
+          <option value="hot">Hot</option>
+          <option value="extremo">Extremo</option>
+        </select>
+        <select class="filter-select" id="filter-preguntas-source" onchange="filterPreguntas()">
+          <option value="">Toda fuente</option>
+          <option value="oficial">Oficial</option>
+          <option value="comunidad">Comunidad</option>
+        </select>
+        <button class="btn-add" onclick="openAddModal('pregunta')">＋ Nueva</button>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th style="width:50%">Pregunta</th>
+              <th>Nivel</th>
+              <th>Fuente</th>
+              <th>Añadida por</th>
+              <th>Fecha</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody id="tbody-preguntas"></tbody>
+        </table>
+        <div id="loading-preguntas" class="loading">Cargando preguntas…</div>
+        <div id="empty-preguntas" class="empty hidden"><div class="empty-icon">❓</div><div class="empty-text">Sin preguntas</div></div>
+      </div>
+      <div class="pagination" id="pag-preguntas"></div>
+    </div>
+
+    <!-- ── RETOS ── -->
+    <div class="section" id="section-retos">
+      <div class="page-header">
+        <div class="page-label">Contenido</div>
+        <div class="page-title">Retos</div>
+        <div class="page-sub">Todos los retos — editar, eliminar o agregar nuevos</div>
+      </div>
+      <div class="stats-grid" id="stats-retos"></div>
+      <div class="toolbar">
+        <input class="search-box" id="search-retos" placeholder="Buscar reto…" oninput="filterRetos()">
+        <select class="filter-select" id="filter-retos-level" onchange="filterRetos()">
+          <option value="">Todos los niveles</option>
+          <option value="familiar">Familiar</option>
+          <option value="light">Light</option>
+          <option value="hot">Hot</option>
+          <option value="extremo">Extremo</option>
+        </select>
+        <select class="filter-select" id="filter-retos-mode" onchange="filterRetos()">
+          <option value="">Toda modalidad</option>
+          <option value="presencial">Presencial</option>
+          <option value="distancia">A distancia</option>
+        </select>
+        <select class="filter-select" id="filter-retos-source" onchange="filterRetos()">
+          <option value="">Toda fuente</option>
+          <option value="oficial">Oficial</option>
+          <option value="comunidad">Comunidad</option>
+        </select>
+        <button class="btn-add" onclick="openAddModal('reto')">＋ Nuevo</button>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th style="width:45%">Reto</th>
+              <th>Nivel</th>
+              <th>Modalidad</th>
+              <th>Fuente</th>
+              <th>Añadido por</th>
+              <th>Fecha</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody id="tbody-retos"></tbody>
+        </table>
+        <div id="loading-retos" class="loading">Cargando retos…</div>
+        <div id="empty-retos" class="empty hidden"><div class="empty-icon">⚡</div><div class="empty-text">Sin retos</div></div>
+      </div>
+      <div class="pagination" id="pag-retos"></div>
+    </div>
+
+    <!-- ── PARTIDAS ── -->
+    <div class="section" id="section-partidas">
+      <div class="page-header">
+        <div class="page-label">Historial</div>
+        <div class="page-title">Partidas</div>
+        <div class="page-sub">Todas las partidas registradas en el sistema</div>
+      </div>
+      <div class="stats-grid" id="stats-partidas"></div>
+      <div class="toolbar">
+        <input class="search-box" id="search-partidas" placeholder="Buscar por código de juego…" oninput="filterPartidas()">
+        <select class="filter-select" id="filter-partidas-status" onchange="filterPartidas()">
+          <option value="">Todos los estados</option>
+          <option value="lobby">Lobby</option>
+          <option value="playing">En juego</option>
+          <option value="finished">Terminadas</option>
+          <option value="closed">Cerradas</option>
+        </select>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Código</th>
+              <th>Estado</th>
+              <th>Nivel</th>
+              <th>Modalidad</th>
+              <th>Jugadores</th>
+              <th>Ronda</th>
+              <th>Creada</th>
+            </tr>
+          </thead>
+          <tbody id="tbody-partidas"></tbody>
+        </table>
+        <div id="loading-partidas" class="loading">Cargando partidas…</div>
+        <div id="empty-partidas" class="empty hidden"><div class="empty-icon">🎮</div><div class="empty-text">Sin partidas</div></div>
+      </div>
+    </div>
+
+  </div><!-- /main -->
+</div><!-- /app -->
+
+<!-- ── MODAL: USER DETAIL ── -->
+<div class="modal-overlay hidden" id="modal-user">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title" id="mu-title">Usuario</div>
+      <div class="modal-sub" id="mu-sub">Perfil completo</div>
+    </div>
+    <div class="modal-body" id="mu-body"></div>
+    <div class="modal-footer">
+      <button class="btn-secondary" onclick="closeModal('modal-user')">Cerrar</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── MODAL: EDIT PREGUNTA / RETO ── -->
+<div class="modal-overlay hidden" id="modal-edit">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title" id="me-title">Editar</div>
+      <div class="modal-sub" id="me-sub"></div>
+    </div>
+    <div class="modal-body">
+      <div class="form-group">
+        <label class="form-label">Texto</label>
+        <textarea class="form-textarea" id="me-text" rows="4"></textarea>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Nivel</label>
+        <select class="form-select" id="me-level">
+          <option value="familiar">Familiar</option>
+          <option value="light">Light</option>
+          <option value="hot">Hot</option>
+          <option value="extremo">Extremo</option>
+        </select>
+      </div>
+      <div class="form-group" id="me-mode-group" style="display:none">
+        <label class="form-label">Modalidad</label>
+        <select class="form-select" id="me-mode">
+          <option value="presencial">Presencial</option>
+          <option value="distancia">A distancia</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Fuente</label>
+        <select class="form-select" id="me-source">
+          <option value="oficial">Oficial</option>
+          <option value="comunidad">Comunidad</option>
+        </select>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-secondary" onclick="closeModal('modal-edit')">Cancelar</button>
+      <button class="btn-primary" onclick="saveEdit()">Guardar cambios</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── MODAL: ADD PREGUNTA / RETO ── -->
+<div class="modal-overlay hidden" id="modal-add">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title" id="ma-title">Nueva pregunta</div>
+      <div class="modal-sub" id="ma-sub"></div>
+    </div>
+    <div class="modal-body">
+      <div class="form-group">
+        <label class="form-label">Texto</label>
+        <textarea class="form-textarea" id="ma-text" rows="4" placeholder="Escribe el contenido aquí…"></textarea>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Nivel</label>
+        <select class="form-select" id="ma-level">
+          <option value="familiar">Familiar</option>
+          <option value="light">Light</option>
+          <option value="hot">Hot</option>
+          <option value="extremo">Extremo</option>
+        </select>
+      </div>
+      <div class="form-group" id="ma-mode-group" style="display:none">
+        <label class="form-label">Modalidad</label>
+        <select class="form-select" id="ma-mode">
+          <option value="presencial">Presencial</option>
+          <option value="distancia">A distancia</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Fuente</label>
+        <select class="form-select" id="ma-source">
+          <option value="oficial">Oficial</option>
+          <option value="comunidad">Comunidad</option>
+        </select>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-secondary" onclick="closeModal('modal-add')">Cancelar</button>
+      <button class="btn-primary" onclick="saveAdd()">Guardar</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── MODAL: CONFIRM DELETE ── -->
+<div class="modal-overlay hidden" id="modal-delete">
+  <div class="modal" style="max-width:420px">
+    <div class="modal-header">
+      <div class="modal-title">Eliminar</div>
+      <div class="modal-sub" id="md-sub">Esta acción no se puede deshacer</div>
+    </div>
+    <div class="modal-body">
+      <div style="background:var(--danger-bg);border:1px solid var(--danger-border);border-radius:12px;padding:14px 16px;font-size:13px;color:var(--danger);line-height:1.5;" id="md-text"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-secondary" onclick="closeModal('modal-delete')">Cancelar</button>
+      <button class="btn-danger-solid" onclick="confirmDelete()">Eliminar</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const SB='https://biuaxkpyujypiigxolwt.supabase.co';
+const SK='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJpdWF4a3B5dWp5cGlpZ3hvbHd0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk5MDY1ODUsImV4cCI6MjA5NTQ4MjU4NX0.4MJ2WfTo6tDNImcN0E5RCy4ilU2-sXnmRb6_BB85YaQ';
+const ADMIN_PIN='7777'; // Cambiar por el PIN deseado
+
+const COLORS=['#c0392b','#2980b9','#27ae60','#d35400','#8e44ad','#16a085','#7f6b4a','#2c3e50','#1a7a4a','#8a6420'];
+const LEVEL_LABELS={familiar:'Familiar',light:'Light',hot:'Hot',extremo:'Extremo',mixto:'Mixto',comunidad:'Comunidad'};
+const LEVEL_CLASS={familiar:'pill-familiar',light:'pill-light',hot:'pill-hot',extremo:'pill-extremo',mixto:'pill-comunidad',comunidad:'pill-comunidad'};
+
+// State
+var allUsuarios=[], filteredUsuarios=[];
+var allPreguntas=[], filteredPreguntas=[];
+var allRetos=[], filteredRetos=[];
+var allPartidas=[], filteredPartidas=[];
+var allParticipants=[], allSeen=[];
+var pregPage=0, retosPage=0;
+const PAGE_SIZE=50;
+
+// Pending modal state
+var editTarget=null, editType=null, deleteTarget=null, deleteType=null, addType=null;
+
+// ── API ──
+function h(){return{'apikey':SK,'Authorization':'Bearer '+SK,'Content-Type':'application/json'};}
+async function sbGet(t,f){
+  var r=await fetch(SB+'/rest/v1/'+t+(f||''),{headers:h()});
+  if(!r.ok){var e=await r.text();throw new Error(e);}
+  return r.json();
+}
+async function sbPost(t,b){
+  var r=await fetch(SB+'/rest/v1/'+t,{method:'POST',headers:Object.assign({},h(),{'Prefer':'return=representation'}),body:JSON.stringify(b)});
+  return r.json();
+}
+async function sbPatch(t,f,b){
+  var r=await fetch(SB+'/rest/v1/'+t+'?id=eq.'+f,{method:'PATCH',headers:Object.assign({},h(),{'Prefer':'return=minimal'}),body:JSON.stringify(b)});
+  return r.ok;
+}
+async function sbDelete(t,f){
+  var r=await fetch(SB+'/rest/v1/'+t+'?id=eq.'+f,{method:'DELETE',headers:h()});
+  return r.ok;
+}
+
+// ── Helpers ──
+function esc(s){return String(s||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
+function ini(n){return String(n||'').trim().substring(0,2).toUpperCase()||'?';}
+function col(i){return COLORS[i%COLORS.length];}
+function fmt(dt){if(!dt)return'—';var d=new Date(dt);return d.toLocaleDateString('es-MX',{day:'2-digit',month:'short',year:'numeric'});}
+function fmtShort(dt){if(!dt)return'—';var d=new Date(dt);return d.toLocaleDateString('es-MX',{day:'2-digit',month:'short'});}
+function levelPill(l){var lbl=LEVEL_LABELS[l]||l||'—';var cls=LEVEL_CLASS[l]||'pill-familiar';return '<span class="pill '+cls+'">'+esc(lbl)+'</span>';}
+function sourcePill(s){return s==='comunidad'?'<span class="pill pill-comunidad">Comunidad</span>':'<span class="pill pill-oficial">Oficial</span>';}
+
+function toast(m,dur){
+  var t=document.getElementById('toast');t.textContent=m;t.classList.add('show');
+  clearTimeout(t._t);t._t=setTimeout(()=>t.classList.remove('show'),dur||2800);
+}
+function closeModal(id){document.getElementById(id).classList.add('hidden');}
+function openModal(id){document.getElementById(id).classList.remove('hidden');}
+
+// ── PIN ──
+function checkPin(){
+  var v=document.getElementById('pinInput').value.trim();
+  if(v===ADMIN_PIN){
+    document.getElementById('pin-screen').classList.add('hidden');
+    document.getElementById('app').classList.remove('hidden');
+    loadAll();
+  } else {
+    document.getElementById('pinInput').classList.add('error');
+    document.getElementById('pinErr').textContent='PIN incorrecto';
+    setTimeout(()=>{document.getElementById('pinInput').classList.remove('error');document.getElementById('pinErr').textContent='';},2000);
+  }
+}
+function logout(){
+  document.getElementById('app').classList.add('hidden');
+  document.getElementById('pin-screen').classList.remove('hidden');
+  document.getElementById('pinInput').value='';
+}
+
+// ── NAVIGATION ──
+function showSection(name){
+  document.querySelectorAll('.section').forEach(s=>s.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+  document.getElementById('section-'+name).classList.add('active');
+  document.getElementById('nav-'+name).classList.add('active');
+}
+
+// ── LOAD ALL DATA ──
+async function loadAll(){
+  await Promise.all([loadUsuarios(),loadPreguntas(),loadRetos(),loadPartidas()]);
+  await Promise.all([loadParticipants(),loadSeen()]);
+  renderStats();
+}
+
+async function loadUsuarios(){
+  try{
+    var rows=await sbGet('tor_users','?order=created_at.desc&select=*');
+    allUsuarios=rows||[];
+    document.getElementById('cnt-usuarios').textContent=allUsuarios.length;
+    filteredUsuarios=[...allUsuarios];
+    renderUsuarios();
+    document.getElementById('loading-usuarios').style.display='none';
+  }catch(e){document.getElementById('loading-usuarios').textContent='Error al cargar usuarios';}
+}
+
+async function loadPreguntas(){
+  try{
+    var rows=await sbGet('tor_questions','?order=created_at.desc&select=*&limit=5000');
+    allPreguntas=rows||[];
+    document.getElementById('cnt-preguntas').textContent=allPreguntas.length;
+    filteredPreguntas=[...allPreguntas];
+    renderPreguntas();
+    renderStatsPreguntas();
+    document.getElementById('loading-preguntas').style.display='none';
+  }catch(e){document.getElementById('loading-preguntas').textContent='Error al cargar preguntas';}
+}
+
+async function loadRetos(){
+  try{
+    var rows=await sbGet('tor_dares','?order=created_at.desc&select=*&limit=5000');
+    allRetos=rows||[];
+    document.getElementById('cnt-retos').textContent=allRetos.length;
+    filteredRetos=[...allRetos];
+    renderRetos();
+    renderStatsRetos();
+    document.getElementById('loading-retos').style.display='none';
+  }catch(e){document.getElementById('loading-retos').textContent='Error al cargar retos';}
+}
+
+async function loadPartidas(){
+  try{
+    var rows=await sbGet('tor_games','?order=created_at.desc&select=*');
+    allPartidas=rows||[];
+    document.getElementById('cnt-partidas').textContent=allPartidas.length;
+    filteredPartidas=[...allPartidas];
+    renderPartidas();
+    document.getElementById('loading-partidas').style.display='none';
+  }catch(e){document.getElementById('loading-partidas').textContent='Error al cargar partidas';}
+}
+
+async function loadParticipants(){
+  try{allParticipants=await sbGet('tor_game_participants','?select=*')||[];}catch(e){}
+}
+
+async function loadSeen(){
+  try{allSeen=await sbGet('tor_user_seen','?select=*')||[];}catch(e){}
+}
+
+// ── STATS GLOBAL ──
+function renderStats(){
+  var comunQ=allPreguntas.filter(q=>q.source==='comunidad').length;
+  var comunD=allRetos.filter(d=>d.source==='comunidad').length;
+  document.getElementById('stats-usuarios').innerHTML=
+    statCard(allUsuarios.length,'Usuarios')+
+    statCard(allPartidas.length,'Partidas totales')+
+    statCard(comunQ+comunD,'Cartas de la comunidad')+
+    statCard(allSeen.length,'Cartas jugadas');
+}
+
+function statCard(val,label){
+  return '<div class="stat-card"><div class="stat-val">'+val+'</div><div class="stat-label">'+label+'</div></div>';
+}
+
+function renderStatsPreguntas(){
+  var byLevel={familiar:0,light:0,hot:0,extremo:0};
+  allPreguntas.forEach(q=>{if(byLevel[q.level]!==undefined)byLevel[q.level]++;});
+  document.getElementById('stats-preguntas').innerHTML=
+    statCard(allPreguntas.length,'Total')+
+    statCard(byLevel.familiar,'Familiar')+
+    statCard(byLevel.light,'Light')+
+    statCard(byLevel.hot,'Hot')+
+    statCard(byLevel.extremo,'Extremo')+
+    statCard(allPreguntas.filter(q=>q.source==='comunidad').length,'Comunidad');
+}
+
+function renderStatsRetos(){
+  var byLevel={familiar:0,light:0,hot:0,extremo:0};
+  allRetos.forEach(d=>{if(byLevel[d.level]!==undefined)byLevel[d.level]++;});
+  document.getElementById('stats-retos').innerHTML=
+    statCard(allRetos.length,'Total')+
+    statCard(byLevel.familiar,'Familiar')+
+    statCard(byLevel.light,'Light')+
+    statCard(byLevel.hot,'Hot')+
+    statCard(byLevel.extremo,'Extremo')+
+    statCard(allRetos.filter(d=>d.source==='comunidad').length,'Comunidad');
+}
+
+// ── USUARIOS ──
+function filterUsuarios(){
+  var q=document.getElementById('search-usuarios').value.toLowerCase();
+  filteredUsuarios=allUsuarios.filter(u=>
+    (u.name||'').toLowerCase().includes(q)||(u.phone||'').includes(q)
+  );
+  renderUsuarios();
+}
+
+function renderUsuarios(){
+  var tb=document.getElementById('tbody-usuarios');
+  var empty=document.getElementById('empty-usuarios');
+  if(!filteredUsuarios.length){tb.innerHTML='';empty.classList.remove('hidden');return;}
+  empty.classList.add('hidden');
+  tb.innerHTML=filteredUsuarios.map((u,i)=>{
+    // Stats from seen/participants/questions
+    var seen=allSeen.filter(s=>s.phone===u.phone);
+    var seenQ=seen.filter(s=>s.card_type==='q');
+    var seenD=seen.filter(s=>s.card_type==='d');
+    var catCount={};
+    seen.forEach(s=>{if(s.level){catCount[s.level]=(catCount[s.level]||0)+1;}});
+    var catPills=Object.entries(catCount).map(([l,n])=>
+      '<span class="pill '+( LEVEL_CLASS[l]||'pill-familiar')+'" style="margin:2px">'+esc(LEVEL_LABELS[l]||l)+' <strong>'+n+'</strong></span>'
+    ).join('')||'<span style="color:var(--faint);font-size:12px">—</span>';
+
+    var addedQ=allPreguntas.filter(q=>q.added_by_phone===u.phone).length;
+    var addedD=allRetos.filter(d=>d.added_by_phone===u.phone).length;
+    var added=(addedQ+addedD)?('<span class="pill pill-truth">'+addedQ+'V</span> <span class="pill pill-dare">'+addedD+'R</span>'):'<span style="color:var(--faint);font-size:12px">—</span>';
+
+    var gamesCount=allParticipants.filter(p=>p.phone===u.phone).length;
+
+    return '<tr>'+
+      '<td class="td-name">'+esc(u.name||'—')+'</td>'+
+      '<td class="td-phone">'+esc(u.phone)+'</td>'+
+      '<td><div class="cat-pills">'+catPills+'</div></td>'+
+      '<td><div style="display:flex;gap:6px;align-items:center"><span class="pill pill-truth">'+seenQ.length+' V</span><span class="pill pill-dare">'+seenD.length+' R</span></div></td>'+
+      '<td>'+added+'</td>'+
+      '<td><span class="pill pill-count">'+gamesCount+'</span></td>'+
+      '<td style="color:var(--faint);font-size:12px">'+fmtShort(u.created_at)+'</td>'+
+      '<td><button class="btn-view" onclick="openUserDetail(\''+esc(u.phone)+'\')">Ver perfil</button></td>'+
+    '</tr>';
+  }).join('');
+}
+
+// ── USER DETAIL MODAL ──
+function openUserDetail(phone){
+  var u=allUsuarios.find(x=>x.phone===phone);
+  if(!u)return;
+  document.getElementById('mu-title').textContent=u.name||'Usuario';
+  document.getElementById('mu-sub').textContent=u.phone+' · Miembro desde '+fmt(u.created_at);
+
+  // Seen cards breakdown
+  var seen=allSeen.filter(s=>s.phone===phone);
+  var catCount={};
+  seen.forEach(s=>{if(s.level){catCount[s.level]=(catCount[s.level]||0)+1;}});
+
+  // Games participated
+  var myGames=allParticipants.filter(p=>p.phone===phone).map(p=>p.game_id);
+  var gameDetails=allPartidas.filter(g=>myGames.includes(g.id));
+
+  // Co-players from shared games
+  var coSet={};
+  myGames.forEach(gid=>{
+    allParticipants.filter(p=>p.game_id===gid&&p.phone!==phone).forEach(p=>{
+      if(!coSet[p.phone]){coSet[p.phone]={phone:p.phone,name:p.player_name||p.phone,games:0};}
+      coSet[p.phone].games++;
+    });
+  });
+  var coPlayers=Object.values(coSet);
+
+  // Questions/dares added
+  var myQ=allPreguntas.filter(q=>q.added_by_phone===phone);
+  var myD=allRetos.filter(d=>d.added_by_phone===phone);
+
+  var html='';
+
+  // Stats
+  html+='<div class="detail-section">';
+  html+='<div class="detail-section-title">Cartas utilizadas por categoría</div>';
+  if(Object.keys(catCount).length){
+    html+='<div style="display:flex;flex-wrap:wrap;gap:10px">';
+    Object.entries(catCount).forEach(([l,n])=>{
+      html+='<div style="display:flex;align-items:center;gap:6px">'+levelPill(l)+'<span style="font-family:\'Cormorant Garamond\',serif;font-size:22px;font-weight:700;color:var(--gold)">'+n+'</span></div>';
+    });
+    html+='</div>';
+  } else {
+    html+='<div style="color:var(--faint);font-size:13px">Sin cartas registradas aún</div>';
+  }
+  html+='</div>';
+
+  // Games
+  html+='<div class="detail-section">';
+  html+='<div class="detail-section-title">Partidas ('+gameDetails.length+')</div>';
+  if(gameDetails.length){
+    html+='<div class="games-list">';
+    gameDetails.forEach(g=>{
+      var statusLabel={lobby:'Lobby',playing:'En juego',finished:'Terminada',closed:'Cerrada'}[g.status]||g.status;
+      html+='<div class="game-item">';
+      html+='<div><div class="game-item-id">'+esc(g.id)+'</div><div class="game-item-meta">'+esc(LEVEL_LABELS[g.level]||g.level)+' · '+esc(g.mode==='distancia'?'A distancia':'Presencial')+'</div></div>';
+      html+='<div style="text-align:right"><div style="font-size:12px;font-weight:600;color:var(--ink)">'+esc(statusLabel)+'</div><div class="game-item-meta">'+fmtShort(g.created_at)+'</div></div>';
+      html+='</div>';
+    });
+    html+='</div>';
+  } else {
+    html+='<div style="color:var(--faint);font-size:13px">Sin partidas registradas</div>';
+  }
+  html+='</div>';
+
+  // Co-players
+  html+='<div class="detail-section">';
+  html+='<div class="detail-section-title">Con quién jugó ('+coPlayers.length+' personas)</div>';
+  if(coPlayers.length){
+    html+='<div class="co-player-grid">';
+    coPlayers.forEach((cp,ci)=>{
+      html+='<div class="co-player-chip">';
+      html+='<div class="co-player-avatar" style="background:'+col(ci)+'">'+ini(cp.name)+'</div>';
+      html+='<div><div class="co-player-name">'+esc(cp.name)+'</div><div style="font-size:10px;color:var(--faint)">'+cp.games+' partida'+(cp.games!==1?'s':'')+'</div></div>';
+      html+='</div>';
+    });
+    html+='</div>';
+  } else {
+    html+='<div style="color:var(--faint);font-size:13px">Sin co-jugadores registrados</div>';
+  }
+  html+='</div>';
+
+  // Questions added
+  html+='<div class="detail-section">';
+  html+='<div class="detail-section-title">Preguntas añadidas ('+myQ.length+')</div>';
+  if(myQ.length){
+    html+='<div style="display:flex;flex-direction:column;gap:8px">';
+    myQ.forEach(q=>{
+      html+='<div style="background:var(--bg2);border:1px solid var(--line);border-radius:10px;padding:10px 14px;display:flex;align-items:flex-start;gap:10px">';
+      html+='<div style="flex:1"><div style="font-size:13px;line-height:1.5;color:var(--ink)">'+esc(q.text)+'</div></div>';
+      html+='<div style="display:flex;gap:5px;flex-shrink:0;margin-top:2px">';
+      html+=levelPill(q.level);
+      html+='<button class="btn-edit" onclick="closeModal(\'modal-user\');openEdit(\''+q.id+'\',\'pregunta\')">Editar</button>';
+      html+='<button class="btn-delete" onclick="closeModal(\'modal-user\');openDelete(\''+q.id+'\',\'pregunta\',\''+esc(q.text.substring(0,60))+'...\')">Eliminar</button>';
+      html+='</div>';
+      html+='</div>';
+    });
+    html+='</div>';
+  } else {
+    html+='<div style="color:var(--faint);font-size:13px">Sin preguntas añadidas</div>';
+  }
+  html+='</div>';
+
+  // Dares added
+  html+='<div class="detail-section">';
+  html+='<div class="detail-section-title">Retos añadidos ('+myD.length+')</div>';
+  if(myD.length){
+    html+='<div style="display:flex;flex-direction:column;gap:8px">';
+    myD.forEach(d=>{
+      html+='<div style="background:var(--bg2);border:1px solid var(--line);border-radius:10px;padding:10px 14px;display:flex;align-items:flex-start;gap:10px">';
+      html+='<div style="flex:1"><div style="font-size:13px;line-height:1.5;color:var(--ink)">'+esc(d.text)+'</div></div>';
+      html+='<div style="display:flex;gap:5px;flex-shrink:0;flex-wrap:wrap;justify-content:flex-end;margin-top:2px">';
+      html+=levelPill(d.level);
+      html+='<span class="pill '+(d.mode==='distancia'?'pill-light':'pill-familiar')+'">'+esc(d.mode==='distancia'?'Dist.':'Pres.')+'</span>';
+      html+='<button class="btn-edit" onclick="closeModal(\'modal-user\');openEdit(\''+d.id+'\',\'reto\')">Editar</button>';
+      html+='<button class="btn-delete" onclick="closeModal(\'modal-user\');openDelete(\''+d.id+'\',\'reto\',\''+esc(d.text.substring(0,60))+'...\')">Eliminar</button>';
+      html+='</div>';
+      html+='</div>';
+    });
+    html+='</div>';
+  } else {
+    html+='<div style="color:var(--faint);font-size:13px">Sin retos añadidos</div>';
+  }
+  html+='</div>';
+
+  document.getElementById('mu-body').innerHTML=html;
+  openModal('modal-user');
+}
+
+// ── PREGUNTAS ──
+function filterPreguntas(){
+  var q=document.getElementById('search-preguntas').value.toLowerCase();
+  var lv=document.getElementById('filter-preguntas-level').value;
+  var src=document.getElementById('filter-preguntas-source').value;
+  filteredPreguntas=allPreguntas.filter(p=>
+    (p.text||'').toLowerCase().includes(q)&&
+    (!lv||p.level===lv)&&
+    (!src||p.source===src)
+  );
+  pregPage=0;
+  renderPreguntas();
+}
+
+function renderPreguntas(){
+  var tb=document.getElementById('tbody-preguntas');
+  var empty=document.getElementById('empty-preguntas');
+  var start=pregPage*PAGE_SIZE, slice=filteredPreguntas.slice(start,start+PAGE_SIZE);
+  if(!filteredPreguntas.length){tb.innerHTML='';empty.classList.remove('hidden');renderPagination('preguntas');return;}
+  empty.classList.add('hidden');
+  tb.innerHTML=slice.map(q=>{
+    var addedBy=q.added_by_phone?('<span style="font-size:12px;color:var(--dim)">'+esc(getUserName(q.added_by_phone))+'</span>'):'<span style="color:var(--faint);font-size:12px">—</span>';
+    return '<tr>'+
+      '<td class="td-text">'+esc(q.text)+'</td>'+
+      '<td>'+levelPill(q.level)+'</td>'+
+      '<td>'+sourcePill(q.source)+'</td>'+
+      '<td>'+addedBy+'</td>'+
+      '<td style="font-size:11px;color:var(--faint)">'+fmtShort(q.created_at)+'</td>'+
+      '<td class="td-actions">'+
+        '<button class="btn-edit" onclick="openEdit(\''+q.id+'\',\'pregunta\')">Editar</button>'+
+        '<button class="btn-delete" onclick="openDelete(\''+q.id+'\',\'pregunta\',\''+esc((q.text||'').substring(0,60))+'\')">Eliminar</button>'+
+      '</td>'+
+    '</tr>';
+  }).join('');
+  renderPagination('preguntas');
+}
+
+// ── RETOS ──
+function filterRetos(){
+  var q=document.getElementById('search-retos').value.toLowerCase();
+  var lv=document.getElementById('filter-retos-level').value;
+  var mode=document.getElementById('filter-retos-mode').value;
+  var src=document.getElementById('filter-retos-source').value;
+  filteredRetos=allRetos.filter(d=>
+    (d.text||'').toLowerCase().includes(q)&&
+    (!lv||d.level===lv)&&
+    (!mode||d.mode===mode)&&
+    (!src||d.source===src)
+  );
+  retosPage=0;
+  renderRetos();
+}
+
+function renderRetos(){
+  var tb=document.getElementById('tbody-retos');
+  var empty=document.getElementById('empty-retos');
+  var start=retosPage*PAGE_SIZE, slice=filteredRetos.slice(start,start+PAGE_SIZE);
+  if(!filteredRetos.length){tb.innerHTML='';empty.classList.remove('hidden');renderPagination('retos');return;}
+  empty.classList.add('hidden');
+  tb.innerHTML=slice.map(d=>{
+    var addedBy=d.added_by_phone?('<span style="font-size:12px;color:var(--dim)">'+esc(getUserName(d.added_by_phone))+'</span>'):'<span style="color:var(--faint);font-size:12px">—</span>';
+    var modeLabel=d.mode==='distancia'?'A distancia':'Presencial';
+    var modeClass=d.mode==='distancia'?'pill-light':'pill-familiar';
+    return '<tr>'+
+      '<td class="td-text">'+esc(d.text)+'</td>'+
+      '<td>'+levelPill(d.level)+'</td>'+
+      '<td><span class="pill '+modeClass+'">'+esc(modeLabel)+'</span></td>'+
+      '<td>'+sourcePill(d.source)+'</td>'+
+      '<td>'+addedBy+'</td>'+
+      '<td style="font-size:11px;color:var(--faint)">'+fmtShort(d.created_at)+'</td>'+
+      '<td class="td-actions">'+
+        '<button class="btn-edit" onclick="openEdit(\''+d.id+'\',\'reto\')">Editar</button>'+
+        '<button class="btn-delete" onclick="openDelete(\''+d.id+'\',\'reto\',\''+esc((d.text||'').substring(0,60))+'\')">Eliminar</button>'+
+      '</td>'+
+    '</tr>';
+  }).join('');
+  renderPagination('retos');
+}
+
+// ── PARTIDAS ──
+function filterPartidas(){
+  var q=document.getElementById('search-partidas').value.toLowerCase();
+  var st=document.getElementById('filter-partidas-status').value;
+  filteredPartidas=allPartidas.filter(g=>
+    (g.id||'').toLowerCase().includes(q)&&(!st||g.status===st)
+  );
+  renderPartidas();
+}
+
+function renderPartidas(){
+  var tb=document.getElementById('tbody-partidas');
+  var empty=document.getElementById('empty-partidas');
+  if(!filteredPartidas.length){tb.innerHTML='';empty.classList.remove('hidden');return;}
+  empty.classList.add('hidden');
+  tb.innerHTML=filteredPartidas.map(g=>{
+    var players=(g.players||[]);
+    var statusColor={lobby:'var(--blue)',playing:'var(--green)',finished:'var(--faint)',closed:'var(--faint)'}[g.status]||'var(--faint)';
+    var statusLabel={lobby:'Lobby',playing:'En juego',finished:'Terminada',closed:'Cerrada'}[g.status]||g.status;
+    return '<tr>'+
+      '<td><span style="font-family:\'Cormorant Garamond\',serif;font-size:22px;font-weight:700;letter-spacing:.15em;color:var(--gold)">'+esc(g.id)+'</span></td>'+
+      '<td><span style="font-size:12px;font-weight:700;color:'+statusColor+'">'+statusLabel+'</span></td>'+
+      '<td>'+levelPill(g.level)+'</td>'+
+      '<td><span style="font-size:12px;color:var(--dim)">'+esc(g.mode==='distancia'?'A distancia':'Presencial')+'</span></td>'+
+      '<td><div style="display:flex;flex-wrap:wrap;gap:4px">'+players.map((p,pi)=>'<span style="background:'+col(pi)+';color:#fff;border-radius:999px;padding:2px 8px;font-size:10px;font-weight:700">'+esc(p.name||'?')+'</span>').join('')+'</div></td>'+
+      '<td><span style="font-family:\'Cormorant Garamond\',serif;font-size:20px;font-weight:700;color:var(--gold)">'+( g.round||1)+'</span></td>'+
+      '<td style="font-size:11px;color:var(--faint)">'+fmtShort(g.created_at)+'</td>'+
+    '</tr>';
+  }).join('');
+}
+
+// ── PAGINATION ──
+function renderPagination(which){
+  var arr=which==='preguntas'?filteredPreguntas:filteredRetos;
+  var page=which==='preguntas'?pregPage:retosPage;
+  var total=Math.ceil(arr.length/PAGE_SIZE);
+  var el=document.getElementById('pag-'+which);
+  if(total<=1){el.innerHTML='';return;}
+  var html='<span class="page-info">'+arr.length+' resultados</span>';
+  html+='<button class="page-btn" '+(page===0?'disabled':'')+' onclick="setPage(\''+which+'\','+(page-1)+')">‹</button>';
+  for(var i=0;i<Math.min(total,7);i++){
+    if(total>7&&i===3&&page>3){html+='<span style="color:var(--faint);padding:0 4px">…</span>';}
+    html+='<button class="page-btn'+(i===page?' active':'')+'" onclick="setPage(\''+which+'\','+i+')">'+( i+1)+'</button>';
+    if(total>7&&i===3&&page<total-4){html+='<span style="color:var(--faint);padding:0 4px">…</span>';i=total-2;}
+  }
+  html+='<button class="page-btn" '+(page===total-1?'disabled':'')+' onclick="setPage(\''+which+'\','+(page+1)+')">›</button>';
+  el.innerHTML=html;
+}
+
+function setPage(which,p){
+  if(which==='preguntas'){pregPage=p;renderPreguntas();}
+  else{retosPage=p;renderRetos();}
+  window.scrollTo(0,0);
+}
+
+// ── HELPERS ──
+function getUserName(phone){
+  if(!phone)return'—';
+  var u=allUsuarios.find(x=>x.phone===phone);
+  return u?u.name:phone;
+}
+
+// ── EDIT MODAL ──
+function openEdit(id,type){
+  editType=type;
+  var arr=type==='pregunta'?allPreguntas:allRetos;
+  var item=arr.find(x=>x.id===id);
+  if(!item)return;
+  editTarget=item;
+  document.getElementById('me-title').textContent='Editar '+(type==='pregunta'?'pregunta':'reto');
+  document.getElementById('me-sub').textContent='ID: '+id;
+  document.getElementById('me-text').value=item.text||'';
+  document.getElementById('me-level').value=item.level||'familiar';
+  document.getElementById('me-source').value=item.source||'oficial';
+  var modeGroup=document.getElementById('me-mode-group');
+  if(type==='reto'){
+    modeGroup.style.display='block';
+    document.getElementById('me-mode').value=item.mode||'presencial';
+  } else {
+    modeGroup.style.display='none';
+  }
+  openModal('modal-edit');
+}
+
+async function saveEdit(){
+  if(!editTarget||!editType)return;
+  var text=document.getElementById('me-text').value.trim();
+  var level=document.getElementById('me-level').value;
+  var source=document.getElementById('me-source').value;
+  if(!text){toast('El texto no puede estar vacío');return;}
+  var body={text,level,source};
+  if(editType==='reto')body.mode=document.getElementById('me-mode').value;
+  var table=editType==='pregunta'?'tor_questions':'tor_dares';
+  try{
+    var ok=await sbPatch(table,editTarget.id,body);
+    if(ok){
+      Object.assign(editTarget,body);
+      closeModal('modal-edit');
+      toast('Guardado correctamente');
+      if(editType==='pregunta')renderPreguntas();
+      else renderRetos();
+      renderUsuarios();
+    } else {toast('Error al guardar');}
+  }catch(e){toast('Error de conexión');}
+}
+
+// ── ADD MODAL ──
+function openAddModal(type){
+  addType=type;
+  document.getElementById('ma-title').textContent='Nueva '+(type==='pregunta'?'pregunta':'reto');
+  document.getElementById('ma-sub').textContent='';
+  document.getElementById('ma-text').value='';
+  document.getElementById('ma-level').value='familiar';
+  document.getElementById('ma-source').value='oficial';
+  var modeGroup=document.getElementById('ma-mode-group');
+  if(type==='reto'){modeGroup.style.display='block';document.getElementById('ma-mode').value='presencial';}
+  else{modeGroup.style.display='none';}
+  openModal('modal-add');
+}
+
+async function saveAdd(){
+  if(!addType)return;
+  var text=document.getElementById('ma-text').value.trim();
+  var level=document.getElementById('ma-level').value;
+  var source=document.getElementById('ma-source').value;
+  if(!text){toast('El texto no puede estar vacío');return;}
+  var body={text,level,source};
+  if(addType==='reto')body.mode=document.getElementById('ma-mode').value;
+  var table=addType==='pregunta'?'tor_questions':'tor_dares';
+  try{
+    var res=await sbPost(table,body);
+    if(res&&res[0]){
+      if(addType==='pregunta'){allPreguntas.unshift(res[0]);filteredPreguntas=[...allPreguntas];renderPreguntas();renderStatsPreguntas();document.getElementById('cnt-preguntas').textContent=allPreguntas.length;}
+      else{allRetos.unshift(res[0]);filteredRetos=[...allRetos];renderRetos();renderStatsRetos();document.getElementById('cnt-retos').textContent=allRetos.length;}
+      closeModal('modal-add');
+      toast((addType==='pregunta'?'Pregunta':'Reto')+' añadido');
+      renderStats();
+    } else {toast('Error al guardar');}
+  }catch(e){toast('Error de conexión');}
+}
+
+// ── DELETE MODAL ──
+function openDelete(id,type,preview){
+  deleteTarget={id,type};
+  document.getElementById('md-sub').textContent='¿Eliminar esta '+(type==='pregunta'?'pregunta':'reto')+'?';
+  document.getElementById('md-text').textContent=preview+'…';
+  openModal('modal-delete');
+}
+
+async function confirmDelete(){
+  if(!deleteTarget)return;
+  var table=deleteTarget.type==='pregunta'?'tor_questions':'tor_dares';
+  try{
+    var ok=await sbDelete(table,deleteTarget.id);
+    if(ok){
+      if(deleteTarget.type==='pregunta'){
+        allPreguntas=allPreguntas.filter(q=>q.id!==deleteTarget.id);
+        filteredPreguntas=filteredPreguntas.filter(q=>q.id!==deleteTarget.id);
+        renderPreguntas();renderStatsPreguntas();document.getElementById('cnt-preguntas').textContent=allPreguntas.length;
+      } else {
+        allRetos=allRetos.filter(d=>d.id!==deleteTarget.id);
+        filteredRetos=filteredRetos.filter(d=>d.id!==deleteTarget.id);
+        renderRetos();renderStatsRetos();document.getElementById('cnt-retos').textContent=allRetos.length;
+      }
+      renderUsuarios();
+      closeModal('modal-delete');
+      toast('Eliminado correctamente');
+      renderStats();
+    } else {toast('Error al eliminar');}
+  }catch(e){toast('Error de conexión');}
+}
+
+// ── Close modal on backdrop click ──
+document.querySelectorAll('.modal-overlay').forEach(ov=>{
+  ov.addEventListener('click',e=>{if(e.target===ov)ov.classList.add('hidden');});
+});
+
+// Enter on PIN
+document.getElementById('pinInput').addEventListener('keydown',e=>{if(e.key==='Enter')checkPin();});
+</script>
+</body>
+</html>

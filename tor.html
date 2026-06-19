@@ -519,7 +519,7 @@ const LEVELS={
 // ── State ──
 var playerCount=4, selectedLevel='mixto', selectedMode='presencial', selectedCardType='truth', game=null;
 var _pendingPhone='';
-var _userPhone='', _userSeenQ=[], _userSeenD=[];
+var _userPhone='', _userName='', _userSeenQ=[], _userSeenD=[];
 var _lastPlayers=[];
 var _INACTIVITY_MS=10*60*1000; // 10 minutos
 // Card pools
@@ -535,6 +535,7 @@ function h(){return{'apikey':SK,'Authorization':'Bearer '+SK,'Content-Type':'app
 async function sbGet(t,f){var r=await fetch(SB+'/rest/v1/'+t+(f||''),{headers:h()});return r.json();}
 async function sbPost(t,b){var r=await fetch(SB+'/rest/v1/'+t,{method:'POST',headers:Object.assign({},h(),{'Prefer':'return=representation'}),body:JSON.stringify(b)});return r.json();}
 async function sbPatch(t,b){return fetch(SB+'/rest/v1/'+t,{method:'PATCH',headers:Object.assign({},h(),{'Prefer':'return=minimal'}),body:JSON.stringify(b)});}
+async function sbDelete(t,f){return fetch(SB+'/rest/v1/'+t+(f||''),{method:'DELETE',headers:h()});}
 
 // ── Helpers ──
 function show(s){document.querySelectorAll('.screen').forEach(function(el){el.classList.toggle('hidden',el.id!=='screen-'+s);});}
@@ -588,12 +589,16 @@ async function loadUserSeen(){
     _userSeenD=(rows||[]).filter(function(r){return r.card_type==='d';}).map(function(r){return r.card_id;});
   }catch(e){}
 }
-function markCardSeen(cardId,isQ){
+function markCardSeen(cardId,isQ,level){
   if(!_userPhone||!cardId)return;
   var type=isQ?'q':'d';
   if(isQ){if(_userSeenQ.indexOf(cardId)<0)_userSeenQ.push(cardId);}
   else{if(_userSeenD.indexOf(cardId)<0)_userSeenD.push(cardId);}
-  sbPost('tor_user_seen',{phone:_userPhone,card_type:type,card_id:cardId}).catch(function(){});
+  sbPost('tor_user_seen',{phone:_userPhone,card_type:type,card_id:cardId,level:level||null}).catch(function(){});
+}
+function recordParticipant(gameId,phone,name){
+  if(!phone||!gameId)return;
+  sbPost('tor_game_participants',{game_id:gameId,phone:phone,player_name:name||null}).catch(function(){});
 }
 
 // ── User registration ──
@@ -608,6 +613,7 @@ function goSetup(){
   var saved=JSON.parse(localStorage.getItem('tor_user')||'null');
   if(saved&&!isSessionExpired()){
     _userPhone=saved.phone;
+    _userName=saved.name||'';
     loadUserSeen();
     show('setup');
     return;
@@ -633,6 +639,7 @@ async function submitPhone(){
       // Usuario registrado
       _userPhone=phone;
       var name=rows[0].name;
+      _userName=name;
       localStorage.setItem('tor_user',JSON.stringify({phone:phone,name:name}));
       touchActivity();
       document.getElementById('regOverlay').classList.add('hidden');
@@ -656,6 +663,7 @@ async function submitName(){
   try{
     await sbPost('tor_users',{phone:_pendingPhone,name:name});
     _userPhone=_pendingPhone;
+    _userName=name;
     _userSeenQ=[];_userSeenD=[];
     localStorage.setItem('tor_user',JSON.stringify({phone:_pendingPhone,name:name}));
     touchActivity();
@@ -703,6 +711,7 @@ async function createGame(){
   try{
     await sbPost('tor_games',{id:id,players:players,level:selectedLevel,mode:selectedMode,status:'lobby',current_player_index:0,round:1});
     game={id:id,players:players,level:selectedLevel,mode:selectedMode,status:'lobby',current_player_index:0,round:1,current_card:null};
+    recordParticipant(id,_userPhone,_userName);
     showLobby();
   }catch(e){toast('Error al crear partida');btn.disabled=false;btn.textContent='Crear juego';}
 }
@@ -738,6 +747,7 @@ async function joinGame(){
     var rows=await sbGet('tor_games','?id=eq.'+code+'&select=*');
     if(!rows||!rows.length){toast('Código no encontrado');return;}
     game=rows[0];
+    recordParticipant(game.id,_userPhone,_userName);
     if(game.status==='lobby'){showLobby();}
     else if(game.status==='playing'){loadCardsAndPlay();}
     else if(game.status==='finished'){showEnd();}
@@ -871,7 +881,7 @@ async function pickCard(type){
   var card={type:type,text:pick.text,level:cardLevel};
   game.current_card=card;
   // Registrar carta vista y actividad
-  markCardSeen(pick.id, type==='truth');
+  markCardSeen(pick.id, type==='truth', cardLevel);
   touchActivity();
   sbPatch('tor_games?id=eq.'+game.id,{current_card:card,current_player_index:game.current_player_index,round:game.round});
   showCard(card);
@@ -976,15 +986,17 @@ async function confirmAddCard(){
   if(!text){toast('Escribe el contenido');return;}
   var type=selectedCardType;
   var lvl=(game.level==='mixto'||game.level==='comunidad')?'familiar':game.level;
-  var newCard={text:text,level:lvl,source:'comunidad'};
+  var newCard={text:text,level:lvl,source:'comunidad',added_by_phone:_userPhone||null};
   try{
     if(type==='truth'){
-      await sbPost('tor_questions',newCard);
-      allQComm.push(newCard); // Add to community pool so it can be drawn this session
-      commQDone=false;        // Re-enable community pool for truths
+      var res=await sbPost('tor_questions',newCard);
+      var saved=(res&&res[0])||newCard;
+      allQComm.push(saved);
+      commQDone=false;
     } else {
-      await sbPost('tor_dares',Object.assign({},newCard,{mode:game.mode||'presencial'}));
-      allDComm.push(newCard);
+      var res2=await sbPost('tor_dares',Object.assign({},newCard,{mode:game.mode||'presencial'}));
+      var saved2=(res2&&res2[0])||newCard;
+      allDComm.push(saved2);
       commDDone=false;
     }
     closeOverlay('addCardOverlay');
