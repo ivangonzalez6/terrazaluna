@@ -269,6 +269,7 @@ h2.sec::after{content:'';flex:1;height:1px;background:var(--line);margin-left:6p
 .sb.pend:active{background:#7a5a18;color:#fff}
 .sb.deld{background:#dceacf;color:#3d6b2e;border:1px solid #a8c995}
 .sb.deld:active{background:#3d6b2e;color:#fff}
+.tl-usr{font-size:9px;font-weight:700;color:var(--gold);background:rgba(212,175,55,.15);padding:1px 5px;border-radius:4px;letter-spacing:.04em;white-space:nowrap}
 .sb.recipe{background:#fff;color:var(--dim);border:1px solid var(--line);font-size:9px;letter-spacing:.1em;text-transform:uppercase;font-weight:600;padding:6px 8px;border-radius:7px;white-space:nowrap;transition:all .15s;width:100%}
 .sb.recipe:active{background:var(--gold);color:#fff;border-color:var(--gold)}
 .t-foot{margin-top:8px;padding-top:8px;border-top:1px dashed var(--line2);display:flex;justify-content:space-between;align-items:center}
@@ -780,6 +781,20 @@ h2.sec::after{content:'';flex:1;height:1px;background:var(--line);margin-left:6p
     <div class="ma"><button class="btn btn-g" id="apCancel">Cancelar</button><button class="btn btn-p" id="apSave">Agregar</button></div>
   </div>
 </div>
+<div class="mb" id="splitItemModal">
+  <div class="modal">
+    <h3>Mover a persona</h3><div class="msub" id="splitItemName" style="font-weight:600;color:var(--ink)"></div>
+    <div id="splitPersonList" style="margin:12px 0;display:flex;flex-direction:column;gap:8px"></div>
+    <div style="border-top:1px solid var(--line);padding-top:12px">
+      <label class="flbl">Nueva persona</label>
+      <div style="display:flex;gap:8px;margin-top:6px">
+        <input id="splitNewName" placeholder="Nombre…" maxlength="30" style="flex:1">
+        <button class="btn btn-p" id="splitAddBtn" style="flex:0;white-space:nowrap;padding:8px 14px">+ Agregar</button>
+      </div>
+    </div>
+    <div class="ma" style="margin-top:12px"><button class="btn btn-g" id="splitCancel">Cancelar</button></div>
+  </div>
+</div>
 <div class="mb" id="tableNoteModal">
   <div class="modal">
     <h3>Identificar mesa <span id="tnLbl"></span></h3><div class="msub">Nombre o referencia</div>
@@ -1098,12 +1113,12 @@ function invalidateMenuCache(){_menuCacheTs=0;} // llamar tras guardar cambios e
 
 
 function loadOrders(){return sfetch('/rest/v1/orders?id=eq.current&select=data').then(function(r){return(r&&r[0])?r[0].data:{};});}
-async function saveOrders(o){
+async function saveOrders(o, protectTable){
   if(!isOnline()){showSaveErr('Sin conexión — orden no guardada');return Promise.resolve();}
   // Read-modify-write: traer estado fresco del servidor y mezclar para NO pisar
   // las mesas que otros usuarios estén editando. Solo forzamos la mesa activa local.
   try{
-    var ct=(curTable===null||curTable===undefined)?null:String(curTable); // las claves de orders son strings
+    var ct=(protectTable!==undefined)?String(protectTable):(curTable===null||curTable===undefined)?null:String(curTable); // las claves de orders son strings
     var fresh=await loadOrders();
     if(fresh&&typeof fresh==='object'){
       Object.keys(fresh).forEach(function(t){ if(t!==ct) o[t]=fresh[t]; });
@@ -1264,6 +1279,7 @@ function money(n){return '$'+Math.round(n).toLocaleString('es-MX');}
 function uid(){return Date.now().toString(36)+Math.random().toString(36).slice(2,7);}
 function esc(s){return String(s).replace(/[&<>"']/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];});}
 function ini(n){return n.trim().split(/\s+/).slice(0,2).map(function(w){return w[0].toUpperCase();}).join('')||'?';}
+function kIni(u){return u?u.trim().slice(0,3).toUpperCase():'?';}
 function pCol(i){return PC[i%PC.length];}
 function showToast(m){var t=gid('toast');t.textContent=m;t.classList.add('show');clearTimeout(t._t);t._t=setTimeout(function(){t.classList.remove('show');},1800);}
 
@@ -1729,11 +1745,12 @@ function renderCart(){
     var d=document.createElement('div');d.className='ol';
     var badge=it._src==='p'?'<span style="display:inline-block;padding:2px 7px;border-radius:999px;font-size:9px;font-weight:600;color:#fff;background:'+it._pc+';margin-top:3px">'+esc(it._pn)+(it._ppaid?' ✓':'')+'</span>':'';
     var priceStyle=it._ppaid?'class="ol-p ol-paid"':'class="ol-p"';
-    d.innerHTML='<div class="ol-l"><div class="ol-n"'+(it._ppaid?' style="opacity:.5"':'')+'>'+esc(it.n)+(it.discounted?'<span style="display:inline-block;padding:1px 5px;border-radius:4px;font-size:9px;font-weight:700;color:#fff;background:var(--ok);margin-left:5px">2×1</span>':'')+'</div>'+(it.note?'<div class="ol-note">"'+esc(it.note)+'"</div>':'')+'<div class="ol-m">'+money(it.p)+' c/u</div>'+badge+'</div><div class="ol-r">'+(!it._ppaid?'<div class="qpill"><button data-a="d">−</button><span class="q">'+it.q+'</span><button data-a="i">+</button></div>':'<span style="font-size:11px;color:var(--ok);padding:0 6px">Pagado</span>')+'<div '+priceStyle+'>'+money(it.p*it.q)+'</div></div>';
+    d.innerHTML='<div class="ol-l"><div class="ol-n"'+(it._ppaid?' style="opacity:.5"':'')+'>'+esc(it.n)+(it.discounted?'<span style="display:inline-block;padding:1px 5px;border-radius:4px;font-size:9px;font-weight:700;color:#fff;background:var(--ok);margin-left:5px">2×1</span>':'')+'</div>'+(it.note?'<div class="ol-note">"'+esc(it.note)+'"</div>':'')+'<div class="ol-m">'+money(it.p)+' c/u</div>'+badge+'</div><div class="ol-r">'+(!it._ppaid?'<div class="qpill"><button data-a="d">−</button><span class="q">'+it.q+'</span><button data-a="i">+</button></div>':'<span style="font-size:11px;color:var(--ok);padding:0 6px">Pagado</span>')+(it._src==='g'&&!it._ppaid?'<button class="split-to-person" title="Mover a persona" style="background:none;border:none;font-size:18px;color:var(--gold);cursor:pointer;padding:2px 4px;line-height:1" aria-label="Mover a persona">⟶</button>':'')+'<div '+priceStyle+'>'+money(it.p*it.q)+'</div></div>';
     if(!it._ppaid){
       (function(item){
         d.querySelector('[data-a=i]').addEventListener('click',async function(){var t=findIt(item);if(t)t.q+=1;await saveOrders(orders);renderCart();updateCartBar();});
         d.querySelector('[data-a=d]').addEventListener('click',async function(){var t=findIt(item);if(!t)return;t.q-=1;if(t.q<=0)removeIt(item);await saveOrders(orders);renderCart();updateCartBar();});
+        if(item._src==='g'){var sb=d.querySelector('.split-to-person');if(sb)sb.addEventListener('click',function(){openSplitModal(item);});}
       })(it);
     }
     wrap.appendChild(d);
@@ -1936,6 +1953,50 @@ gid('clearTableBtn').addEventListener('click',function(){
     await saveOrders(orders);renderCart();updateCartBar();updateBadges();showToast('✓ Mesa vaciada');
   });
 });
+
+// ══ SPLIT POR PERSONA (mover producto de cuenta general a persona) ══
+var _splitItem=null;
+function openSplitModal(item){
+  _splitItem=item;
+  gid('splitItemName').textContent=item.q+'× '+item.n;
+  gid('splitNewName').value='';
+  renderSplitPersonList();
+  gid('splitItemModal').classList.add('show');
+  setTimeout(function(){if(!(orders[curTable]&&orders[curTable].persons&&orders[curTable].persons.length))gid('splitNewName').focus();},200);
+}
+function renderSplitPersonList(){
+  var o=orders[curTable];var persons=(o&&o.persons)||[];var list=gid('splitPersonList');list.innerHTML='';
+  if(!persons.length){list.innerHTML='<div style="color:var(--faint);font-size:12px;text-align:center;padding:4px 0">Sin personas — agrega una abajo</div>';return;}
+  persons.forEach(function(p,idx){
+    var btn=document.createElement('button');btn.className='btn btn-g';btn.style.cssText='width:100%;text-align:left;display:flex;align-items:center;gap:10px;padding:10px 12px';
+    btn.innerHTML='<div style="width:28px;height:28px;border-radius:50%;background:'+pCol(idx)+';display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:#fff;flex-shrink:0">'+ini(p.name)+'</div><span>'+esc(p.name)+'</span>';
+    btn.addEventListener('click',function(){moveItemToPerson(p.id);});
+    list.appendChild(btn);
+  });
+}
+async function moveItemToPerson(personId){
+  if(!_splitItem||!curTable)return;
+  var o=orders[curTable];if(!o)return;
+  var per=null;for(var i=0;i<(o.persons||[]).length;i++){if(o.persons[i].id===personId){per=o.persons[i];break;}}
+  if(!per)return;
+  // Reduce from general (by 1 unit)
+  var item=_splitItem;var genIdx=-1;
+  for(var k=0;k<(o.items||[]).length;k++){if(o.items[k].id===item.id){genIdx=k;break;}}
+  if(genIdx<0){gid('splitItemModal').classList.remove('show');return;}
+  if(o.items[genIdx].q>1){o.items[genIdx].q-=1;}else{o.items.splice(genIdx,1);}
+  // Add to person
+  if(!per.items)per.items=[];
+  var ex=null;for(var m=0;m<per.items.length;m++){if(per.items[m].n===item.n&&(per.items[m].note||'')===(item.note||'')){ex=per.items[m];break;}}
+  if(ex){ex.q+=1;}else{per.items.push({id:uid(),n:item.n,p:item.p,q:1,note:item.note||''});}
+  gid('splitItemModal').classList.remove('show');_splitItem=null;
+  await saveOrders(orders);renderCart();updateCartBar();showToast('Movido a '+per.name);
+}
+gid('splitAddBtn').addEventListener('click',async function(){
+  var name=gid('splitNewName').value.trim();if(!name){gid('splitNewName').focus();return;}
+  initTbl(curTable);var np={id:uid(),name:name,items:[],paid:false};orders[curTable].persons.push(np);
+  await moveItemToPerson(np.id);
+});
+gid('splitCancel').addEventListener('click',function(){gid('splitItemModal').classList.remove('show');_splitItem=null;});
 
 // ══ PROMO 2x1 ══
 function menuItemPrice(name){
@@ -2184,7 +2245,7 @@ async function renderKitchen(){
     var ticket=document.createElement('div');
     // Fully-delivered tables get a muted style but stay visible
     ticket.className='ticket'+(isNew&&!allDel?' new-t':'')+(allDel?' ticket-done':'');
-    var linesHTML=allItems.map(function(it){var st=it.status||'pending';var hasRec=!!kitchenRecipeNames[it.n.toLowerCase()];return'<div class="tl '+(st==='delivered'?'del ':'')+ '" data-table="'+t+'" data-id="'+it.id+'" data-pid="'+(it._pid||'')+'"><span class="tl-q">'+it.q+'×</span><span class="tl-n">'+esc(it.n)+(it.note?'<span class="tl-note">↳ '+esc(it.note)+'</span>':'')+( it._pl?'<span class="tl-per" style="color:'+it._pc+'">↳ '+esc(it._pl)+'</span>':'')+'</span>'+(hasRec?'<span class="tl-st"><button class="sb recipe" data-item-name="'+esc(it.n)+'">Receta</button></span>':'<span></span>')+(st==='pending'?'<span class="tl-st"><button class="sb pend">Entregar</button></span>':'<span class="tl-st"><button class="sb deld">✓ Listo</button></span>')+'</div>';}).join('');
+    var linesHTML=allItems.map(function(it){var st=it.status||'pending';var hasRec=!!kitchenRecipeNames[it.n.toLowerCase()];return'<div class="tl '+(st==='delivered'?'del ':'')+ '" data-table="'+t+'" data-id="'+it.id+'" data-pid="'+(it._pid||'')+'"><span class="tl-q">'+it.q+'×</span><span class="tl-n">'+esc(it.n)+(it.note?'<span class="tl-note">↳ '+esc(it.note)+'</span>':'')+( it._pl?'<span class="tl-per" style="color:'+it._pc+'">↳ '+esc(it._pl)+'</span>':'')+'</span>'+(hasRec?'<span class="tl-st"><button class="sb recipe" data-item-name="'+esc(it.n)+'">Receta</button></span>':'<span></span>')+(st==='pending'?'<span class="tl-st"><button class="sb pend">Entregar</button></span>':'<span class="tl-st" style="gap:4px;flex-direction:column;align-items:flex-end">'+(it.takenBy?'<span class="tl-usr">'+kIni(it.takenBy)+'</span>':'')+'<button class="sb deld">✓ Listo</button></span>')+'</div>';}).join('');
     var doneLabel=allDel?'<span class="ticket-done-badge">Todo entregado · esperando cierre</span>':'';
     ticket.innerHTML='<div class="t-head"><div><div class="t-tbl">Mesa '+t.toString().padStart(2,'0')+'</div>'+(o.tableNote?'<div class="t-note">↳ '+esc(o.tableNote)+'</div>':'')+'</div><div style="text-align:right"><div class="t-time">'+hh+':'+mm+' · '+min+'min</div><div class="t-prog">'+(pend>0?'<span class="bp">'+pend+' pend.</span>':'')+(del>0?'<span class="bd">'+del+' ✓</span>':'')+'</div></div></div>'+doneLabel+'<div><div class="t-hrow"><span>Cant</span><span>Producto</span><span></span><span>Status</span></div>'+linesHTML+'</div><div class="t-foot"><span style="font-size:9px;letter-spacing:.2em;color:var(--faint);text-transform:uppercase">'+allItems.reduce(function(s,it){return s+it.q;},0)+' productos</span><span class="t-tot">'+money(tot)+'</span></div>';
     ticket.querySelectorAll('.sb:not(.recipe)').forEach(function(btn){
@@ -2193,7 +2254,7 @@ async function renderKitchen(){
         var o2=orders[tbl];if(!o2)return;var item=null;
         if(pid){var pp=null;if(o2.persons)for(var i=0;i<o2.persons.length;i++){if(o2.persons[i].id===pid){pp=o2.persons[i];break;}}if(pp&&pp.items)for(var j=0;j<pp.items.length;j++){if(pp.items[j].id===iid){item=pp.items[j];break;}}}
         else if(o2.items)for(var k=0;k<o2.items.length;k++){if(o2.items[k].id===iid){item=o2.items[k];break;}}
-        if(!item)return;item.status=item.status==='delivered'?'pending':'delivered';await saveOrders(orders);renderKitchen();showToast(item.status==='delivered'?'✓ Entregado':'Marcado pendiente');
+        if(!item)return;var wasDelivered=item.status==='delivered';item.status=wasDelivered?'pending':'delivered';if(!wasDelivered){item.takenBy=loggedUser?loggedUser.username:'';}else{delete item.takenBy;}btn.disabled=true;await saveOrders(orders,tbl);btn.disabled=false;renderKitchen();showToast(item.status==='delivered'?'✓ Entregado':'Marcado pendiente');
       });
     });
     ticket.querySelectorAll('.sb.recipe').forEach(function(btn){

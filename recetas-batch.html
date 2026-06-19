@@ -426,7 +426,12 @@ function addIngRow(ing){
 }
 gid('addIngBtn').addEventListener('click',function(){addIngRow(null);markDirty(currentId);gid('ingTableBody').lastElementChild.querySelector('input').focus();});
 
-// ── DIRTY STATE ──
+// ── DIRTY STATE + AUTOSAVE ──
+var _autoSaveTimer=null;
+function debounceAutoSave(){
+  clearTimeout(_autoSaveTimer);
+  _autoSaveTimer=setTimeout(function(){saveCurrentRecipe(true);},1200);
+}
 function markDirty(id){
   if(!id)return;
   dirtyRecipes[id]={
@@ -436,8 +441,9 @@ function markDirty(id){
   // Update list item
   var el=gid('recipeList').querySelector('[data-id="'+id+'"]');
   if(el&&!el.classList.contains('dirty'))el.classList.add('dirty');
-  gid('saveStatus').textContent='Sin guardar';
+  gid('saveStatus').textContent='Sin guardar…';
   gid('saveStatus').className='save-status err';
+  debounceAutoSave();
 }
 function collectIngs(){
   var rows=gid('ingTableBody').querySelectorAll('tr');
@@ -455,13 +461,13 @@ function collectIngs(){
 }
 
 // ── SAVE ──
-gid('saveBtn').addEventListener('click',function(){saveCurrentRecipe();});
-async function saveCurrentRecipe(){
+gid('saveBtn').addEventListener('click',function(){saveCurrentRecipe(false);});
+async function saveCurrentRecipe(silent){
   if(!currentId)return;
   var r=allRecipes.find(function(x){return x.id===currentId;});
   if(!r)return;
   var btn=gid('saveBtn');
-  btn.disabled=true;btn.textContent='Guardando…';
+  if(!silent){btn.disabled=true;btn.textContent='Guardando…';}
   gid('saveStatus').textContent='';
 
   var prep=gid('prepTextarea').value.trim();
@@ -484,13 +490,13 @@ async function saveCurrentRecipe(){
     renderList();
     gid('saveStatus').textContent='✓ Guardado';
     gid('saveStatus').className='save-status';
-    toast('✓ Receta guardada');
+    if(!silent)toast('✓ Receta guardada');
   }catch(e){
     gid('saveStatus').textContent='Error al guardar';
     gid('saveStatus').className='save-status err';
-    toast('Error al guardar');
+    if(!silent)toast('Error al guardar');
   }
-  btn.disabled=false;btn.textContent='Guardar';
+  if(!silent){btn.disabled=false;btn.textContent='Guardar';}
 }
 
 // ── FIND & REPLACE ──
