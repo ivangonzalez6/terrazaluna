@@ -268,11 +268,11 @@ textarea{resize:none;line-height:1.5;}
     <div class="card">
       <div class="section-label" style="margin-bottom:12px">Nivel del juego</div>
       <div class="level-tabs">
-        <button class="ltab active" data-level="mixto"     onclick="setLevel(this)">Mixto</button>
         <button class="ltab"        data-level="familiar"  onclick="setLevel(this)">Familiar</button>
         <button class="ltab"        data-level="light"     onclick="setLevel(this)">Light</button>
         <button class="ltab"        data-level="hot"       onclick="setLevel(this)">Hot</button>
         <button class="ltab"        data-level="extremo"   onclick="setLevel(this)">Extremo</button>
+        <button class="ltab active" data-level="mixto"     onclick="setLevel(this)">Mixto</button>
         <button class="ltab"        data-level="comunidad" onclick="setLevel(this)">Comunidad</button>
       </div>
     </div>
@@ -347,6 +347,7 @@ textarea{resize:none;line-height:1.5;}
       <div class="game-bar-val" id="barCode1">------</div>
     </div>
     <button class="game-bar-btn" onclick="openInviteOverlay()">Invitar</button>
+    <button class="game-bar-btn" onclick="shareGame()">Compartir</button>
     <button class="game-bar-btn" onclick="openOptionsOverlay()">Opciones</button>
   </div>
 </div>
@@ -369,6 +370,7 @@ textarea{resize:none;line-height:1.5;}
       <div class="game-bar-val" id="barCode2">------</div>
     </div>
     <button class="game-bar-btn" onclick="openInviteOverlay()">Invitar</button>
+    <button class="game-bar-btn" onclick="shareGame()">Compartir</button>
     <button class="game-bar-btn" onclick="openOptionsOverlay()">Opciones</button>
   </div>
 </div>
@@ -400,6 +402,7 @@ textarea{resize:none;line-height:1.5;}
       <button class="copy-btn" onclick="copyLink()">Copiar link</button>
     </div>
     <div class="share-url" id="overlayUrl" style="margin-top:0"></div>
+    <button class="btn btn-outline" style="margin-top:10px;width:100%;padding:12px;font-size:12px;display:flex;align-items:center;justify-content:center;gap:8px;border-radius:10px;cursor:pointer;" onclick="shareGame()">📲 Compartir por WhatsApp / Redes</button>
     <button class="overlay-close" onclick="closeOverlay('inviteOverlay')">Cerrar</button>
   </div>
 </div>
@@ -409,6 +412,10 @@ textarea{resize:none;line-height:1.5;}
   <div class="overlay-sheet">
     <div class="overlay-title">Opciones</div>
     <div class="overlay-sub">Acciones durante el juego</div>
+    <div class="menu-item" onclick="closeOverlay('optionsOverlay');shareGame()">
+      <div><div class="menu-item-label">Compartir</div><div class="menu-item-sub">Manda el link por WhatsApp o redes</div></div>
+      <div class="menu-item-arrow">›</div>
+    </div>
     <div class="menu-item" onclick="closeOverlay('optionsOverlay');openAddPlayerOverlay()">
       <div><div class="menu-item-label">Agregar jugador</div><div class="menu-item-sub">Entra en el siguiente turno</div></div>
       <div class="menu-item-arrow">›</div>
@@ -464,6 +471,28 @@ textarea{resize:none;line-height:1.5;}
   </div>
 </div>
 
+<!-- Registro: teléfono -->
+<div class="overlay hidden" id="regOverlay">
+  <div class="overlay-sheet">
+    <div class="overlay-title">¡Bienvenido!</div>
+    <div class="overlay-sub">Para empezar ingresa tu número de teléfono. Solo lo pedimos una vez.</div>
+    <input id="regPhone" type="tel" placeholder="+52 999 000 0000" maxlength="20" onkeydown="if(event.key==='Enter')submitPhone()" style="letter-spacing:.05em;font-size:17px;text-align:center">
+    <div id="regPhoneError" style="font-size:11px;color:#c0392b;margin-top:6px;min-height:16px;letter-spacing:.02em"></div>
+    <button class="btn btn-gold" style="margin-top:10px" onclick="submitPhone()">Continuar</button>
+    <button class="overlay-close" onclick="document.getElementById('regOverlay').classList.add('hidden');show('setup')">Saltar por ahora</button>
+  </div>
+</div>
+
+<!-- Registro: nombre -->
+<div class="overlay hidden" id="regNameOverlay">
+  <div class="overlay-sheet">
+    <div class="overlay-title">¿Cómo te llamas?</div>
+    <div class="overlay-sub">Tu nombre aparecerá en el juego y guardamos tu perfil para la próxima vez.</div>
+    <input id="regName" type="text" placeholder="Tu nombre" maxlength="30" onkeydown="if(event.key==='Enter')submitName()" style="font-size:17px;text-align:center">
+    <button class="btn btn-gold" style="margin-top:10px" onclick="submitName()">Empezar a jugar</button>
+  </div>
+</div>
+
 <div class="toast" id="toast"></div>
 
 <script>
@@ -481,6 +510,7 @@ const LEVELS={
 
 // ── State ──
 var playerCount=4, selectedLevel='mixto', selectedMode='presencial', selectedCardType='truth', game=null;
+var _pendingPhone='';
 // Card pools
 var allQ=[], allD=[];         // main / fallback pool
 var allQComm=[], allDComm=[]; // community pool
@@ -504,12 +534,61 @@ function ini(n){return n.trim().substring(0,2).toUpperCase();}
 function col(i){return COLORS[i%COLORS.length];}
 function setRoundBadge(r){document.querySelectorAll('.round-badge').forEach(function(el){el.textContent='Ronda '+(r||1);});}
 function setBarCodes(id){document.getElementById('barCode1').textContent=id||'------';document.getElementById('barCode2').textContent=id||'------';}
-function gameUrl(){return window.location.origin+window.location.pathname+'?id='+(game?game.id:'');}
+function gameUrl(){var base=window.location.origin+window.location.pathname;return game?base+'?id='+game.id:base;}
 function shuffle(arr){for(var i=arr.length-1;i>0;i--){var j=Math.floor(Math.random()*(i+1));var t=arr[i];arr[i]=arr[j];arr[j]=t;}return arr;}
 function resetPools(){allQ=[];allD=[];allQComm=[];allDComm=[];usedQIdx=[];usedDIdx=[];usedQCommIdx=[];usedDCommIdx=[];commQDone=false;commDDone=false;}
 
-// ── Setup ──
-function goSetup(){resetPools();game=null;stopRealtime();show('setup');}
+// ── Share ──
+function shareGame(){
+  var url=gameUrl();
+  var text='¡Juega Verdad o Reto conmigo en Terraza Luna!'+(game?' Código: '+game.id:'')+'\\n'+url;
+  if(navigator.share){
+    navigator.share({title:'Verdad o Reto · Terraza Luna',text:'¡Únete'+(game?' con código '+game.id:'')+'!',url:url}).catch(function(){});
+  } else {
+    window.open('https://wa.me/?text='+encodeURIComponent(text),'_blank');
+  }
+}
+
+// ── User registration ──
+function goSetup(){
+  resetPools();game=null;stopRealtime();
+  var saved=JSON.parse(localStorage.getItem('tor_user')||'null');
+  if(saved){show('setup');return;}
+  document.getElementById('regPhone').value='';
+  document.getElementById('regPhoneError').textContent='';
+  document.getElementById('regOverlay').classList.remove('hidden');
+}
+
+async function submitPhone(){
+  var phone=document.getElementById('regPhone').value.trim();
+  if(!phone){document.getElementById('regPhoneError').textContent='Ingresa tu número de teléfono';return;}
+  document.getElementById('regPhoneError').textContent='';
+  try{
+    var rows=await sbGet('tor_users','?phone=eq.'+encodeURIComponent(phone)+'&select=id,name');
+    if(rows&&rows.length){
+      localStorage.setItem('tor_user',JSON.stringify({phone:phone,name:rows[0].name}));
+      document.getElementById('regOverlay').classList.add('hidden');
+      show('setup');
+      return;
+    }
+    _pendingPhone=phone;
+    document.getElementById('regOverlay').classList.add('hidden');
+    document.getElementById('regName').value='';
+    document.getElementById('regNameOverlay').classList.remove('hidden');
+    setTimeout(function(){document.getElementById('regName').focus();},200);
+  }catch(e){document.getElementById('regPhoneError').textContent='Error de conexión, intenta de nuevo';}
+}
+
+async function submitName(){
+  var name=document.getElementById('regName').value.trim();
+  if(!name){toast('Escribe tu nombre');return;}
+  try{
+    await sbPost('tor_users',{phone:_pendingPhone,name:name});
+    localStorage.setItem('tor_user',JSON.stringify({phone:_pendingPhone,name:name}));
+    document.getElementById('regNameOverlay').classList.add('hidden');
+    show('setup');
+  }catch(e){toast('Error al guardar, intenta de nuevo');}
+}
 function setMode(m){selectedMode=m;document.getElementById('modePresencial').classList.toggle('active',m==='presencial');document.getElementById('modeDistancia').classList.toggle('active',m==='distancia');}
 function changeCount(d){playerCount=Math.max(2,Math.min(10,playerCount+d));document.getElementById('countVal').textContent=playerCount;}
 function setLevel(btn){selectedLevel=btn.dataset.level;document.querySelectorAll('.ltab').forEach(function(b){b.classList.toggle('active',b===btn);});}
@@ -599,6 +678,9 @@ async function startGame(){
 
 // ── Load cards ──
 async function loadCardsAndPlay(){
+  // Ensure realtime + polling are running (critical for players joining mid-game)
+  startRealtime();
+  startPolling();
   // Only fetch if pools are empty
   if(allQ.length||allQComm.length){setBarCodes(game.id);showTurn();return;}
   var lvl=game.level, mode=game.mode||'presencial';
@@ -729,7 +811,8 @@ async function endGame(){
   showEnd();
 }
 function showEnd(){
-  stopRealtime();
+  // No detenemos realtime aquí — seguimos escuchando para detectar status='closed'
+  // stopRealtime() se llama en goHome() y cuando syncDisplay detecta 'closed'
   document.getElementById('endStats').textContent='Ronda '+(game.round||1)+' · '+game.players.length+' jugadores';
   var ep=document.getElementById('endPlayers');ep.innerHTML='';
   game.players.forEach(function(p){
