@@ -663,6 +663,7 @@ function checkPin(){
     document.getElementById('pin-screen').classList.add('hidden');
     document.getElementById('app').classList.remove('hidden');
     loadAll();
+    startAutoRefresh();
   } else {
     document.getElementById('pinInput').classList.add('error');
     document.getElementById('pinErr').textContent='PIN incorrecto';
@@ -670,6 +671,7 @@ function checkPin(){
   }
 }
 function logout(){
+  stopAutoRefresh();
   document.getElementById('app').classList.add('hidden');
   document.getElementById('pin-screen').classList.remove('hidden');
   document.getElementById('pinInput').value='';
@@ -1392,6 +1394,22 @@ async function deleteMedia(id,filename){
 document.querySelectorAll('.modal-overlay').forEach(ov=>{
   ov.addEventListener('click',e=>{if(e.target===ov)ov.classList.add('hidden');});
 });
+
+// ── Auto-refresh cada 30s (solo cuando el panel está abierto) ──
+var _refreshInterval=null;
+function startAutoRefresh(){
+  if(_refreshInterval)return;
+  _refreshInterval=setInterval(async function(){
+    if(document.getElementById('app').classList.contains('hidden'))return;
+    await Promise.all([loadUsuarios(),loadPartidas(),loadParticipants(),loadSeen()]);
+    renderStats();
+    // Re-renderizar la sección activa si es usuarios o partidas
+    var active=document.querySelector('.section.active');
+    if(active&&active.id==='section-usuarios')filterUsuarios();
+    if(active&&active.id==='section-partidas')filterPartidas();
+  },30000);
+}
+function stopAutoRefresh(){clearInterval(_refreshInterval);_refreshInterval=null;}
 
 // Enter on PIN
 document.getElementById('pinInput').addEventListener('keydown',e=>{if(e.key==='Enter')checkPin();});

@@ -573,7 +573,7 @@ function shareGame(){
   var url=gameUrl();
   var text='¡Juega Verdad o Reto conmigo en Terraza Luna!'+(game?' Código: '+game.id:'')+'\\n'+url;
   if(navigator.share){
-    navigator.share({title:'Verdad o Reto · Terraza Luna',text:'¡Únete'+(game?' con código '+game.id:'')+'!',url:url}).catch(function(){});
+    navigator.share({title:'Verdad o Reto · Terraza Luna',text:'¡Juega Verdad o Reto conmigo!',url:url}).catch(function(){});
   } else {
     window.open('https://wa.me/?text='+encodeURIComponent(text),'_blank');
   }
