@@ -246,6 +246,12 @@ tr:hover td{background:var(--bg3);}
         <div class="nav-item-label">Partidas</div>
         <div class="nav-item-count" id="cnt-partidas">—</div>
       </div>
+      <div class="nav-section">Negocio</div>
+      <div class="nav-item" id="nav-marketing" onclick="showSection('marketing')">
+        <div class="nav-item-icon">📸</div>
+        <div class="nav-item-label">Marketing</div>
+        <div class="nav-item-count" id="cnt-marketing">—</div>
+      </div>
     </div>
     <div class="sidebar-footer">
       <div class="sidebar-footer-text">Terraza Luna © 2025</div>
@@ -417,6 +423,40 @@ tr:hover td{background:var(--bg3);}
         </table>
         <div id="loading-partidas" class="loading">Cargando partidas…</div>
         <div id="empty-partidas" class="empty hidden"><div class="empty-icon">🎮</div><div class="empty-text">Sin partidas</div></div>
+      </div>
+    </div>
+
+    <!-- ── MARKETING ── -->
+    <div class="section" id="section-marketing">
+      <div class="page-header">
+        <div class="page-label">Negocio</div>
+        <div class="page-title">Marketing</div>
+        <div class="page-sub">Fotos (4 seg) y videos (duración completa) que aparecen aleatoriamente después de que el jugador inicia sesión</div>
+      </div>
+      <div class="stats-grid" id="stats-marketing"></div>
+      <div class="toolbar">
+        <button class="btn-add" onclick="document.getElementById('mktFileInput').click()">＋ Agregar foto / video</button>
+        <input type="file" id="mktFileInput" accept="image/jpeg,image/png,image/gif,image/webp,video/mp4,video/webm,video/quicktime" style="display:none" onchange="uploadMedia(this)">
+        <span id="mktUploadStatus" style="font-size:12px;color:var(--faint);margin-left:10px;letter-spacing:.05em"></span>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th style="width:100px">Vista previa</th>
+              <th>Tipo</th>
+              <th>Archivo</th>
+              <th>Subido</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody id="tbody-marketing"></tbody>
+        </table>
+        <div id="loading-marketing" class="loading">Cargando media…</div>
+        <div id="empty-marketing" class="empty hidden">
+          <div class="empty-icon">📸</div>
+          <div class="empty-text">Sin fotos ni videos. Agrega el primero con el botón de arriba.</div>
+        </div>
       </div>
     </div>
 
@@ -628,7 +668,7 @@ function showSection(name){
 
 // ── LOAD ALL DATA ──
 async function loadAll(){
-  await Promise.all([loadUsuarios(),loadPreguntas(),loadRetos(),loadPartidas()]);
+  await Promise.all([loadUsuarios(),loadPreguntas(),loadRetos(),loadPartidas(),loadMarketing()]);
   await Promise.all([loadParticipants(),loadSeen()]);
   renderStats();
 }
@@ -1185,6 +1225,103 @@ async function confirmDelete(){
       renderStats();
     } else {toast('Error al eliminar');}
   }catch(e){toast('Error de conexión');}
+}
+
+// ── MARKETING ──
+var allMarketing=[];
+
+async function loadMarketing(){
+  try{
+    var rows=await sbGet('tor_media','?order=created_at.desc');
+    allMarketing=rows||[];
+    document.getElementById('cnt-marketing').textContent=allMarketing.length;
+    renderMarketing();
+    document.getElementById('loading-marketing').style.display='none';
+  }catch(e){document.getElementById('loading-marketing').textContent='Error al cargar media';}
+}
+
+function renderMarketing(){
+  var tb=document.getElementById('tbody-marketing');
+  var empty=document.getElementById('empty-marketing');
+  renderStatsMarketing();
+  if(!allMarketing.length){tb.innerHTML='';empty.classList.remove('hidden');return;}
+  empty.classList.add('hidden');
+  tb.innerHTML=allMarketing.map(function(m){
+    var preview=m.type==='photo'
+      ?'<img src="'+esc(m.url)+'" style="width:88px;height:60px;object-fit:cover;border-radius:8px;border:1px solid var(--line);display:block">'
+      :'<video src="'+esc(m.url)+'" style="width:88px;height:60px;object-fit:cover;border-radius:8px;border:1px solid var(--line);display:block" muted preload="metadata"></video>';
+    var pill=m.type==='photo'
+      ?'<span class="pill pill-familiar">📷 Foto · 4 seg</span>'
+      :'<span class="pill pill-hot">🎬 Video</span>';
+    var name=m.filename||'—';
+    return '<tr>'+
+      '<td>'+preview+'</td>'+
+      '<td>'+pill+'</td>'+
+      '<td style="font-size:12px;color:var(--dim);max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="'+esc(name)+'">'+esc(name)+'</td>'+
+      '<td style="font-size:11px;color:var(--faint)">'+fmt(m.created_at)+'</td>'+
+      '<td><button class="btn-delete" onclick="deleteMedia(\''+esc(m.id)+'\',\''+esc(m.filename||'')+'\')">Eliminar</button></td>'+
+    '</tr>';
+  }).join('');
+}
+
+function renderStatsMarketing(){
+  var photos=allMarketing.filter(function(m){return m.type==='photo';}).length;
+  var videos=allMarketing.filter(function(m){return m.type==='video';}).length;
+  document.getElementById('stats-marketing').innerHTML=
+    statCard(allMarketing.length,'Total')+
+    statCard(photos,'Fotos')+
+    statCard(videos,'Videos');
+}
+
+async function uploadMedia(input){
+  var file=input.files[0];
+  if(!file)return;
+  var status=document.getElementById('mktUploadStatus');
+  status.textContent='Subiendo '+file.name+'…';
+  input.disabled=true;
+  try{
+    var isPhoto=file.type.startsWith('image/');
+    var type=isPhoto?'photo':'video';
+    var ext=file.name.split('.').pop().toLowerCase();
+    var filename=Date.now()+'_'+Math.random().toString(36).slice(2)+'.'+ext;
+    // Upload to Supabase Storage
+    var upRes=await fetch(SB+'/storage/v1/object/tor-marketing/'+filename,{
+      method:'POST',
+      headers:{'apikey':SK,'Authorization':'Bearer '+SK,'Content-Type':file.type,'x-upsert':'true'},
+      body:file
+    });
+    if(!upRes.ok){var err=await upRes.text();throw new Error(err);}
+    var publicUrl=SB+'/storage/v1/object/public/tor-marketing/'+filename;
+    // Save record
+    var res=await sbPost('tor_media',{type:type,url:publicUrl,filename:filename});
+    if(res&&res[0]){
+      allMarketing.unshift(res[0]);
+      document.getElementById('cnt-marketing').textContent=allMarketing.length;
+      renderMarketing();
+      toast((isPhoto?'Foto':'Video')+' subido correctamente');
+    } else {throw new Error('No se pudo guardar el registro');}
+  }catch(e){toast('Error al subir: '+(e.message||e));}
+  status.textContent='';
+  input.value='';
+  input.disabled=false;
+}
+
+async function deleteMedia(id,filename){
+  if(!confirm('¿Eliminar este archivo?'))return;
+  try{
+    if(filename){
+      await fetch(SB+'/storage/v1/object/tor-marketing',{
+        method:'DELETE',
+        headers:{'apikey':SK,'Authorization':'Bearer '+SK,'Content-Type':'application/json'},
+        body:JSON.stringify({prefixes:[filename]})
+      });
+    }
+    await fetch(SB+'/rest/v1/tor_media?id=eq.'+encodeURIComponent(id),{method:'DELETE',headers:h()});
+    allMarketing=allMarketing.filter(function(m){return m.id!==id;});
+    document.getElementById('cnt-marketing').textContent=allMarketing.length;
+    renderMarketing();
+    toast('Archivo eliminado');
+  }catch(e){toast('Error al eliminar');}
 }
 
 // ── Close modal on backdrop click ──

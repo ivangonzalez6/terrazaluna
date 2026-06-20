@@ -471,12 +471,11 @@ textarea{resize:none;line-height:1.5;}
   </div>
 </div>
 
-<!-- Bienvenida (auto-dismiss 1s) -->
-<div class="overlay hidden" id="welcomeOverlay" style="align-items:center;justify-content:center;padding:0 20px;">
-  <div class="overlay-sheet welcome-sheet" style="border-radius:20px;max-width:320px;width:100%;">
-    <div class="overlay-title welcome-sheet">¡Bienvenid@!</div>
-    <div class="welcome-user-name" id="welcomeName"></div>
-  </div>
+<!-- Marketing media fullscreen -->
+<div id="mktOverlay" style="position:fixed;inset:0;z-index:500;background:#000;display:none;align-items:center;justify-content:center;opacity:0;transition:opacity .5s;">
+  <img id="mktImg" style="max-width:100vw;max-height:100vh;object-fit:contain;display:none">
+  <video id="mktVideo" style="max-width:100vw;max-height:100vh;object-fit:contain;display:none" playsinline></video>
+  <div id="mktTapMsg" style="position:absolute;bottom:48px;left:0;right:0;text-align:center;color:rgba(255,255,255,.6);font-size:12px;letter-spacing:.18em;text-transform:uppercase;font-family:'Inter Tight',sans-serif;display:none">Toca para reproducir</div>
 </div>
 
 <!-- Registro: teléfono -->
@@ -584,11 +583,46 @@ function isSessionExpired(){
   return (Date.now()-last)>_INACTIVITY_MS;
 }
 
-// ── Welcome modal ──
-function showWelcomeModal(name){
-  document.getElementById('welcomeName').textContent=name;
-  document.getElementById('welcomeOverlay').classList.remove('hidden');
-  setTimeout(function(){document.getElementById('welcomeOverlay').classList.add('hidden');},1100);
+// ── Marketing media ──
+async function showMarketingMedia(onDone){
+  try{
+    var rows=await sbGet('tor_media','?order=id.asc');
+    if(!rows||!rows.length){onDone();return;}
+    var item=rows[Math.floor(Math.random()*rows.length)];
+    var ov=document.getElementById('mktOverlay');
+    var img=document.getElementById('mktImg');
+    var vid=document.getElementById('mktVideo');
+    var tap=document.getElementById('mktTapMsg');
+    img.style.display='none';
+    vid.style.display='none';
+    vid.src='';
+    tap.style.display='none';
+    ov.style.opacity='0';
+    ov.style.display='flex';
+    setTimeout(function(){ov.style.opacity='1';},20);
+    function dismiss(){
+      ov.style.opacity='0';
+      setTimeout(function(){ov.style.display='none';onDone();},500);
+    }
+    if(item.type==='photo'){
+      img.src=item.url;
+      img.style.display='block';
+      setTimeout(dismiss,4000);
+    } else {
+      vid.src=item.url;
+      vid.style.display='block';
+      vid.onended=dismiss;
+      var p=vid.play();
+      if(p&&p.catch){
+        p.catch(function(){
+          tap.style.display='block';
+          ov.onclick=function(){
+            vid.play().then(function(){tap.style.display='none';ov.onclick=null;}).catch(function(){});
+          };
+        });
+      }
+    }
+  }catch(e){onDone();}
 }
 
 // ── User seen history ──
@@ -660,9 +694,8 @@ async function submitPhone(){
       localStorage.setItem('tor_user',JSON.stringify({phone:phone,name:user.name}));
       touchActivity();
       document.getElementById('regOverlay').classList.add('hidden');
-      show('setup');
-      showWelcomeModal(user.name);
       loadUserSeen();
+      showMarketingMedia(function(){show('setup');});
       return;
     }
     // Número no registrado → pedir nombre
@@ -685,8 +718,7 @@ async function submitName(){
     localStorage.setItem('tor_user',JSON.stringify({phone:_pendingPhone,name:name}));
     touchActivity();
     document.getElementById('regNameOverlay').classList.add('hidden');
-    show('setup');
-    showWelcomeModal(name);
+    showMarketingMedia(function(){show('setup');});
   }catch(e){toast('Error al guardar, intenta de nuevo');}
 }
 function setMode(m){selectedMode=m;document.getElementById('modePresencial').classList.toggle('active',m==='presencial');document.getElementById('modeDistancia').classList.toggle('active',m==='distancia');}
