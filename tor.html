@@ -475,6 +475,10 @@ textarea{resize:none;line-height:1.5;}
 <div id="mktOverlay" style="position:fixed;inset:0;z-index:500;background:#000;display:none;align-items:center;justify-content:center;opacity:0;transition:opacity .5s;">
   <img id="mktImg" style="max-width:100vw;max-height:100vh;object-fit:contain;display:none">
   <video id="mktVideo" style="max-width:100vw;max-height:100vh;object-fit:contain;display:none" playsinline></video>
+  <div id="mktCountdown" style="position:absolute;top:18px;right:22px;background:rgba(0,0,0,.45);border:1px solid rgba(255,255,255,.18);border-radius:999px;padding:6px 14px;display:none;align-items:center;gap:7px;backdrop-filter:blur(6px);">
+    <svg width="18" height="18" viewBox="0 0 18 18" style="flex-shrink:0"><circle cx="9" cy="9" r="7.5" fill="none" stroke="rgba(255,255,255,.25)" stroke-width="2"/><circle id="mktCountdownRing" cx="9" cy="9" r="7.5" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-dasharray="47.1" stroke-dashoffset="0" transform="rotate(-90 9 9)" style="transition:stroke-dashoffset 1s linear"/></svg>
+    <span id="mktCountdownNum" style="color:#fff;font-size:13px;font-weight:600;font-family:'Inter Tight',sans-serif;min-width:8px;text-align:center"></span>
+  </div>
   <div id="mktTapMsg" style="position:absolute;bottom:48px;left:0;right:0;text-align:center;color:rgba(255,255,255,.6);font-size:12px;letter-spacing:.18em;text-transform:uppercase;font-family:'Inter Tight',sans-serif;display:none">Toca para reproducir</div>
 </div>
 
@@ -597,6 +601,7 @@ async function showMarketingMedia(onDone){
     vid.style.display='none';
     vid.src='';
     tap.style.display='none';
+    document.getElementById('mktCountdown').style.display='none';
     ov.style.opacity='0';
     ov.style.display='flex';
     setTimeout(function(){ov.style.opacity='1';},20);
@@ -607,11 +612,56 @@ async function showMarketingMedia(onDone){
     if(item.type==='photo'){
       img.src=item.url;
       img.style.display='block';
-      setTimeout(dismiss,4000);
+      // Contador descendente
+      var cdEl=document.getElementById('mktCountdown');
+      var cdNum=document.getElementById('mktCountdownNum');
+      var cdRing=document.getElementById('mktCountdownRing');
+      var TOTAL=4, CIRC=47.1;
+      var remaining=TOTAL;
+      cdNum.textContent=remaining;
+      cdRing.style.strokeDashoffset='0';
+      cdRing.style.transition='none';
+      cdEl.style.display='flex';
+      // Forzar repaint antes de activar la transición
+      void cdRing.getBoundingClientRect();
+      cdRing.style.transition='stroke-dashoffset 1s linear';
+      cdRing.style.strokeDashoffset=String(CIRC/TOTAL);
+      var cdTick=setInterval(function(){
+        remaining--;
+        cdNum.textContent=Math.max(remaining,0);
+        cdRing.style.strokeDashoffset=String(CIRC/TOTAL*(TOTAL-remaining));
+        if(remaining<=0)clearInterval(cdTick);
+      },1000);
+      setTimeout(function(){clearInterval(cdTick);cdEl.style.display='none';dismiss();},4000);
     } else {
       vid.src=item.url;
       vid.style.display='block';
-      vid.onended=dismiss;
+      vid.onended=function(){clearInterval(cdTick);document.getElementById('mktCountdown').style.display='none';dismiss();};
+      var cdEl=document.getElementById('mktCountdown');
+      var cdNum=document.getElementById('mktCountdownNum');
+      var cdRing=document.getElementById('mktCountdownRing');
+      var CIRC=47.1;
+      var cdTick=null;
+      function startVideoCountdown(){
+        var TOTAL=Math.round(vid.duration)||0;
+        if(!TOTAL)return;
+        var remaining=TOTAL;
+        cdNum.textContent=remaining;
+        cdRing.style.transition='none';
+        cdRing.style.strokeDashoffset='0';
+        cdEl.style.display='flex';
+        void cdRing.getBoundingClientRect();
+        cdRing.style.transition='stroke-dashoffset 1s linear';
+        cdRing.style.strokeDashoffset=String(CIRC/TOTAL);
+        cdTick=setInterval(function(){
+          remaining--;
+          cdNum.textContent=Math.max(remaining,0);
+          cdRing.style.strokeDashoffset=String(CIRC/TOTAL*(TOTAL-remaining));
+          if(remaining<=0)clearInterval(cdTick);
+        },1000);
+      }
+      if(vid.readyState>=1){startVideoCountdown();}
+      else{vid.onloadedmetadata=startVideoCountdown;}
       var p=vid.play();
       if(p&&p.catch){
         p.catch(function(){
