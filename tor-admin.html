@@ -843,15 +843,21 @@ function openUserDetail(phone){
   var myGames=allParticipants.filter(p=>p.phone===phone).map(p=>p.game_id);
   var gameDetails=allPartidas.filter(g=>myGames.includes(g.id));
 
-  // Co-players from shared games
+  // Co-players: leídos del array players en tor_games (todos los jugadores de cada partida)
+  var selfName=(u.name||'').toLowerCase();
   var coSet={};
-  myGames.forEach(gid=>{
-    allParticipants.filter(p=>p.game_id===gid&&p.phone!==phone).forEach(p=>{
-      if(!coSet[p.phone]){coSet[p.phone]={phone:p.phone,name:p.player_name||p.phone,games:0};}
-      coSet[p.phone].games++;
+  gameDetails.forEach(function(g){
+    (g.players||[]).forEach(function(p){
+      var key=(p.name||'').toLowerCase();
+      if(!key||key===selfName)return;
+      if(!coSet[key]){
+        var mu=allUsuarios.find(function(x){return (x.name||'').toLowerCase()===key;});
+        coSet[key]={name:p.name,color:p.color||'#8a6420',phone:mu?mu.phone:null,games:0};
+      }
+      coSet[key].games++;
     });
   });
-  var coPlayers=Object.values(coSet);
+  var coPlayers=Object.values(coSet).sort(function(a,b){return b.games-a.games;});
 
   // Questions/dares added
   var myQ=allPreguntas.filter(q=>q.added_by_phone===phone);
@@ -1246,12 +1252,14 @@ async function confirmDelete(){
 
 // ── MARKETING ──
 var allMarketing=[];
+var _photoDuration=4;
 
 async function loadPhotoDuration(){
   try{
     var rows=await sbGet('tor_settings','?key=eq.photo_duration&select=value');
     if(rows&&rows.length){
-      document.getElementById('photoDurationInput').value=parseInt(rows[0].value)||4;
+      _photoDuration=parseInt(rows[0].value)||4;
+      document.getElementById('photoDurationInput').value=_photoDuration;
     }
   }catch(e){}
 }
@@ -1278,6 +1286,8 @@ async function savePhotoDuration(){
       });
       if(!r2.ok){var err2=await r2.text();throw new Error(err2);}
     }
+    _photoDuration=val;
+    renderMarketing();
     status.textContent='✓ Guardado';
     toast('Duración actualizada a '+val+' segundos');
     setTimeout(function(){status.textContent='';},3000);
@@ -1305,7 +1315,7 @@ function renderMarketing(){
       ?'<img src="'+esc(m.url)+'" style="width:88px;height:60px;object-fit:cover;border-radius:8px;border:1px solid var(--line);display:block">'
       :'<video src="'+esc(m.url)+'" style="width:88px;height:60px;object-fit:cover;border-radius:8px;border:1px solid var(--line);display:block" muted preload="metadata"></video>';
     var pill=m.type==='photo'
-      ?'<span class="pill pill-familiar">📷 Foto · 4 seg</span>'
+      ?'<span class="pill pill-familiar">📷 Foto · '+_photoDuration+' seg</span>'
       :'<span class="pill pill-hot">🎬 Video</span>';
     var name=m.filename||'—';
     return '<tr>'+
