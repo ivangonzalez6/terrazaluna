@@ -612,11 +612,13 @@ async function showMarketingMedia(onDone){
     if(item.type==='photo'){
       img.src=item.url;
       img.style.display='block';
-      // Contador descendente
+      // Contador descendente — leer duración desde Supabase
       var cdEl=document.getElementById('mktCountdown');
       var cdNum=document.getElementById('mktCountdownNum');
       var cdRing=document.getElementById('mktCountdownRing');
-      var TOTAL=4, CIRC=47.1;
+      var CIRC=47.1;
+      var durRows=await sbGet('tor_settings','?key=eq.photo_duration&select=value').catch(function(){return[];});
+      var TOTAL=(durRows&&durRows.length)?Math.max(1,parseInt(durRows[0].value)||4):4;
       var remaining=TOTAL;
       cdNum.textContent=remaining;
       cdRing.style.strokeDashoffset='0';

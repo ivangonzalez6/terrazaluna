@@ -434,6 +434,23 @@ tr:hover td{background:var(--bg3);}
         <div class="page-sub">Fotos (4 seg) y videos (duración completa) que aparecen aleatoriamente después de que el jugador inicia sesión</div>
       </div>
       <div class="stats-grid" id="stats-marketing"></div>
+
+      <!-- Duración de fotos -->
+      <div class="table-wrap" style="padding:20px 24px;margin-bottom:18px;display:flex;align-items:center;gap:16px;flex-wrap:wrap">
+        <div style="flex:1;min-width:180px">
+          <div style="font-size:10px;letter-spacing:.2em;text-transform:uppercase;color:var(--gold);font-weight:700;margin-bottom:4px">Duración de fotos</div>
+          <div style="font-size:12px;color:var(--faint)">Segundos que se muestra cada foto antes de continuar</div>
+        </div>
+        <div style="display:flex;align-items:center;gap:10px">
+          <input id="photoDurationInput" type="number" min="1" max="60" value="4"
+            style="width:80px;background:var(--bg3);border:1px solid var(--line);border-radius:10px;color:var(--ink);font-size:22px;font-family:'Cormorant Garamond',serif;font-weight:600;padding:10px 14px;outline:none;text-align:center;transition:border-color .2s"
+            onfocus="this.style.borderColor='var(--gold)'" onblur="this.style.borderColor='var(--line)'">
+          <span style="font-size:13px;color:var(--faint)">seg</span>
+          <button class="btn-add" onclick="savePhotoDuration()" style="padding:10px 20px">Guardar</button>
+          <span id="photoDurationStatus" style="font-size:12px;color:var(--faint)"></span>
+        </div>
+      </div>
+
       <div class="toolbar">
         <button class="btn-add" onclick="document.getElementById('mktFileInput').click()">＋ Agregar foto / video</button>
         <input type="file" id="mktFileInput" accept="image/jpeg,image/png,image/gif,image/webp,video/mp4,video/webm,video/quicktime" style="display:none" onchange="uploadMedia(this)">
@@ -668,7 +685,7 @@ function showSection(name){
 
 // ── LOAD ALL DATA ──
 async function loadAll(){
-  await Promise.all([loadUsuarios(),loadPreguntas(),loadRetos(),loadPartidas(),loadMarketing()]);
+  await Promise.all([loadUsuarios(),loadPreguntas(),loadRetos(),loadPartidas(),loadMarketing(),loadPhotoDuration()]);
   await Promise.all([loadParticipants(),loadSeen()]);
   renderStats();
 }
@@ -1229,6 +1246,33 @@ async function confirmDelete(){
 
 // ── MARKETING ──
 var allMarketing=[];
+
+async function loadPhotoDuration(){
+  try{
+    var rows=await sbGet('tor_settings','?key=eq.photo_duration&select=value');
+    if(rows&&rows.length){
+      document.getElementById('photoDurationInput').value=parseInt(rows[0].value)||4;
+    }
+  }catch(e){}
+}
+
+async function savePhotoDuration(){
+  var val=parseInt(document.getElementById('photoDurationInput').value);
+  if(!val||val<1||val>60){toast('Ingresa un valor entre 1 y 60');return;}
+  var status=document.getElementById('photoDurationStatus');
+  status.textContent='Guardando…';
+  try{
+    // Upsert: actualizar si existe, insertar si no
+    await fetch(SB+'/rest/v1/tor_settings?key=eq.photo_duration',{
+      method:'PATCH',
+      headers:Object.assign({},h(),{'Prefer':'return=minimal'}),
+      body:JSON.stringify({value:String(val)})
+    });
+    status.textContent='✓ Guardado';
+    toast('Duración actualizada a '+val+' segundos');
+    setTimeout(function(){status.textContent='';},3000);
+  }catch(e){status.textContent='';toast('Error al guardar');}
+}
 
 async function loadMarketing(){
   try{
