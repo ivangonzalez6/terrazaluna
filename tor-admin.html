@@ -1262,16 +1262,26 @@ async function savePhotoDuration(){
   var status=document.getElementById('photoDurationStatus');
   status.textContent='Guardando…';
   try{
-    // Upsert: actualizar si existe, insertar si no
-    await fetch(SB+'/rest/v1/tor_settings?key=eq.photo_duration',{
+    var r=await fetch(SB+'/rest/v1/tor_settings?key=eq.photo_duration',{
       method:'PATCH',
-      headers:Object.assign({},h(),{'Prefer':'return=minimal'}),
+      headers:Object.assign({},h(),{'Prefer':'return=representation'}),
       body:JSON.stringify({value:String(val)})
     });
+    if(!r.ok){var err=await r.text();throw new Error(err);}
+    var updated=await r.json();
+    // Si no actualizó ninguna fila, insertar
+    if(!updated||!updated.length){
+      var r2=await fetch(SB+'/rest/v1/tor_settings',{
+        method:'POST',
+        headers:Object.assign({},h(),{'Prefer':'return=minimal'}),
+        body:JSON.stringify({key:'photo_duration',value:String(val)})
+      });
+      if(!r2.ok){var err2=await r2.text();throw new Error(err2);}
+    }
     status.textContent='✓ Guardado';
     toast('Duración actualizada a '+val+' segundos');
     setTimeout(function(){status.textContent='';},3000);
-  }catch(e){status.textContent='';toast('Error al guardar');}
+  }catch(e){status.textContent='';toast('Error: '+(e.message||e));}
 }
 
 async function loadMarketing(){
