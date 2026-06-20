@@ -634,7 +634,7 @@ async function showMarketingMedia(onDone){
         cdRing.style.strokeDashoffset=String(CIRC/TOTAL*(TOTAL-remaining));
         if(remaining<=0)clearInterval(cdTick);
       },1000);
-      setTimeout(function(){clearInterval(cdTick);cdEl.style.display='none';dismiss();},4000);
+      setTimeout(function(){clearInterval(cdTick);cdEl.style.display='none';dismiss();},TOTAL*1000);
     } else {
       vid.src=item.url;
       vid.style.display='block';
