@@ -561,7 +561,7 @@ var pregPage=0, retosPage=0;
 const PAGE_SIZE=50;
 
 // Pending modal state
-var editTarget=null, editType=null, deleteTarget=null, deleteType=null, addType=null;
+var editTarget=null, editType=null, deleteTarget=null, deleteType=null, addType=null, deleteUserPhone=null;
 
 // ── API ──
 function h(){return{'apikey':SK,'Authorization':'Bearer '+SK,'Content-Type':'application/json'};}
@@ -765,7 +765,7 @@ function renderUsuarios(){
       '<td>'+added+'</td>'+
       '<td><span class="pill pill-count">'+gamesCount+'</span></td>'+
       '<td style="color:var(--faint);font-size:12px">'+fmtShort(u.created_at)+'</td>'+
-      '<td><button class="btn-view" onclick="openUserDetail(\''+esc(u.phone)+'\')">Ver perfil</button></td>'+
+      '<td class="td-actions"><button class="btn-view" onclick="openUserDetail(\''+esc(u.phone)+'\')">Ver perfil</button><button class="btn-delete" onclick="openDeleteUser(\''+esc(u.phone)+'\')">Eliminar</button></td>'+
     '</tr>';
   }).join('');
 }
@@ -1121,12 +1121,50 @@ async function saveAdd(){
 // ── DELETE MODAL ──
 function openDelete(id,type,preview){
   deleteTarget={id,type};
+  deleteUserPhone=null;
   document.getElementById('md-sub').textContent='¿Eliminar esta '+(type==='pregunta'?'pregunta':'reto')+'?';
   document.getElementById('md-text').textContent=preview+'…';
   openModal('modal-delete');
 }
 
+// ── DELETE USER ──
+function openDeleteUser(phone){
+  var u=allUsuarios.find(x=>x.phone===phone);
+  if(!u)return;
+  deleteUserPhone=phone;
+  deleteTarget=null; // aseguramos que no hay conflicto con el delete de contenido
+  document.getElementById('md-sub').textContent='¿Eliminar usuario? Esta acción no se puede deshacer.';
+  document.getElementById('md-text').textContent=u.name+' · '+u.phone+' — Se eliminarán también su historial de cartas y registro de partidas.';
+  openModal('modal-delete');
+}
+
 async function confirmDelete(){
+  // Usuario
+  if(deleteUserPhone){
+    var phone=deleteUserPhone;
+    var u=allUsuarios.find(x=>x.phone===phone);
+    if(!u){closeModal('modal-delete');return;}
+    try{
+      // Borrar registros relacionados primero
+      await fetch(SB+'/rest/v1/tor_user_seen?phone=eq.'+encodeURIComponent(phone),{method:'DELETE',headers:h()});
+      await fetch(SB+'/rest/v1/tor_game_participants?phone=eq.'+encodeURIComponent(phone),{method:'DELETE',headers:h()});
+      var ok=await sbDelete('tor_users',u.id);
+      if(ok){
+        allUsuarios=allUsuarios.filter(x=>x.phone!==phone);
+        filteredUsuarios=filteredUsuarios.filter(x=>x.phone!==phone);
+        allSeen=allSeen.filter(x=>x.phone!==phone);
+        allParticipants=allParticipants.filter(x=>x.phone!==phone);
+        document.getElementById('cnt-usuarios').textContent=allUsuarios.length;
+        renderUsuarios();
+        renderStats();
+        closeModal('modal-delete');
+        toast('Usuario eliminado');
+      } else {toast('Error al eliminar');}
+    }catch(e){toast('Error de conexión');}
+    deleteUserPhone=null;
+    return;
+  }
+  // Pregunta / Reto
   if(!deleteTarget)return;
   var table=deleteTarget.type==='pregunta'?'tor_questions':'tor_dares';
   try{

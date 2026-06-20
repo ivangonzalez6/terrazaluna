@@ -237,7 +237,7 @@ textarea{resize:none;line-height:1.5;}
     <div class="card">
       <div class="section-label" style="margin-bottom:10px">Unirse con código</div>
       <div style="display:flex;gap:8px">
-        <input id="joinCode" placeholder="Ej: XBTA2" maxlength="6" style="text-transform:uppercase;letter-spacing:.25em;font-size:17px;font-weight:600;text-align:center" onkeydown="if(event.key==='Enter')joinGame()">
+        <input id="joinCode" placeholder="Ej: XBTA2" maxlength="6" style="text-transform:uppercase;letter-spacing:.25em;font-size:22px;font-weight:600;text-align:center;font-family:'Cormorant Garamond',serif" onkeydown="if(event.key==='Enter')joinGame()">
         <button class="btn btn-outline" style="width:auto;padding:0 18px;min-width:80px;white-space:nowrap" onclick="joinGame()">Entrar</button>
       </div>
     </div>
@@ -540,7 +540,7 @@ async function sbDelete(t,f){return fetch(SB+'/rest/v1/'+t+(f||''),{method:'DELE
 function show(s){document.querySelectorAll('.screen').forEach(function(el){el.classList.toggle('hidden',el.id!=='screen-'+s);});}
 function toast(m,dur){var t=document.getElementById('toast');t.textContent=m;t.classList.add('show');clearTimeout(t._t);t._t=setTimeout(function(){t.classList.remove('show');},dur||2600);}
 function esc(s){return String(s).replace(/[&<>"']/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];});}
-function uid5(){return Math.random().toString(36).substr(2,6).toUpperCase();}
+function uid5(){var c='ABCDEFGHJKMNPQRSTUVWXYZ23456789';var r='';for(var i=0;i<5;i++)r+=c[Math.floor(Math.random()*c.length)];return r;}
 function ini(n){return n.trim().substring(0,2).toUpperCase();}
 function col(i){return COLORS[i%COLORS.length];}
 function setRoundBadge(r){document.querySelectorAll('.round-badge').forEach(function(el){el.textContent='Ronda '+(r||1);});}
