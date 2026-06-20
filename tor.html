@@ -500,6 +500,16 @@ textarea{resize:none;line-height:1.5;}
   </div>
 </div>
 
+<!-- ¿Cuál jugador eres? -->
+<div class="overlay hidden" id="claimOverlay">
+  <div class="overlay-sheet">
+    <div class="overlay-title">¿Cuál jugador eres?</div>
+    <div class="overlay-sub">Selecciónate para que solo tú puedas elegir en tu turno. Si todos comparten un dispositivo, elige la opción de abajo.</div>
+    <div id="claimPlayersList" style="display:flex;flex-direction:column;gap:8px;margin-bottom:14px"></div>
+    <button class="btn-outline" style="width:100%;padding:12px;font-size:12px;display:flex;align-items:center;justify-content:center;gap:6px" onclick="claimNone()">📱 Un solo dispositivo (compartido)</button>
+  </div>
+</div>
+
 <div class="toast" id="toast"></div>
 
 <script>
@@ -520,6 +530,7 @@ var playerCount=4, selectedLevel='mixto', selectedMode='presencial', selectedCar
 var _pendingPhone='';
 var _userPhone='', _userName='', _userSeenQ=[], _userSeenD=[];
 var _lastPlayers=[];
+var _myPlayerIdx=null; // índice del jugador reclamado en este dispositivo (null = dispositivo compartido)
 var _INACTIVITY_MS=10*60*1000; // 10 minutos
 // Card pools
 var allQ=[], allD=[];         // main / fallback pool
@@ -724,6 +735,11 @@ function showLobby(){
   show('lobby');
   startRealtime();
   startPolling();
+  // Claim: cargar desde localStorage; si no hay, intentar auto-match por nombre; si no, pedir selección
+  loadMyClaim();
+  if(_myPlayerIdx===null){
+    if(!tryAutoMatch()) setTimeout(openClaimOverlay,400);
+  }
 }
 function renderLobbyPlayers(){
   var pp=document.getElementById('lobbyPlayers');pp.innerHTML='';
@@ -869,11 +885,17 @@ function showTurn(){
   setRoundBadge(game.round);
   setBarCodes(game.id);
   updateLevelBadge();
-  document.querySelectorAll('.btn-truth,.btn-dare').forEach(function(b){b.disabled=false;});
+  var isMyTurn=(_myPlayerIdx===null||_myPlayerIdx===game.current_player_index);
+  document.querySelectorAll('.btn-truth,.btn-dare').forEach(function(b){b.disabled=!isMyTurn;});
+  document.querySelector('.turn-sub').textContent=isMyTurn?'Es tu turno · Elige':'Esperando que '+p.name+' elija…';
 }
 
 // ── Pick card ──
 async function pickCard(type){
+  if(_myPlayerIdx!==null&&_myPlayerIdx!==game.current_player_index){
+    toast('No es tu turno — espera el tuyo');
+    return;
+  }
   document.querySelectorAll('.btn-truth,.btn-dare').forEach(function(b){b.disabled=true;});
   var result=drawCard(type);
   var pick=result.pick;
@@ -942,6 +964,7 @@ async function goHome(){
   stopRealtime();
   resetPools();
   game=null;
+  _myPlayerIdx=null;
   document.getElementById('joinCode').value='';
   show('welcome');
 }
@@ -954,6 +977,7 @@ async function goSalir(){
   stopRealtime();
   resetPools();
   game=null;
+  _myPlayerIdx=null;
   _lastPlayers=[];
   localStorage.removeItem('tor_user');
   localStorage.removeItem('tor_last_activity');
@@ -1085,6 +1109,56 @@ function startPolling(){
       if(rows&&rows.length)applyRemoteState(rows[0]);
     }catch(e){}
   },2500);
+}
+
+// ── Claim de jugador (quién eres tú en este dispositivo) ──
+function loadMyClaim(){
+  if(!game)return;
+  var saved=localStorage.getItem('tor_claim_'+game.id);
+  _myPlayerIdx=(saved!==null&&saved!=='')?parseInt(saved):null;
+}
+function saveMyClaim(idx){
+  _myPlayerIdx=idx;
+  if(!game)return;
+  if(idx===null)localStorage.removeItem('tor_claim_'+game.id);
+  else localStorage.setItem('tor_claim_'+game.id,String(idx));
+}
+function tryAutoMatch(){
+  // Si el nombre registrado coincide con algún jugador, reclamarlo automáticamente
+  if(!_userName||!game||!game.players)return false;
+  var idx=game.players.findIndex(function(p){return p.name.toLowerCase()===_userName.toLowerCase();});
+  if(idx>=0){saveMyClaim(idx);toast('Jugando como '+game.players[idx].name);return true;}
+  return false;
+}
+function openClaimOverlay(){
+  if(!game||!game.players)return;
+  var list=document.getElementById('claimPlayersList');
+  list.innerHTML='';
+  game.players.forEach(function(p,i){
+    var d=document.createElement('div');
+    d.className='player-pill';
+    d.style.cursor='pointer';
+    d.style.padding='12px 14px';
+    d.innerHTML='<div class="avatar" style="background:'+p.color+'">'+ini(p.name)+'</div>'
+      +'<span class="player-pill-name" style="font-size:15px">'+esc(p.name)+'</span>'
+      +'<span style="margin-left:auto;font-size:11px;color:var(--gold);font-weight:700;letter-spacing:.06em;text-transform:uppercase">Soy yo ›</span>';
+    d.onclick=function(){claimPlayer(i);};
+    list.appendChild(d);
+  });
+  document.getElementById('claimOverlay').classList.remove('hidden');
+}
+function claimPlayer(idx){
+  saveMyClaim(idx);
+  document.getElementById('claimOverlay').classList.add('hidden');
+  toast('Eres '+game.players[idx].name+' · Solo tú podrás elegir en tu turno');
+  // Actualizar estado de botones si ya está en pantalla de turno
+  var isMyTurn=(_myPlayerIdx===null||_myPlayerIdx===game.current_player_index);
+  document.querySelectorAll('.btn-truth,.btn-dare').forEach(function(b){b.disabled=!isMyTurn;});
+}
+function claimNone(){
+  saveMyClaim(null);
+  document.getElementById('claimOverlay').classList.add('hidden');
+  document.querySelectorAll('.btn-truth,.btn-dare').forEach(function(b){b.disabled=false;});
 }
 
 // ── Init ──
