@@ -617,7 +617,7 @@ async function showMarketingMedia(onDone){
       var cdNum=document.getElementById('mktCountdownNum');
       var cdRing=document.getElementById('mktCountdownRing');
       var CIRC=47.1;
-      var durRows=await sbGet('tor_settings','?key=eq.photo_duration&select=value').catch(function(){return[];});
+      var durRows=await fetch(SB+'/rest/v1/tor_settings?key=eq.photo_duration&select=value',{headers:Object.assign({},h(),{'Cache-Control':'no-cache','Pragma':'no-cache'})}).then(function(r){return r.json();}).catch(function(){return[];});
       var TOTAL=(durRows&&durRows.length)?Math.max(1,parseInt(durRows[0].value)||4):4;
       var remaining=TOTAL;
       cdNum.textContent=remaining;
