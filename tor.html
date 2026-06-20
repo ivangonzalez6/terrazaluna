@@ -531,6 +531,7 @@ var _pendingPhone='';
 var _userPhone='', _userName='', _userSeenQ=[], _userSeenD=[];
 var _lastPlayers=[];
 var _myPlayerIdx=null; // índice del jugador reclamado en este dispositivo (null = dispositivo compartido)
+var _deviceId=(function(){var id=localStorage.getItem('tor_device_id');if(!id){id=Math.random().toString(36).slice(2)+Date.now().toString(36);localStorage.setItem('tor_device_id',id);}return id;})();
 var _INACTIVITY_MS=10*60*1000; // 10 minutos
 // Card pools
 var allQ=[], allD=[];         // main / fallback pool
@@ -644,17 +645,23 @@ async function submitPhone(){
   if(!phone){document.getElementById('regPhoneError').textContent='Ingresa tu número de teléfono';return;}
   document.getElementById('regPhoneError').textContent='';
   try{
-    var rows=await sbGet('tor_users','?phone=eq.'+encodeURIComponent(phone)+'&select=id,name');
+    var rows=await sbGet('tor_users','?phone=eq.'+encodeURIComponent(phone)+'&select=id,name,device_id');
     if(rows&&rows.length){
-      // Usuario registrado
+      var user=rows[0];
+      // Bloquear si el número ya está activo en otro dispositivo
+      if(user.device_id&&user.device_id!==_deviceId){
+        document.getElementById('regPhoneError').textContent='Este número ya está en uso en otro dispositivo';
+        return;
+      }
+      // Registrar este dispositivo como el activo
+      await sbPatch('tor_users?phone=eq.'+encodeURIComponent(phone),{device_id:_deviceId});
       _userPhone=phone;
-      var name=rows[0].name;
-      _userName=name;
-      localStorage.setItem('tor_user',JSON.stringify({phone:phone,name:name}));
+      _userName=user.name;
+      localStorage.setItem('tor_user',JSON.stringify({phone:phone,name:user.name}));
       touchActivity();
       document.getElementById('regOverlay').classList.add('hidden');
       show('setup');
-      showWelcomeModal(name);
+      showWelcomeModal(user.name);
       loadUserSeen();
       return;
     }
@@ -671,7 +678,7 @@ async function submitName(){
   var name=document.getElementById('regName').value.trim();
   if(!name){toast('Escribe tu nombre');return;}
   try{
-    await sbPost('tor_users',{phone:_pendingPhone,name:name});
+    await sbPost('tor_users',{phone:_pendingPhone,name:name,device_id:_deviceId});
     _userPhone=_pendingPhone;
     _userName=name;
     _userSeenQ=[];_userSeenD=[];
@@ -738,7 +745,7 @@ function showLobby(){
   // Claim: cargar desde localStorage; si no hay, intentar auto-match por nombre; si no, pedir selección
   loadMyClaim();
   if(_myPlayerIdx===null){
-    if(!tryAutoMatch()) setTimeout(openClaimOverlay,400);
+    tryAutoMatch().then(function(matched){if(!matched)setTimeout(openClaimOverlay,400);});
   }
 }
 function renderLobbyPlayers(){
@@ -1115,7 +1122,15 @@ function startPolling(){
 function loadMyClaim(){
   if(!game)return;
   var saved=localStorage.getItem('tor_claim_'+game.id);
-  _myPlayerIdx=(saved!==null&&saved!=='')?parseInt(saved):null;
+  if(saved===null||saved===''){_myPlayerIdx=null;return;}
+  var idx=parseInt(saved);
+  // Verificar que el claim sigue siendo de este dispositivo en Supabase
+  if(game.players&&game.players[idx]&&game.players[idx].claimed_by===_deviceId){
+    _myPlayerIdx=idx;
+  } else {
+    localStorage.removeItem('tor_claim_'+game.id);
+    _myPlayerIdx=null;
+  }
 }
 function saveMyClaim(idx){
   _myPlayerIdx=idx;
@@ -1123,39 +1138,92 @@ function saveMyClaim(idx){
   if(idx===null)localStorage.removeItem('tor_claim_'+game.id);
   else localStorage.setItem('tor_claim_'+game.id,String(idx));
 }
-function tryAutoMatch(){
-  // Si el nombre registrado coincide con algún jugador, reclamarlo automáticamente
+async function writeClaimToSB(idx){
+  // Guardar claimed_by en el array de jugadores en Supabase
+  // Si este dispositivo ya tenía otro jugador reclamado, liberarlo
+  var updated=game.players.map(function(p,i){
+    if(i===idx)return Object.assign({},p,{claimed_by:_deviceId});
+    if(p.claimed_by===_deviceId)return Object.assign({},p,{claimed_by:null});
+    return p;
+  });
+  await sbPatch('tor_games?id=eq.'+game.id,{players:updated});
+  game.players=updated;
+}
+async function tryAutoMatch(){
   if(!_userName||!game||!game.players)return false;
-  var idx=game.players.findIndex(function(p){return p.name.toLowerCase()===_userName.toLowerCase();});
-  if(idx>=0){saveMyClaim(idx);toast('Jugando como '+game.players[idx].name);return true;}
+  // Buscar jugador con mismo nombre que no esté reclamado por otro dispositivo
+  var idx=game.players.findIndex(function(p){
+    return p.name.toLowerCase()===_userName.toLowerCase()&&
+           (!p.claimed_by||p.claimed_by===_deviceId);
+  });
+  if(idx>=0){
+    saveMyClaim(idx);
+    await writeClaimToSB(idx);
+    toast('Jugando como '+game.players[idx].name);
+    return true;
+  }
   return false;
 }
-function openClaimOverlay(){
+async function openClaimOverlay(){
   if(!game||!game.players)return;
+  // Fetch datos frescos para ver claims actuales
+  try{
+    var rows=await sbGet('tor_games','?id=eq.'+game.id+'&select=players');
+    if(rows&&rows.length)game.players=rows[0].players;
+  }catch(e){}
   var list=document.getElementById('claimPlayersList');
   list.innerHTML='';
+  var anyAvailable=false;
   game.players.forEach(function(p,i){
+    var takenByOther=p.claimed_by&&p.claimed_by!==_deviceId;
+    var takenByMe=p.claimed_by&&p.claimed_by===_deviceId;
     var d=document.createElement('div');
     d.className='player-pill';
-    d.style.cursor='pointer';
     d.style.padding='12px 14px';
-    d.innerHTML='<div class="avatar" style="background:'+p.color+'">'+ini(p.name)+'</div>'
-      +'<span class="player-pill-name" style="font-size:15px">'+esc(p.name)+'</span>'
-      +'<span style="margin-left:auto;font-size:11px;color:var(--gold);font-weight:700;letter-spacing:.06em;text-transform:uppercase">Soy yo ›</span>';
-    d.onclick=function(){claimPlayer(i);};
+    if(takenByOther){
+      d.style.opacity='0.38';
+      d.style.cursor='not-allowed';
+      d.innerHTML='<div class="avatar" style="background:'+p.color+'">'+ini(p.name)+'</div>'
+        +'<span class="player-pill-name" style="font-size:15px">'+esc(p.name)+'</span>'
+        +'<span style="margin-left:auto;font-size:11px;color:var(--faint);font-weight:700;letter-spacing:.06em;text-transform:uppercase">Ocupado</span>';
+    } else if(takenByMe){
+      d.style.cursor='pointer';
+      d.style.borderColor='var(--gold)';
+      d.style.background='var(--gold-light)';
+      d.innerHTML='<div class="avatar" style="background:'+p.color+'">'+ini(p.name)+'</div>'
+        +'<span class="player-pill-name" style="font-size:15px;color:var(--gold)">'+esc(p.name)+'</span>'
+        +'<span style="margin-left:auto;font-size:11px;color:var(--gold);font-weight:700;letter-spacing:.06em;text-transform:uppercase">✓ Tú</span>';
+      d.onclick=function(){claimPlayer(i);};
+      anyAvailable=true;
+    } else {
+      d.style.cursor='pointer';
+      d.innerHTML='<div class="avatar" style="background:'+p.color+'">'+ini(p.name)+'</div>'
+        +'<span class="player-pill-name" style="font-size:15px">'+esc(p.name)+'</span>'
+        +'<span style="margin-left:auto;font-size:11px;color:var(--gold);font-weight:700;letter-spacing:.06em;text-transform:uppercase">Soy yo ›</span>';
+      d.onclick=function(){claimPlayer(i);};
+      anyAvailable=true;
+    }
     list.appendChild(d);
   });
   document.getElementById('claimOverlay').classList.remove('hidden');
 }
-function claimPlayer(idx){
+async function claimPlayer(idx){
   saveMyClaim(idx);
+  await writeClaimToSB(idx);
   document.getElementById('claimOverlay').classList.add('hidden');
   toast('Eres '+game.players[idx].name+' · Solo tú podrás elegir en tu turno');
-  // Actualizar estado de botones si ya está en pantalla de turno
   var isMyTurn=(_myPlayerIdx===null||_myPlayerIdx===game.current_player_index);
   document.querySelectorAll('.btn-truth,.btn-dare').forEach(function(b){b.disabled=!isMyTurn;});
 }
-function claimNone(){
+async function claimNone(){
+  // Liberar claim de este dispositivo en Supabase si existía
+  if(_myPlayerIdx!==null){
+    var updated=game.players.map(function(p){
+      return p.claimed_by===_deviceId?Object.assign({},p,{claimed_by:null}):p;
+    });
+    await sbPatch('tor_games?id=eq.'+game.id,{players:updated});
+    game.players=updated;
+  }
   saveMyClaim(null);
   document.getElementById('claimOverlay').classList.add('hidden');
   document.querySelectorAll('.btn-truth,.btn-dare').forEach(function(b){b.disabled=false;});
