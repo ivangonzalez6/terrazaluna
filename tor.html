@@ -751,7 +751,7 @@ async function joinGame(){
     if(game.status==='lobby'){showLobby();}
     else if(game.status==='playing'){loadCardsAndPlay();}
     else if(game.status==='finished'){showEnd();}
-    else{show('welcome');} // 'closed' or unknown → welcome
+    else{toast('Esta partida ya fue cerrada o no existe');show('welcome');} // 'closed' or unknown → welcome
   }catch(e){toast('Error de conexión');}
 }
 
