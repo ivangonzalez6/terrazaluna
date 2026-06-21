@@ -616,6 +616,8 @@ var allPartidas=[], filteredPartidas=[];
 var allParticipants=[], allSeen=[];
 var pregPage=0, retosPage=0;
 const PAGE_SIZE=50;
+var _usuariosLoaded=false; // flag: al menos una carga exitosa
+var _isRefreshing=false;   // guard: evita refreshes concurrentes
 
 // Pending modal state
 var editTarget=null, editType=null, deleteTarget=null, deleteType=null, addType=null, deleteUserPhone=null;
@@ -696,12 +698,31 @@ async function loadAll(){
 async function loadUsuarios(){
   try{
     var rows=await sbGet('tor_users','?order=created_at.desc&select=*');
-    allUsuarios=rows||[];
+    // Solo actualizar si la respuesta es un array válido con datos,
+    // O si es la primera carga (aún no tenemos nada en memoria).
+    // Esto evita que un fetch vacío por error de red/RLS borre la UI.
+    if(Array.isArray(rows)&&(rows.length>0||!_usuariosLoaded)){
+      allUsuarios=rows;
+      _usuariosLoaded=true;
+    }
     document.getElementById('cnt-usuarios').textContent=allUsuarios.length;
-    filteredUsuarios=[...allUsuarios];
+    // Re-aplicar el filtro actual en lugar de resetear filteredUsuarios
+    var q=(document.getElementById('search-usuarios')||{}).value||'';
+    if(q.trim()){
+      filteredUsuarios=allUsuarios.filter(u=>(u.name||'').toLowerCase().includes(q.toLowerCase())||(u.phone||'').includes(q));
+    }else{
+      filteredUsuarios=[...allUsuarios];
+    }
     renderUsuarios();
     document.getElementById('loading-usuarios').style.display='none';
-  }catch(e){document.getElementById('loading-usuarios').textContent='Error al cargar usuarios';}
+  }catch(e){
+    // En caso de error de red, NO borrar datos existentes
+    if(!_usuariosLoaded){
+      document.getElementById('loading-usuarios').textContent='Error al cargar usuarios';
+    } else {
+      toast('No se pudo actualizar usuarios — mostrando datos previos');
+    }
+  }
 }
 
 async function loadPreguntas(){
@@ -1402,16 +1423,22 @@ function startAutoRefresh(){
   if(_refreshInterval)return;
   _refreshInterval=setInterval(async function(){
     if(document.getElementById('app').classList.contains('hidden'))return;
-    await Promise.all([loadPartidas(),loadParticipants(),loadSeen()]);
-    await loadUsuarios(); // Cargar después de participants y seen
-    renderStats();
-    // Re-renderizar la sección activa si es usuarios o partidas
-    var active=document.querySelector('.section.active');
-    if(active&&active.id==='section-usuarios')filterUsuarios();
-    if(active&&active.id==='section-partidas')filterPartidas();
+    // Guard: evitar que dos ciclos corran en paralelo si la red es lenta
+    if(_isRefreshing)return;
+    _isRefreshing=true;
+    try{
+      await Promise.all([loadPartidas(),loadParticipants(),loadSeen()]);
+      await loadUsuarios(); // Cargar después de participants y seen
+      renderStats();
+      // Re-renderizar la sección activa si es usuarios o partidas
+      var active=document.querySelector('.section.active');
+      if(active&&active.id==='section-partidas')filterPartidas();
+    }finally{
+      _isRefreshing=false;
+    }
   },30000);
 }
-function stopAutoRefresh(){clearInterval(_refreshInterval);_refreshInterval=null;}
+function stopAutoRefresh(){clearInterval(_refreshInterval);_refreshInterval=null;_isRefreshing=false;}
 
 // Enter on PIN
 document.getElementById('pinInput').addEventListener('keydown',e=>{if(e.key==='Enter')checkPin();});
