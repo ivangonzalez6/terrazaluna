@@ -698,31 +698,18 @@ async function loadAll(){
 async function loadUsuarios(){
   try{
     var rows=await sbGet('tor_users','?order=created_at.desc&select=*');
-    // Solo actualizar si la respuesta es un array válido con datos,
-    // O si es la primera carga (aún no tenemos nada en memoria).
-    // Esto evita que un fetch vacío por error de red/RLS borre la UI.
-    if(Array.isArray(rows)&&(rows.length>0||!_usuariosLoaded)){
-      allUsuarios=rows;
-      _usuariosLoaded=true;
+    var fetched=rows||[];
+    // Si el fetch devuelve vacío pero ya teníamos datos cargados,
+    // conservar los datos previos (evita borrar UI por error transitorio).
+    if(fetched.length>0||!_usuariosLoaded){
+      allUsuarios=fetched;
     }
+    _usuariosLoaded=true;
     document.getElementById('cnt-usuarios').textContent=allUsuarios.length;
-    // Re-aplicar el filtro actual en lugar de resetear filteredUsuarios
-    var q=(document.getElementById('search-usuarios')||{}).value||'';
-    if(q.trim()){
-      filteredUsuarios=allUsuarios.filter(u=>(u.name||'').toLowerCase().includes(q.toLowerCase())||(u.phone||'').includes(q));
-    }else{
-      filteredUsuarios=[...allUsuarios];
-    }
+    filteredUsuarios=[...allUsuarios];
     renderUsuarios();
     document.getElementById('loading-usuarios').style.display='none';
-  }catch(e){
-    // En caso de error de red, NO borrar datos existentes
-    if(!_usuariosLoaded){
-      document.getElementById('loading-usuarios').textContent='Error al cargar usuarios';
-    } else {
-      toast('No se pudo actualizar usuarios — mostrando datos previos');
-    }
-  }
+  }catch(e){document.getElementById('loading-usuarios').textContent='Error al cargar usuarios';}
 }
 
 async function loadPreguntas(){
