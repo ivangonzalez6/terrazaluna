@@ -530,7 +530,7 @@ const LEVELS={
 
 // ── State ──
 var playerCount=4, selectedLevel='mixto', selectedMode='presencial', selectedCardType='truth', game=null;
-var _pendingPhone='';
+var _pendingPhone='', _pendingGameId=null;
 var _userPhone='', _userName='', _userSeenQ=[], _userSeenD=[];
 var _lastPlayers=[];
 var _myPlayerIdx=null; // índice del jugador reclamado en este dispositivo (null = dispositivo compartido)
@@ -747,7 +747,8 @@ async function submitPhone(){
       touchActivity();
       document.getElementById('regOverlay').classList.add('hidden');
       loadUserSeen();
-      showMarketingMedia(function(){show('setup');});
+      if(_pendingGameId){var _pgid=_pendingGameId;_pendingGameId=null;document.getElementById('joinCode').value=_pgid;showMarketingMedia(function(){joinGame();});}
+      else{showMarketingMedia(function(){show('setup');});}
       return;
     }
     // Número no registrado → pedir nombre
@@ -770,7 +771,8 @@ async function submitName(){
     localStorage.setItem('tor_user',JSON.stringify({phone:_pendingPhone,name:name}));
     touchActivity();
     document.getElementById('regNameOverlay').classList.add('hidden');
-    showMarketingMedia(function(){show('setup');});
+    if(_pendingGameId){var _pgid=_pendingGameId;_pendingGameId=null;document.getElementById('joinCode').value=_pgid;showMarketingMedia(function(){joinGame();});}
+    else{showMarketingMedia(function(){show('setup');});}
   }catch(e){toast('Error al guardar, intenta de nuevo');}
 }
 function setMode(m){selectedMode=m;document.getElementById('modePresencial').classList.toggle('active',m==='presencial');document.getElementById('modeDistancia').classList.toggle('active',m==='distancia');}
@@ -850,6 +852,20 @@ function copyLink(){
 async function joinGame(){
   var code=document.getElementById('joinCode').value.trim().toUpperCase();
   if(!code){toast('Ingresa el código');return;}
+  // Verificar registro antes de unirse
+  if(!_userPhone){
+    var saved=JSON.parse(localStorage.getItem('tor_user')||'null');
+    if(saved&&!isSessionExpired()){_userPhone=saved.phone;_userName=saved.name||'';loadUserSeen();}
+    else{
+      if(isSessionExpired()){localStorage.removeItem('tor_user');localStorage.removeItem('tor_last_activity');}
+      _pendingGameId=code;
+      _userPhone='';_userSeenQ=[];_userSeenD=[];
+      document.getElementById('regPhone').value='';
+      document.getElementById('regPhoneError').textContent='';
+      document.getElementById('regOverlay').classList.remove('hidden');
+      return;
+    }
+  }
   try{
     var rows=await sbGet('tor_games','?id=eq.'+code+'&select=*');
     if(!rows||!rows.length){toast('Código no encontrado');return;}
@@ -876,6 +892,14 @@ async function loadCardsAndPlay(){
   // Ensure realtime + polling are running (critical for players joining mid-game)
   startRealtime();
   startPolling();
+  // Claim de jugador — solo si no está establecido (re-entrada a partida en curso)
+  // No llamar loadMyClaim() si ya hay claim: evita invalidarlo por actualización stale
+  if(_myPlayerIdx===null){
+    loadMyClaim();
+    if(_myPlayerIdx===null){
+      tryAutoMatch().then(function(matched){if(!matched)setTimeout(openClaimOverlay,400);});
+    }
+  }
   // Only fetch if pools are empty
   if(allQ.length||allQComm.length){setBarCodes(game.id);showTurn();return;}
   var lvl=game.level, mode=game.mode||'presencial';
@@ -1062,8 +1086,11 @@ async function goHome(){
 
 // ── Salir: cierra sesión de juego + sesión local ──
 async function goSalir(){
-  if(game&&(game.status==='playing'||game.status==='lobby'||game.status==='finished')){
-    await sbPatch('tor_games?id=eq.'+game.id,{status:'closed'});
+  if(game){
+    localStorage.removeItem('tor_claim_'+game.id); // Limpiar claim al salir
+    if(game.status==='playing'||game.status==='lobby'||game.status==='finished'){
+      await sbPatch('tor_games?id=eq.'+game.id,{status:'closed'});
+    }
   }
   stopRealtime();
   resetPools();
@@ -1138,7 +1165,15 @@ function stateChanged(rec){
 function applyRemoteState(rec){
   if(!game||rec.id!==game.id)return;
   if(!stateChanged(rec))return;
+  // Si los jugadores cambiaron y teníamos un claim, verificar que no fue sobreescrito
+  var myIdx=_myPlayerIdx;
   game=Object.assign(game,rec);
+  if(myIdx!==null&&rec.players){
+    if(!game.players[myIdx]||game.players[myIdx].claimed_by!==_deviceId){
+      // Nuestro claim fue sobreescrito (race condition) — reclamarlo de nuevo
+      writeClaimToSB(myIdx).catch(function(){});
+    }
+  }
   syncDisplay();
 }
 
@@ -1223,23 +1258,37 @@ function saveMyClaim(idx){
   else localStorage.setItem('tor_claim_'+game.id,String(idx));
 }
 async function writeClaimToSB(idx){
-  // Guardar claimed_by en el array de jugadores en Supabase
-  // Si este dispositivo ya tenía otro jugador reclamado, liberarlo
+  // IMPORTANTE: siempre fetch frescos antes de escribir para no sobreescribir
+  // los claims de otros dispositivos (race condition si dos entran al mismo tiempo)
+  try{
+    var freshRows=await sbGet('tor_games','?id=eq.'+game.id+'&select=players');
+    if(freshRows&&freshRows.length)game.players=freshRows[0].players;
+  }catch(e){}
   var updated=game.players.map(function(p,i){
-    if(i===idx)return Object.assign({},p,{claimed_by:_deviceId});
-    if(p.claimed_by===_deviceId)return Object.assign({},p,{claimed_by:null});
+    if(i===idx)return Object.assign({},p,{claimed_by:_deviceId,claimed_phone:_userPhone||null});
+    if(p.claimed_by===_deviceId)return Object.assign({},p,{claimed_by:null,claimed_phone:null});
     return p;
   });
   await sbPatch('tor_games?id=eq.'+game.id,{players:updated});
   game.players=updated;
 }
 async function tryAutoMatch(){
-  if(!_userName||!game||!game.players)return false;
-  // Buscar jugador con mismo nombre que no esté reclamado por otro dispositivo
-  var idx=game.players.findIndex(function(p){
-    return p.name.toLowerCase()===_userName.toLowerCase()&&
-           (!p.claimed_by||p.claimed_by===_deviceId);
-  });
+  if(!game||!game.players)return false;
+  var idx=-1;
+  // 1. Buscar por teléfono (más seguro — identidad verificada)
+  if(_userPhone){
+    idx=game.players.findIndex(function(p){
+      return p.claimed_phone===_userPhone&&(!p.claimed_by||p.claimed_by===_deviceId);
+    });
+  }
+  // 2. Fallback: buscar por nombre solo si no hay teléfono guardado en el slot
+  if(idx<0&&_userName){
+    idx=game.players.findIndex(function(p){
+      return p.name.toLowerCase()===_userName.toLowerCase()&&
+             (!p.claimed_by||p.claimed_by===_deviceId)&&
+             !p.claimed_phone; // Solo si el slot no tiene teléfono vinculado
+    });
+  }
   if(idx>=0){
     saveMyClaim(idx);
     await writeClaimToSB(idx);
@@ -1317,7 +1366,22 @@ async function claimNone(){
 (function(){
   var p=new URLSearchParams(window.location.search);
   var id=p.get('id');
-  if(id){document.getElementById('joinCode').value=id;joinGame();}
+  if(!id)return;
+  document.getElementById('joinCode').value=id;
+  var saved=JSON.parse(localStorage.getItem('tor_user')||'null');
+  if(saved&&!isSessionExpired()){
+    _userPhone=saved.phone;_userName=saved.name||'';
+    loadUserSeen();
+    joinGame();
+  } else {
+    // Guardar el ID de partida y pedir registro primero
+    if(isSessionExpired()){localStorage.removeItem('tor_user');localStorage.removeItem('tor_last_activity');}
+    _pendingGameId=id;
+    _userPhone='';_userSeenQ=[];_userSeenD=[];
+    document.getElementById('regPhone').value='';
+    document.getElementById('regPhoneError').textContent='';
+    document.getElementById('regOverlay').classList.remove('hidden');
+  }
 })();
 </script>
 </body>

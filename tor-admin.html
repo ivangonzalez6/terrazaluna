@@ -687,8 +687,9 @@ function showSection(name){
 
 // ── LOAD ALL DATA ──
 async function loadAll(){
-  await Promise.all([loadUsuarios(),loadPreguntas(),loadRetos(),loadPartidas(),loadMarketing(),loadPhotoDuration()]);
+  await Promise.all([loadPreguntas(),loadRetos(),loadPartidas(),loadMarketing(),loadPhotoDuration()]);
   await Promise.all([loadParticipants(),loadSeen()]);
+  await loadUsuarios(); // Cargar usuarios DESPUÉS de participants y seen para que renderUsuarios() tenga los datos correctos
   renderStats();
 }
 
@@ -1401,7 +1402,8 @@ function startAutoRefresh(){
   if(_refreshInterval)return;
   _refreshInterval=setInterval(async function(){
     if(document.getElementById('app').classList.contains('hidden'))return;
-    await Promise.all([loadUsuarios(),loadPartidas(),loadParticipants(),loadSeen()]);
+    await Promise.all([loadPartidas(),loadParticipants(),loadSeen()]);
+    await loadUsuarios(); // Cargar después de participants y seen
     renderStats();
     // Re-renderizar la sección activa si es usuarios o partidas
     var active=document.querySelector('.section.active');
