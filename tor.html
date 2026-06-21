@@ -389,8 +389,29 @@ textarea{resize:none;line-height:1.5;}
       <div style="font-size:11px;color:var(--faint);letter-spacing:.15em;text-transform:uppercase;margin-bottom:4px" id="endStats"></div>
     </div>
     <div class="end-players" id="endPlayers"></div>
-    <button class="btn btn-gold" onclick="goSetup()">Nuevo juego</button>
+    <button class="btn btn-gold" onclick="goRematch()">Nuevo juego</button>
     <button class="btn btn-outline" style="margin-top:8px" onclick="goSalir()">Salir</button>
+  </div>
+</div>
+
+<!-- ══ REMATCH OVERLAY ══ -->
+<div class="overlay hidden" id="rematchOverlay">
+  <div class="overlay-sheet">
+    <div class="overlay-title">Nueva partida</div>
+    <div class="overlay-sub">Mismos jugadores · Elige el nivel</div>
+    <div class="card" style="margin:16px 0">
+      <div class="section-label" style="margin-bottom:12px">Nivel del juego</div>
+      <div class="level-tabs">
+        <button class="ltab"        data-level="familiar"  onclick="setLevel(this)">Familiar</button>
+        <button class="ltab"        data-level="light"     onclick="setLevel(this)">Light</button>
+        <button class="ltab"        data-level="hot"       onclick="setLevel(this)">Hot</button>
+        <button class="ltab"        data-level="extremo"   onclick="setLevel(this)">Extremo</button>
+        <button class="ltab active" data-level="mixto"     onclick="setLevel(this)">Mixto</button>
+        <button class="ltab"        data-level="comunidad" onclick="setLevel(this)">Comunidad</button>
+      </div>
+    </div>
+    <button class="btn btn-gold" id="rematchBtn" onclick="startRematch()">Continuar</button>
+    <button class="overlay-close" onclick="closeOverlay('rematchOverlay')">Cancelar</button>
   </div>
 </div>
 
@@ -530,7 +551,7 @@ const LEVELS={
 
 // ── State ──
 var playerCount=4, selectedLevel='mixto', selectedMode='presencial', selectedCardType='truth', game=null;
-var _pendingPhone='', _pendingGameId=null;
+var _pendingPhone='', _pendingGameId=null, _rematchPlayers=null;
 var _userPhone='', _userName='', _userSeenQ=[], _userSeenD=[];
 var _lastPlayers=[];
 var _myPlayerIdx=null; // índice del jugador reclamado en este dispositivo (null = dispositivo compartido)
@@ -1071,6 +1092,62 @@ function showEnd(){
   show('end');
 }
 
+// ── Rematch ──
+function goRematch(){
+  if(!game||!game.players||!game.players.length){goSetup();return;}
+  // Guardar jugadores del juego actual (sin claims)
+  _rematchPlayers=game.players.map(function(p){return{name:p.name,color:p.color};});
+  selectedMode=game.mode||'presencial';
+  // Sincronizar nivel seleccionado en el overlay
+  document.querySelectorAll('#rematchOverlay .ltab').forEach(function(b){
+    b.classList.toggle('active',b.dataset.level===selectedLevel);
+  });
+  document.getElementById('rematchOverlay').classList.remove('hidden');
+}
+
+async function startRematch(){
+  if(!_rematchPlayers||!_rematchPlayers.length){toast('Error al iniciar');return;}
+  var btn=document.getElementById('rematchBtn');btn.disabled=true;btn.textContent='Creando…';
+  var newId=uid5();
+  var oldGameId=game?game.id:null;
+  try{
+    // 1. Crear nuevo juego con los mismos jugadores
+    await sbPost('tor_games',{id:newId,players:_rematchPlayers,level:selectedLevel,mode:selectedMode,status:'lobby',current_player_index:0,round:1});
+    // 2. Parar realtime viejo antes de señalizar (no queremos recibir nuestro propio mensaje)
+    stopRealtime();
+    resetPools();
+    if(oldGameId)localStorage.removeItem('tor_claim_'+oldGameId);
+    // 3. Señalizar rematch en el juego viejo para que todos los dispositivos se unan automáticamente
+    if(oldGameId){
+      try{await sbPatch('tor_games?id=eq.'+oldGameId,{current_card:{rematch_id:newId}});}catch(e){}
+    }
+    // 4. El host va directo al nuevo lobby
+    game={id:newId,players:_rematchPlayers,level:selectedLevel,mode:selectedMode,status:'lobby',current_player_index:0,round:1,current_card:null};
+    _myPlayerIdx=null;
+    _rematchPlayers=null;
+    recordParticipant(newId,_userPhone,_userName);
+    closeOverlay('rematchOverlay');
+    showLobby();
+  }catch(e){toast('Error al crear partida');}
+  finally{btn.disabled=false;btn.textContent='Continuar';}
+}
+
+async function autoJoinRematch(newGameId){
+  // Llamado en dispositivos no-host cuando detectan la señal de rematch vía realtime
+  if(game)localStorage.removeItem('tor_claim_'+game.id);
+  stopRealtime();
+  resetPools();
+  _myPlayerIdx=null;
+  try{
+    var rows=await sbGet('tor_games','?id=eq.'+newGameId+'&select=*');
+    if(!rows||!rows.length){toast('Error al unirse al nuevo juego');return;}
+    game=rows[0];
+    recordParticipant(game.id,_userPhone,_userName);
+    if(game.status==='lobby')showLobby();
+    else if(game.status==='playing')loadCardsAndPlay();
+  }catch(e){toast('Error al unirse al nuevo juego');}
+}
+
 // ── Go home (closed — sends all to welcome) ──
 async function goHome(){
   if(game&&(game.status==='playing'||game.status==='lobby')){
@@ -1170,9 +1247,13 @@ function applyRemoteState(rec){
   game=Object.assign(game,rec);
   if(myIdx!==null&&rec.players){
     if(!game.players[myIdx]||game.players[myIdx].claimed_by!==_deviceId){
-      // Nuestro claim fue sobreescrito (race condition) — reclamarlo de nuevo
       writeClaimToSB(myIdx).catch(function(){});
     }
+  }
+  // Detectar señal de rematch del host
+  if(game.status==='finished'&&game.current_card&&game.current_card.rematch_id){
+    autoJoinRematch(game.current_card.rematch_id);
+    return;
   }
   syncDisplay();
 }
