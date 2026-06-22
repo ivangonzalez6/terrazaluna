@@ -188,6 +188,44 @@ tr:hover td{background:var(--bg3);}
 .section{display:none;}
 .section.active{display:block;}
 
+/* ── ANALYTICS ── */
+.charts-grid{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-bottom:18px;}
+.charts-grid.full{grid-template-columns:1fr;}
+@media(max-width:700px){.charts-grid{grid-template-columns:1fr;}}
+.chart-wrap{background:var(--bg2);border:1px solid var(--line);border-radius:16px;padding:20px 24px;}
+.chart-title{font-size:10px;letter-spacing:.2em;text-transform:uppercase;color:var(--gold);font-weight:700;margin-bottom:16px;}
+.pct-bar-wrap{display:flex;flex-direction:column;gap:12px;}
+.pct-bar-row{display:flex;align-items:center;gap:10px;}
+.pct-bar-label{font-size:12px;font-weight:600;color:var(--dim);width:90px;flex-shrink:0;}
+.pct-bar-track{flex:1;height:10px;background:var(--bg3);border-radius:999px;overflow:hidden;border:1px solid var(--line);}
+.pct-bar-fill{height:100%;border-radius:999px;transition:width .5s cubic-bezier(.34,1.56,.64,1);}
+.pct-bar-num{font-family:'Cormorant Garamond',serif;font-size:20px;font-weight:700;color:var(--gold);width:36px;text-align:right;flex-shrink:0;}
+.bar-chart-outer{display:flex;align-items:flex-end;gap:2px;height:130px;padding-bottom:22px;position:relative;}
+.bar-col{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;height:100%;position:relative;cursor:default;}
+.bar-fill{border-radius:3px 3px 0 0;width:100%;transition:height .4s;}
+.bar-fill:hover{filter:brightness(1.15);}
+.bar-lbl{position:absolute;bottom:-18px;font-size:8px;color:var(--faint);white-space:nowrap;text-align:center;}
+.bar-tip{position:absolute;top:-26px;left:50%;transform:translateX(-50%);background:var(--ink);color:var(--gold-light);font-size:10px;font-weight:700;padding:3px 7px;border-radius:6px;opacity:0;pointer-events:none;transition:opacity .15s;white-space:nowrap;z-index:10;}
+.bar-col:hover .bar-tip{opacity:1;}
+.heatmap-grid{display:grid;gap:3px;}
+.heatmap-cell{height:22px;border-radius:4px;cursor:default;position:relative;}
+.heatmap-cell[title]:hover::after{content:attr(title);position:absolute;top:-30px;left:50%;transform:translateX(-50%);background:var(--ink);color:var(--gold-light);font-size:10px;padding:3px 8px;border-radius:6px;white-space:nowrap;z-index:20;pointer-events:none;}
+.hm-header{font-size:9px;color:var(--faint);text-align:center;font-weight:700;letter-spacing:.06em;padding-bottom:4px;}
+.hm-row-label{font-size:9px;color:var(--faint);display:flex;align-items:center;justify-content:flex-end;padding-right:5px;white-space:nowrap;}
+.stat-card-warn{border-color:rgba(230,126,34,.3)!important;}
+.stat-card-danger{border-color:rgba(192,57,43,.3)!important;}
+.stat-card-warn .stat-val{color:#e67e22!important;}
+.stat-card-danger .stat-val{color:#c0392b!important;}
+
+/* ── LEALTAD CROSS ── */
+.lealtad-tabs{display:flex;gap:0;border-bottom:1px solid var(--line);margin-bottom:20px;}
+.lealtad-tab{padding:10px 20px;font-size:11px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--faint);cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-1px;transition:all .15s;}
+.lealtad-tab.active{color:var(--gold);border-bottom-color:var(--gold);}
+.wa-link{display:inline-flex;align-items:center;gap:5px;color:#25D366;text-decoration:none;font-weight:600;font-size:12px;}
+.wa-link:hover{text-decoration:underline;}
+.pill-inclub{background:#f0fdf4;color:#14532d;border:1px solid rgba(134,239,172,.4);}
+.pill-noclub{background:#fff7ed;color:#9a3412;border:1px solid rgba(253,186,116,.4);}
+
 @media(max-width:900px){
   .sidebar{width:220px;}
   .main{margin-left:220px;padding:20px;}
@@ -273,6 +311,16 @@ tr:hover td{background:var(--bg3);}
         <div class="nav-item-label">Feedback</div>
         <div class="nav-item-count" id="cnt-feedback">—</div>
       </div>
+      <div class="nav-section">Herramientas</div>
+      <div class="nav-item" id="nav-analytics" onclick="showSection('analytics')">
+        <div class="nav-item-icon">📊</div>
+        <div class="nav-item-label">Analytics</div>
+      </div>
+      <div class="nav-item" id="nav-lealtad" onclick="showSection('lealtad')">
+        <div class="nav-item-icon">💎</div>
+        <div class="nav-item-label">Club Lealtad</div>
+        <div class="nav-item-count" id="cnt-lealtad">—</div>
+      </div>
     </div>
     <div class="sidebar-footer">
       <div class="sidebar-footer-text">Terraza Luna © 2025</div>
@@ -301,9 +349,10 @@ tr:hover td{background:var(--bg3);}
               <th>Nombre</th>
               <th>Teléfono</th>
               <th>Categorías jugadas</th>
-              <th>Preguntas vistas</th>
+              <th>Vistas</th>
               <th>Agregó</th>
               <th>Partidas</th>
+              <th>Club</th>
               <th>Desde</th>
               <th></th>
             </tr>
@@ -426,6 +475,13 @@ tr:hover td{background:var(--bg3);}
           <option value="finished">Terminadas</option>
           <option value="closed">Cerradas</option>
         </select>
+        <select class="filter-select" id="filter-partidas-date" onchange="filterPartidas()">
+          <option value="">Todo el tiempo</option>
+          <option value="hoy">Hoy</option>
+          <option value="7d">Últimos 7 días</option>
+          <option value="mes">Este mes</option>
+        </select>
+        <button class="btn-add" onclick="exportPartidasCSV()" style="white-space:nowrap">⬇ CSV</button>
       </div>
       <div class="table-wrap">
         <table>
@@ -506,6 +562,9 @@ tr:hover td{background:var(--bg3);}
         <div class="page-sub">Comentarios enviados por jugadores al terminar una partida</div>
       </div>
       <div class="stats-grid" id="stats-feedback"></div>
+      <div class="toolbar">
+        <input class="search-box" id="search-feedback" placeholder="Buscar en comentarios…" oninput="filterFeedback()">
+      </div>
       <div class="table-wrap">
         <table>
           <thead>
@@ -520,6 +579,86 @@ tr:hover td{background:var(--bg3);}
         <div id="empty-feedback" class="empty hidden">
           <div class="empty-icon">💬</div>
           <div class="empty-text">Aún no hay comentarios de jugadores</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── ANALYTICS ── -->
+    <div class="section" id="section-analytics">
+      <div class="page-header">
+        <div class="page-label">Estadísticas</div>
+        <div class="page-title">Analytics</div>
+        <div class="page-sub">Comportamiento, tendencias y métricas del juego</div>
+      </div>
+      <div class="stats-grid" id="stats-analytics"></div>
+      <div class="charts-grid full" style="margin-bottom:18px">
+        <div class="chart-wrap">
+          <div class="chart-title">Partidas por día · últimos 30 días</div>
+          <div id="chart-partidas-dia"></div>
+        </div>
+      </div>
+      <div class="charts-grid" style="margin-bottom:18px">
+        <div class="chart-wrap">
+          <div class="chart-title">Nivel más jugado</div>
+          <div class="pct-bar-wrap" id="chart-niveles"></div>
+        </div>
+        <div class="chart-wrap">
+          <div class="chart-title">Modalidad · presencial vs distancia</div>
+          <div class="pct-bar-wrap" id="chart-modalidad"></div>
+        </div>
+      </div>
+      <div class="charts-grid" style="margin-bottom:18px">
+        <div class="chart-wrap">
+          <div class="chart-title">Retención de usuarios</div>
+          <div class="pct-bar-wrap" id="chart-retencion"></div>
+        </div>
+        <div class="chart-wrap">
+          <div class="chart-title">Contenido de comunidad vs oficial</div>
+          <div class="pct-bar-wrap" id="chart-comunidad"></div>
+        </div>
+      </div>
+      <div class="charts-grid full">
+        <div class="chart-wrap">
+          <div class="chart-title">Heatmap de actividad · hora × día de la semana</div>
+          <div id="chart-heatmap"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── CLUB LEALTAD ── -->
+    <div class="section" id="section-lealtad">
+      <div class="page-header">
+        <div class="page-label">Cruce de datos</div>
+        <div class="page-title">Club de Lealtad</div>
+        <div class="page-sub">Jugadores de Verdad o Reto cruzados con el programa de lealtad</div>
+      </div>
+      <div class="stats-grid" id="stats-lealtad"></div>
+      <div class="lealtad-tabs">
+        <div class="lealtad-tab active" id="ltab-noclub" onclick="switchLealtadTab('noclub')">VoR sin club · <span id="lcnt-noclub">—</span></div>
+        <div class="lealtad-tab" id="ltab-novor" onclick="switchLealtadTab('novor')">Club sin VoR · <span id="lcnt-novor">—</span></div>
+      </div>
+      <div id="lealtad-panel-noclub">
+        <p style="font-size:12px;color:var(--faint);margin-bottom:14px">Jugadores registrados en Verdad o Reto que <strong>no</strong> están en el Club de Lealtad — lista de conversión directa.</p>
+        <div class="toolbar"><button class="btn-add" onclick="exportLealtadCSV('noclub')">⬇ Exportar CSV</button></div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Nombre</th><th>WhatsApp</th><th>Partidas</th><th>Cartas vistas</th><th>Desde</th><th></th></tr></thead>
+            <tbody id="tbody-noclub"></tbody>
+          </table>
+          <div id="loading-noclub" class="loading">Cargando…</div>
+          <div id="empty-noclub" class="empty hidden"><div class="empty-icon">🎉</div><div class="empty-text">¡Todos los jugadores ya están en el club!</div></div>
+        </div>
+      </div>
+      <div id="lealtad-panel-novor" style="display:none">
+        <p style="font-size:12px;color:var(--faint);margin-bottom:14px">Clientes del Club de Lealtad que <strong>nunca</strong> han jugado Verdad o Reto — oportunidad para promoverles el juego.</p>
+        <div class="toolbar"><button class="btn-add" onclick="exportLealtadCSV('novor')">⬇ Exportar CSV</button></div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Nombre</th><th>WhatsApp</th><th>Visitas al bar</th><th>Desde</th><th></th></tr></thead>
+            <tbody id="tbody-novor"></tbody>
+          </table>
+          <div id="loading-novor" class="loading">Cargando…</div>
+          <div id="empty-novor" class="empty hidden"><div class="empty-icon">🎉</div><div class="empty-text">¡Todos los clientes han jugado VoR!</div></div>
         </div>
       </div>
     </div>
@@ -644,6 +783,20 @@ tr:hover td{background:var(--bg3);}
   </div>
 </div>
 
+<!-- ── MODAL: PARTIDA DETAIL ── -->
+<div class="modal-overlay hidden" id="modal-partida">
+  <div class="modal" style="max-width:520px">
+    <div class="modal-header">
+      <div class="modal-title" id="mp-title">Partida</div>
+      <div class="modal-sub" id="mp-sub"></div>
+    </div>
+    <div class="modal-body" id="mp-body"></div>
+    <div class="modal-footer">
+      <button class="btn-secondary" onclick="closeModal('modal-partida')">Cerrar</button>
+    </div>
+  </div>
+</div>
+
 <div class="toast" id="toast"></div>
 
 <script>
@@ -732,14 +885,17 @@ function showSection(name){
   document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
   document.getElementById('section-'+name).classList.add('active');
   document.getElementById('nav-'+name).classList.add('active');
+  if(name==='analytics') renderAnalytics();
+  if(name==='lealtad') renderLealtad();
 }
 
 // ── LOAD ALL DATA ──
 async function loadAll(){
-  await Promise.all([loadPreguntas(),loadRetos(),loadPartidas(),loadMarketing(),loadPhotoDuration(),loadFeedback()]);
+  await Promise.all([loadPreguntas(),loadRetos(),loadPartidas(),loadMarketing(),loadPhotoDuration(),loadFeedback(),loadLoyaltyClients()]);
   await Promise.all([loadParticipants(),loadSeen()]);
-  await loadUsuarios(); // Cargar usuarios DESPUÉS de participants y seen para que renderUsuarios() tenga los datos correctos
+  await loadUsuarios();
   renderStats();
+  renderLealtad();
 }
 
 async function loadUsuarios(){
@@ -817,15 +973,21 @@ function statCard(val,label){
   return '<div class="stat-card"><div class="stat-val">'+val+'</div><div class="stat-label">'+label+'</div></div>';
 }
 
+function statCardLevel(val,label){
+  var cls=val<5?' stat-card-danger':val<15?' stat-card-warn':'';
+  var tip=val<5?'Muy pocas cartas — agregar más':val<15?'Pocas cartas — considera agregar':'';
+  return '<div class="stat-card'+cls+'"'+(tip?' title="'+tip+'"':'')+'><div class="stat-val">'+val+'</div><div class="stat-label">'+label+(val<5?' ⚠':'')+'</div></div>';
+}
+
 function renderStatsPreguntas(){
   var byLevel={familiar:0,light:0,hot:0,extremo:0};
   allPreguntas.forEach(q=>{if(byLevel[q.level]!==undefined)byLevel[q.level]++;});
   document.getElementById('stats-preguntas').innerHTML=
     statCard(allPreguntas.length,'Total')+
-    statCard(byLevel.familiar,'Familiar')+
-    statCard(byLevel.light,'Light')+
-    statCard(byLevel.hot,'Hot')+
-    statCard(byLevel.extremo,'Extremo')+
+    statCardLevel(byLevel.familiar,'Familiar')+
+    statCardLevel(byLevel.light,'Light')+
+    statCardLevel(byLevel.hot,'Hot')+
+    statCardLevel(byLevel.extremo,'Extremo')+
     statCard(allPreguntas.filter(q=>q.source==='comunidad').length,'Comunidad');
 }
 
@@ -834,10 +996,10 @@ function renderStatsRetos(){
   allRetos.forEach(d=>{if(byLevel[d.level]!==undefined)byLevel[d.level]++;});
   document.getElementById('stats-retos').innerHTML=
     statCard(allRetos.length,'Total')+
-    statCard(byLevel.familiar,'Familiar')+
-    statCard(byLevel.light,'Light')+
-    statCard(byLevel.hot,'Hot')+
-    statCard(byLevel.extremo,'Extremo')+
+    statCardLevel(byLevel.familiar,'Familiar')+
+    statCardLevel(byLevel.light,'Light')+
+    statCardLevel(byLevel.hot,'Hot')+
+    statCardLevel(byLevel.extremo,'Extremo')+
     statCard(allRetos.filter(d=>d.source==='comunidad').length,'Comunidad');
 }
 
@@ -855,6 +1017,7 @@ function renderUsuarios(){
   var empty=document.getElementById('empty-usuarios');
   if(!filteredUsuarios.length){tb.innerHTML='';empty.classList.remove('hidden');return;}
   empty.classList.add('hidden');
+  var _loyalNorm=new Set(allLoyaltyClients.map(c=>normPhone(c.whatsapp)));
   tb.innerHTML=filteredUsuarios.map((u,i)=>{
     // Stats from seen/participants/questions
     var seen=allSeen.filter(s=>s.phone===u.phone);
@@ -871,6 +1034,7 @@ function renderUsuarios(){
     var added=(addedQ+addedD)?('<span class="pill pill-truth">'+addedQ+'V</span> <span class="pill pill-dare">'+addedD+'R</span>'):'<span style="color:var(--faint);font-size:12px">—</span>';
 
     var gamesCount=allParticipants.filter(p=>p.phone===u.phone).length;
+    var inClub=_loyalNorm.has(normPhone(u.phone));
 
     return '<tr>'+
       '<td class="td-name">'+esc(u.name||'—')+'</td>'+
@@ -879,6 +1043,7 @@ function renderUsuarios(){
       '<td><div style="display:flex;gap:6px;align-items:center"><span class="pill pill-truth">'+seenQ.length+' V</span><span class="pill pill-dare">'+seenD.length+' R</span></div></td>'+
       '<td>'+added+'</td>'+
       '<td><span class="pill pill-count">'+gamesCount+'</span></td>'+
+      '<td>'+(inClub?'<span class="pill pill-inclub">✓ Club</span>':'<span class="pill pill-noclub">—</span>')+'</td>'+
       '<td style="color:var(--faint);font-size:12px">'+fmtShort(u.created_at)+'</td>'+
       '<td class="td-actions"><button class="btn-view" onclick="openUserDetail(\''+esc(u.phone)+'\')">Ver perfil</button><button class="btn-delete" onclick="openDeleteUser(\''+esc(u.phone)+'\')">Eliminar</button></td>'+
     '</tr>';
@@ -1102,9 +1267,19 @@ function renderRetos(){
 function filterPartidas(){
   var q=document.getElementById('search-partidas').value.toLowerCase();
   var st=document.getElementById('filter-partidas-status').value;
-  filteredPartidas=allPartidas.filter(g=>
-    (g.id||'').toLowerCase().includes(q)&&(!st||g.status===st)
-  );
+  var dt=document.getElementById('filter-partidas-date').value;
+  var now=new Date();
+  filteredPartidas=allPartidas.filter(function(g){
+    if(!(g.id||'').toLowerCase().includes(q))return false;
+    if(st&&g.status!==st)return false;
+    if(dt){
+      var d=new Date(g.created_at);
+      if(dt==='hoy'){var s=new Date(now);s.setHours(0,0,0,0);if(d<s)return false;}
+      else if(dt==='7d'){var s=new Date(now-7*864e5);if(d<s)return false;}
+      else if(dt==='mes'){var s=new Date(now.getFullYear(),now.getMonth(),1);if(d<s)return false;}
+    }
+    return true;
+  });
   renderPartidas();
 }
 
@@ -1117,13 +1292,13 @@ function renderPartidas(){
     var players=(g.players||[]);
     var statusColor={lobby:'var(--blue)',playing:'var(--green)',finished:'var(--faint)',closed:'var(--faint)'}[g.status]||'var(--faint)';
     var statusLabel={lobby:'Lobby',playing:'En juego',finished:'Terminada',closed:'Cerrada'}[g.status]||g.status;
-    return '<tr>'+
+    return '<tr style="cursor:pointer" onclick="openPartidaDetail(\''+esc(g.id)+'\')" title="Ver detalle">'+
       '<td><span style="font-family:\'Cormorant Garamond\',serif;font-size:22px;font-weight:700;letter-spacing:.15em;color:var(--gold)">'+esc(g.id)+'</span></td>'+
       '<td><span style="font-size:12px;font-weight:700;color:'+statusColor+'">'+statusLabel+'</span></td>'+
       '<td>'+levelPill(g.level)+'</td>'+
       '<td><span style="font-size:12px;color:var(--dim)">'+esc(g.mode==='distancia'?'A distancia':'Presencial')+'</span></td>'+
       '<td><div style="display:flex;flex-wrap:wrap;gap:4px">'+players.map((p,pi)=>'<span style="background:'+col(pi)+';color:#fff;border-radius:999px;padding:2px 8px;font-size:10px;font-weight:700">'+esc(p.name||'?')+'</span>').join('')+'</div></td>'+
-      '<td><span style="font-family:\'Cormorant Garamond\',serif;font-size:20px;font-weight:700;color:var(--gold)">'+( g.round||1)+'</span></td>'+
+      '<td><span style="font-family:\'Cormorant Garamond\',serif;font-size:20px;font-weight:700;color:var(--gold)">'+(g.round||1)+'</span></td>'+
       '<td style="font-size:11px;color:var(--faint)">'+fmtShort(g.created_at)+'</td>'+
     '</tr>';
   }).join('');
@@ -1323,21 +1498,23 @@ async function loadFeedback(){
     document.getElementById('loading-feedback').style.display='none';
   }catch(e){document.getElementById('loading-feedback').textContent='Error al cargar comentarios';}
 }
+function filterFeedback(){renderFeedback();}
 function renderFeedback(){
   var tb=document.getElementById('tbody-feedback');
   var empty=document.getElementById('empty-feedback');
-  if(!allFeedback.length){tb.innerHTML='';empty.classList.remove('hidden');return;}
+  var q=(document.getElementById('search-feedback')||{}).value||'';
+  var list=q?allFeedback.filter(function(f){return (f.text||'').toLowerCase().includes(q.toLowerCase());}):allFeedback;
+  if(!list.length){tb.innerHTML='';empty.classList.remove('hidden');return;}
   empty.classList.add('hidden');
-  tb.innerHTML=allFeedback.map(function(f){
+  tb.innerHTML=list.map(function(f){
     var d=new Date(f.created_at);
     var ds=d.toLocaleDateString('es-MX',{day:'2-digit',month:'short',year:'numeric'})+' '+
            d.getHours().toString().padStart(2,'0')+':'+d.getMinutes().toString().padStart(2,'0');
     return '<tr><td style="max-width:520px;word-break:break-word;line-height:1.5">'+esc(f.text||'')+'</td>'+
            '<td style="font-size:11px;color:var(--faint);white-space:nowrap">'+ds+'</td></tr>';
   }).join('');
-  // Stat card: total comentarios
   var sg=document.getElementById('stats-feedback');
-  sg.innerHTML='<div class="stat-card"><div class="stat-val">'+allFeedback.length+'</div><div class="stat-label">Comentarios</div></div>';
+  sg.innerHTML=statCard(allFeedback.length,'Comentarios')+statCard(list.length,'Mostrando');
 }
 
 async function loadPhotoDuration(){
@@ -1472,6 +1649,316 @@ async function deleteMedia(id,filename){
     renderMarketing();
     toast('Archivo eliminado');
   }catch(e){toast('Error al eliminar');}
+}
+
+// ── HELPERS ──
+function normPhone(p){return (p||'').replace(/\D/g,'').replace(/^52/,'');}
+
+// ── ANALYTICS ──
+function renderAnalytics(){
+  var total=allPartidas.length;
+  var totalU=allUsuarios.length;
+  var ret=allUsuarios.filter(function(u){return allParticipants.filter(function(p){return p.phone===u.phone;}).length>=2;}).length;
+  var pctRet=totalU?Math.round(ret/totalU*100):0;
+  var comunQ=allPreguntas.filter(function(q){return q.source==='comunidad';}).length;
+  var comunD=allRetos.filter(function(d){return d.source==='comunidad';}).length;
+  var avgRound=total?Math.round(allPartidas.reduce(function(a,g){return a+(g.round||1);},0)/total):0;
+  document.getElementById('stats-analytics').innerHTML=
+    statCard(total,'Partidas totales')+
+    statCard(totalU,'Jugadores')+
+    statCard(pctRet+'%','Retención 2+ partidas')+
+    statCard(comunQ+comunD,'Cartas comunidad')+
+    statCard(allSeen.length,'Cartas jugadas')+
+    statCard(avgRound,'Rondas promedio');
+  renderChartPartidasDia();
+  renderChartNiveles();
+  renderChartModalidad();
+  renderChartRetencion();
+  renderChartComunidad();
+  renderHeatmap();
+}
+
+function renderChartPartidasDia(){
+  var days=30;
+  var counts={};
+  var now=new Date();
+  for(var i=days-1;i>=0;i--){var d=new Date(now);d.setDate(d.getDate()-i);counts[d.toISOString().substring(0,10)]=0;}
+  allPartidas.forEach(function(g){var k=(g.created_at||'').substring(0,10);if(counts[k]!==undefined)counts[k]++;});
+  var entries=Object.entries(counts);
+  var max=Math.max.apply(null,Object.values(counts).concat([1]));
+  var html='<div class="bar-chart-outer" style="height:140px;padding-bottom:22px">';
+  entries.forEach(function(e){
+    var date=e[0],count=e[1];
+    var pct=Math.max(count/max*100,count>0?4:2);
+    var d=new Date(date+'T12:00:00');
+    var label=d.toLocaleDateString('es-MX',{day:'numeric',month:'short'});
+    var showLbl=d.getDate()===1||d.getDay()===0||d.getDate()===15;
+    html+='<div class="bar-col">';
+    html+='<div class="bar-tip">'+label+': '+count+'</div>';
+    html+='<div class="bar-fill" style="height:'+pct+'%;background:'+(count>0?'linear-gradient(180deg,var(--gold),rgba(138,100,32,.4))':'var(--bg3)')+'"></div>';
+    if(showLbl)html+='<div class="bar-lbl">'+label+'</div>';
+    html+='</div>';
+  });
+  html+='</div>';
+  document.getElementById('chart-partidas-dia').innerHTML=html;
+}
+
+function renderChartNiveles(){
+  var counts={familiar:0,light:0,hot:0,extremo:0,mixto:0,comunidad:0};
+  allPartidas.forEach(function(g){if(counts[g.level]!==undefined)counts[g.level]++;});
+  var total=allPartidas.length||1;
+  var colors={familiar:'#27ae60',light:'#2980b9',hot:'#e67e22',extremo:'#8e44ad',mixto:'#c49a40',comunidad:'#8a6420'};
+  var html='';
+  Object.entries(counts).sort(function(a,b){return b[1]-a[1];}).forEach(function(e){
+    var level=e[0],count=e[1];
+    var pct=Math.round(count/total*100);
+    html+='<div class="pct-bar-row"><div class="pct-bar-label">'+esc(LEVEL_LABELS[level]||level)+'</div>'+
+      '<div class="pct-bar-track"><div class="pct-bar-fill" style="width:'+pct+'%;background:'+colors[level]+'"></div></div>'+
+      '<div class="pct-bar-num">'+count+'</div></div>';
+  });
+  document.getElementById('chart-niveles').innerHTML=html||'<div style="color:var(--faint);font-size:13px">Sin datos aún</div>';
+}
+
+function renderChartModalidad(){
+  var pres=allPartidas.filter(function(g){return g.mode!=='distancia';}).length;
+  var dist=allPartidas.filter(function(g){return g.mode==='distancia';}).length;
+  var total=allPartidas.length||1;
+  var html='';
+  [['Presencial',pres,'#27ae60'],['A distancia',dist,'#2980b9']].forEach(function(r){
+    var pct=Math.round(r[1]/total*100);
+    html+='<div class="pct-bar-row"><div class="pct-bar-label">'+r[0]+'</div>'+
+      '<div class="pct-bar-track"><div class="pct-bar-fill" style="width:'+pct+'%;background:'+r[2]+'"></div></div>'+
+      '<div class="pct-bar-num">'+r[1]+'</div></div>';
+  });
+  document.getElementById('chart-modalidad').innerHTML=html;
+}
+
+function renderChartRetencion(){
+  var total=allUsuarios.length||1;
+  function gc(u){return allParticipants.filter(function(p){return p.phone===u.phone;}).length;}
+  var none=allUsuarios.filter(function(u){return gc(u)===0;}).length;
+  var one=allUsuarios.filter(function(u){return gc(u)===1;}).length;
+  var two=allUsuarios.filter(function(u){return gc(u)===2;}).length;
+  var twoplus=allUsuarios.filter(function(u){return gc(u)>=3;}).length;
+  var html='';
+  [['Sin partidas',none,'#e74c3c'],['1 partida',one,'#e67e22'],['2 partidas',two,'#2980b9'],['3+ partidas',twoplus,'#27ae60']].forEach(function(r){
+    var pct=Math.round(r[1]/total*100);
+    html+='<div class="pct-bar-row"><div class="pct-bar-label" style="width:100px">'+r[0]+'</div>'+
+      '<div class="pct-bar-track"><div class="pct-bar-fill" style="width:'+pct+'%;background:'+r[2]+'"></div></div>'+
+      '<div class="pct-bar-num">'+r[1]+'</div></div>';
+  });
+  document.getElementById('chart-retencion').innerHTML=html;
+}
+
+function renderChartComunidad(){
+  var totalQ=allPreguntas.length||1;
+  var totalD=allRetos.length||1;
+  var comunQ=allPreguntas.filter(function(q){return q.source==='comunidad';}).length;
+  var comunD=allRetos.filter(function(d){return d.source==='comunidad';}).length;
+  var html='';
+  [['Preguntas com.',comunQ,totalQ,'#2980b9'],['Preguntas ofic.',totalQ-comunQ,totalQ,'#7f8c8d'],
+   ['Retos com.',comunD,totalD,'#e67e22'],['Retos ofic.',totalD-comunD,totalD,'#95a5a6']].forEach(function(r){
+    var pct=Math.round(r[1]/r[2]*100);
+    html+='<div class="pct-bar-row"><div class="pct-bar-label" style="width:110px;font-size:11px">'+r[0]+'</div>'+
+      '<div class="pct-bar-track"><div class="pct-bar-fill" style="width:'+pct+'%;background:'+r[3]+'"></div></div>'+
+      '<div class="pct-bar-num">'+r[1]+'</div></div>';
+  });
+  document.getElementById('chart-comunidad').innerHTML=html;
+}
+
+function renderHeatmap(){
+  var daysLbl=['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'];
+  var hours=[0,2,4,6,8,10,12,14,16,18,20,22];
+  var data={};
+  allPartidas.forEach(function(g){
+    if(!g.created_at)return;
+    var d=new Date(g.created_at);
+    var key=d.getDay()+'-'+(Math.floor(d.getHours()/2)*2);
+    data[key]=(data[key]||0)+1;
+  });
+  var max=Math.max.apply(null,Object.values(data).concat([1]));
+  var cols='40px '+daysLbl.map(function(){return '1fr';}).join(' ');
+  var html='<div style="display:grid;grid-template-columns:'+cols+';gap:3px">';
+  html+='<div></div>';
+  daysLbl.forEach(function(d){html+='<div class="hm-header">'+d+'</div>';});
+  hours.forEach(function(h){
+    var lbl=h.toString().padStart(2,'0')+':00';
+    html+='<div class="hm-row-label">'+lbl+'</div>';
+    for(var d=0;d<7;d++){
+      var count=data[d+'-'+h]||0;
+      var intensity=count/max;
+      var bg=count===0?'var(--bg3)':'rgba(138,100,32,'+(0.1+intensity*0.85)+')';
+      html+='<div class="heatmap-cell" style="background:'+bg+'" title="'+daysLbl[d]+' '+lbl+': '+count+' partidas"></div>';
+    }
+  });
+  html+='</div>';
+  document.getElementById('chart-heatmap').innerHTML=html;
+}
+
+// ── LEALTAD CROSS-REF ──
+var allLoyaltyClients=[];
+var _lealtadTab='noclub';
+
+async function loadLoyaltyClients(){
+  try{
+    var rows=await sbGet('loyalty_clients','?select=id,nombre,whatsapp,visitas_totales,activo,created_at&order=created_at.desc');
+    allLoyaltyClients=rows||[];
+  }catch(e){allLoyaltyClients=[];}
+}
+
+function renderLealtad(){
+  var loyalNorm=new Set(allLoyaltyClients.map(function(c){return normPhone(c.whatsapp);}));
+  var vorNorm=new Set(allUsuarios.map(function(u){return normPhone(u.phone);}));
+  var noclub=allUsuarios.filter(function(u){return !loyalNorm.has(normPhone(u.phone));});
+  var novor=allLoyaltyClients.filter(function(c){return !vorNorm.has(normPhone(c.whatsapp));});
+  var converted=allUsuarios.filter(function(u){return loyalNorm.has(normPhone(u.phone));}).length;
+
+  document.getElementById('lcnt-noclub').textContent=noclub.length;
+  document.getElementById('lcnt-novor').textContent=novor.length;
+  document.getElementById('cnt-lealtad').textContent=noclub.length;
+
+  document.getElementById('stats-lealtad').innerHTML=
+    statCard(allUsuarios.length,'Jugadores VoR')+
+    statCard(allLoyaltyClients.length,'Clientes club')+
+    statCard(converted,'En ambos')+
+    statCard(noclub.length,'VoR sin club')+
+    statCard(novor.length,'Club sin VoR');
+
+  // VoR sin club
+  var tb1=document.getElementById('tbody-noclub');
+  var e1=document.getElementById('empty-noclub');
+  document.getElementById('loading-noclub').style.display='none';
+  if(!noclub.length){tb1.innerHTML='';e1.classList.remove('hidden');}
+  else{
+    e1.classList.add('hidden');
+    tb1.innerHTML=noclub.map(function(u){
+      var games=allParticipants.filter(function(p){return p.phone===u.phone;}).length;
+      var seen=allSeen.filter(function(s){return s.phone===u.phone;}).length;
+      var waN=normPhone(u.phone);
+      var waLink='<a href="https://wa.me/52'+waN+'" target="_blank" class="wa-link">📱 '+esc(u.phone)+'</a>';
+      var invMsg=encodeURIComponent('¡Hola '+(u.name||'')+' 👋! Jugaste Verdad o Reto en Terraza Luna. ¿Te gustaría unirte a nuestro Club de Lealtad y ganar bebidas gratis? 🍹');
+      return '<tr>'+
+        '<td class="td-name">'+esc(u.name||'—')+'</td>'+
+        '<td>'+waLink+'</td>'+
+        '<td><span class="pill pill-count">'+games+'</span></td>'+
+        '<td style="font-size:12px;color:var(--dim)">'+seen+'</td>'+
+        '<td style="font-size:11px;color:var(--faint)">'+fmtShort(u.created_at)+'</td>'+
+        '<td><a href="https://wa.me/52'+waN+'?text='+invMsg+'" target="_blank" class="btn-view" style="text-decoration:none;display:inline-flex;align-items:center;gap:4px">💬 Invitar</a></td>'+
+      '</tr>';
+    }).join('');
+  }
+
+  // Club sin VoR
+  var tb2=document.getElementById('tbody-novor');
+  var e2=document.getElementById('empty-novor');
+  document.getElementById('loading-novor').style.display='none';
+  if(!novor.length){tb2.innerHTML='';e2.classList.remove('hidden');}
+  else{
+    e2.classList.add('hidden');
+    tb2.innerHTML=novor.map(function(c){
+      var waN=(c.whatsapp||'').replace(/\D/g,'');
+      var waLink='<a href="https://wa.me/'+waN+'" target="_blank" class="wa-link">📱 '+esc(c.whatsapp)+'</a>';
+      var invMsg=encodeURIComponent('¡Hola '+(c.nombre||'')+' 👋! ¿Ya jugaste Verdad o Reto en Terraza Luna? Es súper divertido, entra en terrazaluna.mx/tor 🎲');
+      return '<tr>'+
+        '<td class="td-name">'+esc(c.nombre||'—')+'</td>'+
+        '<td>'+waLink+'</td>'+
+        '<td><span class="pill pill-count">'+(c.visitas_totales||0)+'</span></td>'+
+        '<td style="font-size:11px;color:var(--faint)">'+fmtShort(c.created_at)+'</td>'+
+        '<td><a href="https://wa.me/'+waN+'?text='+invMsg+'" target="_blank" class="btn-view" style="text-decoration:none;display:inline-flex;align-items:center;gap:4px">💬 Invitar</a></td>'+
+      '</tr>';
+    }).join('');
+  }
+}
+
+function switchLealtadTab(tab){
+  _lealtadTab=tab;
+  document.getElementById('ltab-noclub').classList.toggle('active',tab==='noclub');
+  document.getElementById('ltab-novor').classList.toggle('active',tab==='novor');
+  document.getElementById('lealtad-panel-noclub').style.display=tab==='noclub'?'block':'none';
+  document.getElementById('lealtad-panel-novor').style.display=tab==='novor'?'block':'none';
+}
+
+function exportLealtadCSV(which){
+  var loyalNorm=new Set(allLoyaltyClients.map(function(c){return normPhone(c.whatsapp);}));
+  var vorNorm=new Set(allUsuarios.map(function(u){return normPhone(u.phone);}));
+  var rows,headers;
+  if(which==='noclub'){
+    headers=['Nombre','Teléfono','Partidas','Cartas vistas','Registro'];
+    rows=allUsuarios.filter(function(u){return !loyalNorm.has(normPhone(u.phone));}).map(function(u){
+      return [u.name||'',u.phone||'',allParticipants.filter(function(p){return p.phone===u.phone;}).length,allSeen.filter(function(s){return s.phone===u.phone;}).length,fmt(u.created_at)];
+    });
+  } else {
+    headers=['Nombre','WhatsApp','Visitas al bar','Registro'];
+    rows=allLoyaltyClients.filter(function(c){return !vorNorm.has(normPhone(c.whatsapp));}).map(function(c){
+      return [c.nombre||'',c.whatsapp||'',c.visitas_totales||0,fmt(c.created_at)];
+    });
+  }
+  var csv=[headers].concat(rows).map(function(r){return r.map(function(v){return '"'+String(v).replace(/"/g,'""')+'"';}).join(',');}).join('\n');
+  var a=document.createElement('a');
+  a.href='data:text/csv;charset=utf-8,﻿'+encodeURIComponent(csv);
+  a.download=(which==='noclub'?'vor_sin_club':'club_sin_vor')+'_'+new Date().toISOString().substring(0,10)+'.csv';
+  a.click();
+}
+
+// ── PARTIDA DETAIL ──
+function openPartidaDetail(gameId){
+  var g=allPartidas.find(function(x){return x.id===gameId;});
+  if(!g)return;
+  var statusLabel={lobby:'En espera',playing:'Jugando',finished:'Terminada',closed:'Cerrada'}[g.status]||g.status;
+  var statusColor={lobby:'var(--blue)',playing:'var(--green)',finished:'var(--faint)',closed:'var(--faint)'}[g.status]||'var(--faint)';
+  document.getElementById('mp-title').textContent='Partida · '+gameId;
+  document.getElementById('mp-sub').textContent=statusLabel+' · '+fmt(g.created_at);
+  var participants=allParticipants.filter(function(p){return p.game_id===g.id;});
+  var players=g.players||[];
+  var html='';
+
+  // Meta grid
+  html+='<div class="detail-section"><div class="detail-section-title">Información</div>';
+  html+='<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">';
+  html+='<div><div style="font-size:10px;color:var(--faint);letter-spacing:.12em;text-transform:uppercase;margin-bottom:4px">Nivel</div>'+levelPill(g.level)+'</div>';
+  html+='<div><div style="font-size:10px;color:var(--faint);letter-spacing:.12em;text-transform:uppercase;margin-bottom:4px">Modalidad</div><div style="font-size:13px;font-weight:600">'+esc(g.mode==='distancia'?'A distancia':'Presencial')+'</div></div>';
+  html+='<div><div style="font-size:10px;color:var(--faint);letter-spacing:.12em;text-transform:uppercase;margin-bottom:4px">Estado</div><div style="font-size:13px;font-weight:700;color:'+statusColor+'">'+esc(statusLabel)+'</div></div>';
+  html+='<div><div style="font-size:10px;color:var(--faint);letter-spacing:.12em;text-transform:uppercase;margin-bottom:4px">Ronda</div><div style="font-family:\'Cormorant Garamond\',serif;font-size:28px;font-weight:700;color:var(--gold)">'+(g.round||1)+'</div></div>';
+  html+='</div></div>';
+
+  // Players
+  html+='<div class="detail-section"><div class="detail-section-title">Jugadores ('+players.length+')</div><div class="co-player-grid">';
+  if(players.length){
+    players.forEach(function(p,pi){
+      var regUser=allUsuarios.find(function(u){return normPhone(u.phone)&&participants[pi]&&normPhone(u.phone)===normPhone(participants[pi].phone||'');});
+      html+='<div class="co-player-chip">';
+      html+='<div class="co-player-avatar" style="background:'+(p.color||col(pi))+'">'+ini(p.name)+'</div>';
+      html+='<div><div class="co-player-name">'+esc(p.name||'—')+'</div>';
+      html+=(regUser?'<div style="font-size:10px;color:var(--ok)">✓ Registrado</div>':'<div style="font-size:10px;color:var(--faint)">Sin cuenta</div>');
+      html+='</div></div>';
+    });
+  } else {html+='<div style="color:var(--faint);font-size:13px">Sin jugadores registrados</div>';}
+  html+='</div></div>';
+
+  // Seen cards in this game (if game_id linkage exists)
+  var gameSeen=allSeen.filter(function(s){return s.game_id===g.id;});
+  if(gameSeen.length){
+    var seenQ=gameSeen.filter(function(s){return s.card_type==='q';}).length;
+    var seenD=gameSeen.filter(function(s){return s.card_type==='d';}).length;
+    html+='<div class="detail-section"><div class="detail-section-title">Cartas mostradas ('+gameSeen.length+')</div>';
+    html+='<div style="display:flex;gap:10px"><span class="pill pill-truth">'+seenQ+' Verdades</span><span class="pill pill-dare">'+seenD+' Retos</span></div></div>';
+  }
+
+  document.getElementById('mp-body').innerHTML=html;
+  openModal('modal-partida');
+}
+
+// ── EXPORT PARTIDAS CSV ──
+function exportPartidasCSV(){
+  var headers=['Código','Estado','Nivel','Modalidad','Jugadores','Ronda','Fecha'];
+  var rows=filteredPartidas.map(function(g){
+    return [g.id||'',g.status||'',(LEVEL_LABELS[g.level]||g.level||''),(g.mode==='distancia'?'A distancia':'Presencial'),(g.players||[]).map(function(p){return p.name||'?';}).join(' | '),(g.round||1),fmt(g.created_at)];
+  });
+  var csv=[headers].concat(rows).map(function(r){return r.map(function(v){return '"'+String(v).replace(/"/g,'""')+'"';}).join(',');}).join('\n');
+  var a=document.createElement('a');
+  a.href='data:text/csv;charset=utf-8,﻿'+encodeURIComponent(csv);
+  a.download='partidas_'+new Date().toISOString().substring(0,10)+'.csv';
+  a.click();
 }
 
 // ── Close modal on backdrop click ──
