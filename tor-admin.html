@@ -321,6 +321,11 @@ tr:hover td{background:var(--bg3);}
         <div class="nav-item-label">Club Lealtad</div>
         <div class="nav-item-count" id="cnt-lealtad">—</div>
       </div>
+      <div class="nav-item" id="nav-push" onclick="showSection('push')">
+        <div class="nav-item-icon">🔔</div>
+        <div class="nav-item-label">Notificaciones</div>
+        <div class="nav-item-count" id="cnt-push">—</div>
+      </div>
     </div>
     <div class="sidebar-footer">
       <div class="sidebar-footer-text">Terraza Luna © 2025</div>
@@ -663,6 +668,72 @@ tr:hover td{background:var(--bg3);}
       </div>
     </div>
 
+    <!-- ── NOTIFICACIONES PUSH ── -->
+    <div class="section" id="section-push">
+      <div class="page-header">
+        <div class="page-label">PWA · Push</div>
+        <div class="page-title">Notificaciones</div>
+        <div class="page-sub">Envía notificaciones push a todos los dispositivos que tienen la PWA instalada</div>
+      </div>
+
+      <div class="stats-grid" style="margin-bottom:24px">
+        <div class="stat-card">
+          <div class="stat-num" id="push-cnt-devices">—</div>
+          <div class="stat-label">Dispositivos suscritos</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-num" id="push-last-sent">—</div>
+          <div class="stat-label">Última notificación</div>
+        </div>
+      </div>
+
+      <div class="card" style="max-width:560px;display:flex;flex-direction:column;gap:16px">
+        <div style="font-size:13px;font-weight:600;color:var(--ink);margin-bottom:2px">Enviar nueva notificación</div>
+
+        <div>
+          <div style="font-size:10px;letter-spacing:.15em;text-transform:uppercase;color:var(--faint);margin-bottom:6px">Título</div>
+          <input id="push-title" type="text" placeholder="Terraza Luna" maxlength="60"
+            style="width:100%;padding:10px 12px;background:var(--bg);border:1px solid var(--line);border-radius:8px;font-size:13px;color:var(--ink);outline:none">
+        </div>
+
+        <div>
+          <div style="font-size:10px;letter-spacing:.15em;text-transform:uppercase;color:var(--faint);margin-bottom:6px">Mensaje</div>
+          <textarea id="push-body" rows="3" maxlength="140" placeholder="¡Esta noche hay mesa disponible en la Terraza! 🌙"
+            style="width:100%;padding:10px 12px;background:var(--bg);border:1px solid var(--line);border-radius:8px;font-size:13px;color:var(--ink);outline:none;resize:none;font-family:inherit;line-height:1.5"></textarea>
+        </div>
+
+        <div>
+          <div style="font-size:10px;letter-spacing:.15em;text-transform:uppercase;color:var(--faint);margin-bottom:6px">URL al tocar (opcional)</div>
+          <input id="push-url" type="text" placeholder="/tor" maxlength="100"
+            style="width:100%;padding:10px 12px;background:var(--bg);border:1px solid var(--line);border-radius:8px;font-size:13px;color:var(--ink);outline:none">
+        </div>
+
+        <div style="display:flex;gap:8px;margin-top:4px">
+          <button onclick="sendPushNotification()" id="push-send-btn"
+            style="flex:1;padding:12px;background:var(--gold);color:#fff;border:none;border-radius:8px;font-size:12px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;cursor:pointer">
+            🔔 Enviar a todos los dispositivos
+          </button>
+        </div>
+
+        <div id="push-result" style="display:none;padding:12px;border-radius:8px;font-size:12px;line-height:1.5"></div>
+      </div>
+
+      <div style="margin-top:28px">
+        <div style="font-size:12px;font-weight:600;color:var(--ink);margin-bottom:12px">Dispositivos suscritos</div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Endpoint (resumen)</th><th>Registrado</th><th></th></tr></thead>
+            <tbody id="tbody-push-devices"></tbody>
+          </table>
+          <div id="loading-push" class="loading">Cargando…</div>
+          <div id="empty-push" class="empty hidden">
+            <div class="empty-icon">🔔</div>
+            <div class="empty-text">Nadie tiene la PWA instalada aún</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
   </div><!-- /main -->
 </div><!-- /app -->
 
@@ -887,6 +958,7 @@ function showSection(name){
   document.getElementById('nav-'+name).classList.add('active');
   if(name==='analytics') renderAnalytics();
   if(name==='lealtad') renderLealtad();
+  if(name==='push') loadPushDevices();
 }
 
 // ── LOAD ALL DATA ──
@@ -1991,6 +2063,97 @@ function stopAutoRefresh(){clearInterval(_refreshInterval);_refreshInterval=null
 
 // Enter on PIN
 document.getElementById('pinInput').addEventListener('keydown',e=>{if(e.key==='Enter')checkPin();});
+
+// ── PUSH NOTIFICATIONS ──
+const PUSH_EDGE = SUPA + '/functions/v1/send-push';
+
+async function loadPushDevices(){
+  document.getElementById('loading-push').style.display='block';
+  document.getElementById('empty-push').classList.add('hidden');
+  document.getElementById('tbody-push-devices').innerHTML='';
+
+  const r = await fetch(SUPA+'/rest/v1/push_subscriptions?select=endpoint,created_at&order=created_at.desc', {
+    headers:{'apikey':KEY,'Authorization':'Bearer '+KEY}
+  });
+  const subs = r.ok ? await r.json() : [];
+
+  document.getElementById('loading-push').style.display='none';
+  document.getElementById('push-cnt-devices').textContent = subs.length || '0';
+  document.getElementById('cnt-push').textContent = subs.length || '0';
+
+  if(!subs.length){ document.getElementById('empty-push').classList.remove('hidden'); return; }
+
+  const tbody = document.getElementById('tbody-push-devices');
+  subs.forEach(s=>{
+    const short = s.endpoint.replace('https://','').split('/')[0] + '/…';
+    const fecha = s.created_at ? new Date(s.created_at).toLocaleDateString('es-MX',{day:'2-digit',month:'short',year:'numeric'}) : '—';
+    tbody.insertAdjacentHTML('beforeend',`
+      <tr>
+        <td style="font-size:11px;color:var(--faint);max-width:340px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${short}</td>
+        <td>${fecha}</td>
+        <td><button onclick="deletePushSub('${encodeURIComponent(s.endpoint)}')"
+          style="background:none;border:1px solid rgba(239,68,68,.3);color:#ef4444;border-radius:6px;padding:4px 10px;font-size:10px;cursor:pointer">Eliminar</button></td>
+      </tr>`);
+  });
+}
+
+async function deletePushSub(encodedEndpoint){
+  const endpoint = decodeURIComponent(encodedEndpoint);
+  if(!confirm('¿Eliminar esta suscripción?')) return;
+  await fetch(SUPA+'/rest/v1/push_subscriptions?endpoint=eq.'+encodeURIComponent(endpoint),{
+    method:'DELETE',
+    headers:{'apikey':KEY,'Authorization':'Bearer '+KEY}
+  });
+  loadPushDevices();
+}
+
+async function sendPushNotification(){
+  const title = document.getElementById('push-title').value.trim() || 'Terraza Luna';
+  const body  = document.getElementById('push-body').value.trim();
+  const url   = document.getElementById('push-url').value.trim() || '/tor';
+
+  if(!body){ alert('Escribe un mensaje antes de enviar'); return; }
+
+  const btn = document.getElementById('push-send-btn');
+  const res = document.getElementById('push-result');
+  btn.disabled = true;
+  btn.textContent = 'Enviando…';
+  res.style.display = 'none';
+
+  try {
+    const r = await fetch(PUSH_EDGE, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ title, body, url }),
+    });
+    const data = await r.json();
+    res.style.display = 'block';
+    if(r.ok){
+      res.style.background = 'rgba(52,211,153,.1)';
+      res.style.border = '1px solid rgba(52,211,153,.3)';
+      res.style.color = '#34d399';
+      res.textContent = `✓ Enviada a ${data.sent} dispositivo${data.sent!==1?'s':''}${data.failed?' · '+data.failed+' fallaron':''}${data.expired_removed?' · '+data.expired_removed+' eliminadas (expiradas)':''}`;
+      document.getElementById('push-last-sent').textContent = new Date().toLocaleTimeString('es-MX',{hour:'2-digit',minute:'2-digit'});
+      // Limpiar campos
+      document.getElementById('push-body').value = '';
+      document.getElementById('push-title').value = '';
+    } else {
+      res.style.background = 'rgba(239,68,68,.1)';
+      res.style.border = '1px solid rgba(239,68,68,.3)';
+      res.style.color = '#ef4444';
+      res.textContent = '✗ Error: ' + (data.error || 'Respuesta inesperada del servidor');
+    }
+  } catch(e) {
+    res.style.display = 'block';
+    res.style.background = 'rgba(239,68,68,.1)';
+    res.style.border = '1px solid rgba(239,68,68,.3)';
+    res.style.color = '#ef4444';
+    res.textContent = '✗ Error de red: ' + e.message;
+  } finally {
+    btn.disabled = false;
+    btn.textContent = '🔔 Enviar a todos los dispositivos';
+  }
+}
 </script>
 </body>
 </html>

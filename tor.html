@@ -479,6 +479,8 @@ function selectMode(mode){
   selectedMode=mode;
   selectedLevel=null;
   document.getElementById('modeLabelPlayers').textContent=mode==='presencial'?'En Terraza Luna':'A distancia';
+  // Pedir permiso de notificaciones en este momento de interacción del usuario
+  document.dispatchEvent(new Event('vorNotifPrompt'));
   initPlayersGrid();
   show('players');
 }
@@ -1024,12 +1026,54 @@ async function showMarketingMedia(onDone){
 })();
 </script>
 
-<!-- PWA Service Worker -->
+<!-- PWA Service Worker + Push Notifications -->
 <script>
+const VAPID_PUBLIC_KEY = 'BKZRTMenzFsK0AF7ItrF34Ua0tolF4sz9ywrEgFNjFqfNBK2nbb2d5i1KQSGhAWmJzbJN8mxRQiDE5zoI875gNU';
+
+function urlBase64ToUint8Array(base64String) {
+  const padding = '='.repeat((4 - base64String.length % 4) % 4);
+  const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
+  const rawData = atob(base64);
+  return Uint8Array.from([...rawData].map(c => c.charCodeAt(0)));
+}
+
+async function subscribePush(reg) {
+  try {
+    // ¿Ya está suscrito?
+    let sub = await reg.pushManager.getSubscription();
+    if (!sub) {
+      sub = await reg.pushManager.subscribe({
+        userVisibleOnly: true,
+        applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY),
+      });
+    }
+    // Guardar en Supabase
+    const j = sub.toJSON();
+    await fetch(SUPA + '/rest/v1/push_subscriptions', {
+      method: 'POST',
+      headers: {
+        'apikey': KEY,
+        'Authorization': 'Bearer ' + KEY,
+        'Content-Type': 'application/json',
+        'Prefer': 'resolution=ignore-duplicates',
+      },
+      body: JSON.stringify({
+        endpoint: j.endpoint,
+        p256dh:   j.keys.p256dh,
+        auth:     j.keys.auth,
+      }),
+    });
+    console.log('[VoR Push] Suscripción guardada');
+  } catch (err) {
+    console.warn('[VoR Push] No se pudo suscribir:', err);
+  }
+}
+
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', function() {
     navigator.serviceWorker.register('/sw-vor.js', { scope: '/tor' })
       .then(function(reg) {
+        // Actualización disponible
         reg.addEventListener('updatefound', function() {
           var newSW = reg.installing;
           newSW.addEventListener('statechange', function() {
@@ -1038,6 +1082,21 @@ if ('serviceWorker' in navigator) {
             }
           });
         });
+
+        // Solicitar permiso de notificaciones tras interacción del usuario
+        if ('PushManager' in window && 'Notification' in window) {
+          // Solo pedimos si el usuario aún no ha decidido
+          if (Notification.permission === 'default') {
+            // Esperamos a que el usuario haga click en "Jugar"
+            document.addEventListener('vorNotifPrompt', function() {
+              Notification.requestPermission().then(function(perm) {
+                if (perm === 'granted') subscribePush(reg);
+              });
+            }, { once: true });
+          } else if (Notification.permission === 'granted') {
+            subscribePush(reg);
+          }
+        }
       })
       .catch(function(err) {
         console.warn('[VoR PWA] Service worker no pudo registrarse:', err);

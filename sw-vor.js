@@ -35,6 +35,36 @@ self.addEventListener('activate', event => {
   );
 });
 
+// ── PUSH: recibir notificaciones del servidor ──
+self.addEventListener('push', event => {
+  let data = { title: 'Terraza Luna', body: '¡Tienes un mensaje!', url: '/tor', icon: '/icons/vor-192.png' };
+  try { if (event.data) data = { ...data, ...event.data.json() }; } catch {}
+
+  event.waitUntil(
+    self.registration.showNotification(data.title, {
+      body:  data.body,
+      icon:  data.icon,
+      badge: '/icons/vor-192.png',
+      data:  { url: data.url },
+      vibrate: [200, 100, 200],
+    })
+  );
+});
+
+// ── NOTIFICATION CLICK: abrir la app al tocar la notificación ──
+self.addEventListener('notificationclick', event => {
+  event.notification.close();
+  const target = event.notification.data?.url || '/tor';
+  event.waitUntil(
+    clients.matchAll({ type: 'window', includeUncontrolled: true }).then(windowClients => {
+      for (const client of windowClients) {
+        if (client.url.includes(target) && 'focus' in client) return client.focus();
+      }
+      return clients.openWindow(target);
+    })
+  );
+});
+
 // ── FETCH: estrategia por tipo de request ──
 self.addEventListener('fetch', event => {
   const url = new URL(event.request.url);
