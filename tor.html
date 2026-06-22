@@ -20,10 +20,10 @@
 html,body{min-height:100%;background:var(--bg);color:var(--ink);font-family:'Inter Tight',sans-serif;overflow-x:hidden;}
 body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellipse 80vw 60vh at 90% -5%,rgba(138,100,32,.06) 0%,transparent 60%),radial-gradient(ellipse 60vw 50vh at -5% 100%,rgba(138,100,32,.04) 0%,transparent 60%);pointer-events:none;z-index:0;}
 
+/* ── SCREENS ── */
 .screen{position:fixed;inset:0;display:flex;flex-direction:column;align-items:center;padding:24px 20px 32px;overflow-y:auto;transition:opacity .3s,transform .3s;z-index:1;}
 .screen.hidden{opacity:0;pointer-events:none;transform:scale(.97)}
 .inner{width:100%;max-width:420px;display:flex;flex-direction:column;gap:14px;margin:auto}
-#screen-game,#screen-card{padding-bottom:72px;}
 
 /* ── TYPOGRAPHY ── */
 .hero-title{font-family:'Cormorant Garamond',serif;font-size:clamp(48px,10vw,72px);font-weight:400;letter-spacing:.15em;text-transform:uppercase;color:var(--ink);line-height:1;text-align:center;}
@@ -59,113 +59,68 @@ textarea{resize:none;line-height:1.5;}
 .btn-outline:hover{border-color:var(--gold);color:var(--gold);}
 .btn-danger{background:transparent;color:#7c2d12;border:1px solid rgba(252,165,165,.6);font-size:12px;}
 .btn-danger:hover{background:#fff1f2;}
-.btn-truth{background:var(--bg2);color:var(--ink);border:1.5px solid var(--line2);font-size:16px;padding:22px;border-radius:14px;letter-spacing:.1em;text-transform:uppercase;font-family:'Cormorant Garamond',serif;font-weight:600;width:100%;cursor:pointer;transition:all .15s;}
-.btn-truth:hover{background:var(--warm);border-color:var(--warm2);}
-.btn-dare{background:var(--gold-light);color:var(--golds);border:1.5px solid var(--line2);font-size:16px;padding:22px;border-radius:14px;letter-spacing:.1em;text-transform:uppercase;font-family:'Cormorant Garamond',serif;font-weight:600;width:100%;cursor:pointer;transition:all .15s;}
-.btn-dare:hover{background:var(--gold);color:#fff;border-color:var(--gold);}
-.btn-truth:disabled,.btn-dare:disabled{opacity:.45;cursor:not-allowed;}
 
 /* ── MODE CARDS ── */
-.mode-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
-.mode-card{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;padding:18px 12px;background:var(--bg3);border:2px solid var(--line);border-radius:14px;cursor:pointer;transition:all .2s;text-align:center;}
-.mode-card.active{border-color:var(--gold);background:var(--gold-light);}
-.mode-card-label{font-family:'Cormorant Garamond',serif;font-size:18px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--ink);}
-.mode-card-sub{font-size:10px;color:var(--faint);letter-spacing:.04em;line-height:1.4;}
-.mode-card.active .mode-card-label{color:var(--gold);}
-.mode-card.active .mode-card-sub{color:var(--golds);}
+.mode-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+.mode-card{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;padding:24px 16px;background:var(--bg3);border:2px solid var(--line);border-radius:16px;cursor:pointer;transition:all .2s;text-align:center;}
+.mode-card:hover{border-color:var(--line2);background:var(--warm);}
+.mode-card-icon{font-size:32px;line-height:1;}
+.mode-card-label{font-family:'Cormorant Garamond',serif;font-size:20px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--ink);}
+.mode-card-sub{font-size:10px;color:var(--faint);letter-spacing:.04em;line-height:1.5;}
 
-/* ── STEPPER ── */
-.stepper{display:flex;align-items:center;justify-content:space-between;gap:16px;background:var(--bg3);border:1px solid var(--line);border-radius:12px;padding:10px 16px;}
-.stepper-val{font-family:'Cormorant Garamond',serif;font-size:36px;font-weight:600;color:var(--gold);min-width:40px;text-align:center;line-height:1;}
-.stepper-btn{background:transparent;border:1px solid var(--line2);color:var(--gold);font-size:20px;cursor:pointer;width:40px;height:40px;border-radius:50%;display:flex;align-items:center;justify-content:center;transition:all .15s;font-family:'Cormorant Garamond',serif;}
-.stepper-btn:hover{background:var(--gold-light);border-color:var(--gold);}
-.stepper-btn:active{transform:scale(.93);}
-
-/* ── LEVEL TABS ── */
-.level-tabs{display:flex;gap:5px;flex-wrap:wrap;}
-.ltab{flex:1;min-width:56px;padding:8px 4px;border-radius:10px;border:1px solid var(--line);background:var(--bg3);color:var(--faint);font-size:10px;font-weight:600;cursor:pointer;text-align:center;transition:all .2s;font-family:'Inter Tight',sans-serif;letter-spacing:.05em;text-transform:uppercase;}
-.ltab.active{border-color:var(--gold);color:var(--gold);background:var(--gold-light);}
-.ltab:hover:not(.active){border-color:var(--line2);color:var(--dim);}
-
-/* ── GAME CODE ── */
-.game-code{font-family:'Cormorant Garamond',serif;font-size:52px;font-weight:600;letter-spacing:.2em;color:var(--gold);text-align:center;padding:18px;background:var(--gold-pale);border-radius:14px;border:1px dashed var(--line2);line-height:1;}
-.share-url{font-size:11px;color:var(--faint);text-align:center;word-break:break-all;padding:10px 12px;background:var(--bg3);border-radius:10px;border:1px solid var(--line);margin-top:8px;}
-
-/* ── PLAYER PILLS ── */
-.player-pills{display:flex;flex-direction:column;gap:8px;max-height:35vh;overflow-y:auto;}
-.player-pill{display:flex;align-items:center;gap:12px;padding:10px 14px;background:var(--bg3);border-radius:10px;border:1px solid var(--line);}
-.player-pill-name{font-size:14px;font-weight:500;color:var(--ink);}
-
-/* ── AVATARS ── */
-.avatar{width:36px;height:36px;border-radius:50%;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:#fff;font-family:'Cormorant Garamond',serif;}
-.avatar-big{width:88px;height:88px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:30px;font-weight:600;color:#fff;font-family:'Cormorant Garamond',serif;box-shadow:0 4px 20px rgba(0,0,0,.1);}
-
-/* ── NAMES GRID ── */
-.names-grid{display:flex;flex-direction:column;gap:10px;max-height:45vh;overflow-y:auto;padding-right:2px;}
+/* ── PLAYER FIELDS ── */
+.names-grid{display:flex;flex-direction:column;gap:10px;}
 .player-row{display:flex;align-items:center;gap:10px;}
+.avatar{width:38px;height:38px;border-radius:50%;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;color:#fff;font-family:'Cormorant Garamond',serif;}
+.remove-btn{background:transparent;border:1px solid var(--line);border-radius:8px;color:var(--faint);font-size:16px;width:38px;height:38px;flex-shrink:0;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .15s;line-height:1;}
+.remove-btn:hover{border-color:rgba(252,165,165,.6);color:#c0392b;background:#fff8f8;}
+.btn-add-player{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;padding:13px;border-radius:12px;border:1px dashed var(--line2);background:transparent;font-size:12px;font-weight:600;cursor:pointer;color:var(--dim);font-family:'Inter Tight',sans-serif;letter-spacing:.08em;text-transform:uppercase;transition:all .15s;}
+.btn-add-player:hover{border-color:var(--gold);color:var(--gold);background:var(--gold-pale);}
 
-/* ── TURN SCREEN ── */
-#screen-game{background:var(--bg);justify-content:center;gap:24px;}
-.player-big{display:flex;flex-direction:column;align-items:center;gap:14px;}
-.turn-name{font-family:'Cormorant Garamond',serif;font-size:36px;font-weight:600;text-align:center;color:var(--ink);letter-spacing:.04em;}
-.turn-sub{font-size:11px;letter-spacing:.2em;text-transform:uppercase;color:var(--faint);margin-top:2px;font-weight:500;}
-.choices{display:flex;flex-direction:column;gap:12px;width:100%;max-width:380px;}
+/* ── LEVEL GRID ── */
+.level-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;}
+.level-option{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;padding:16px 8px 14px;background:var(--bg3);border:2px solid var(--line);border-radius:14px;cursor:pointer;transition:all .2s;text-align:center;}
+.level-option:hover{border-color:var(--line2);background:var(--warm);}
+.level-option.active{border-color:var(--gold);background:var(--gold-light);}
+.level-option-icon{font-size:26px;line-height:1;}
+.level-option-label{font-family:'Cormorant Garamond',serif;font-size:15px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;color:var(--ink);}
+.level-option.active .level-option-label{color:var(--gold);}
+.level-desc-box{background:var(--bg3);border:1px solid var(--line2);border-radius:12px;padding:14px 16px;font-size:13px;color:var(--dim);line-height:1.6;min-height:64px;transition:all .2s;}
+.level-desc-box.hidden{display:none;}
 
 /* ── CARD SCREEN ── */
-#screen-card{background:linear-gradient(180deg,#2a1f0e 0%,#1a1610 100%);}
+#screen-card{background:linear-gradient(180deg,#2a1f0e 0%,#1a1610 100%);justify-content:center;padding-bottom:80px;}
 #screen-card::before{content:'';position:fixed;top:-100px;right:-80px;width:320px;height:320px;border-radius:50%;background:radial-gradient(circle,rgba(212,168,75,.09),transparent 70%);pointer-events:none;}
-.card-reveal{display:flex;flex-direction:column;align-items:center;justify-content:center;flex:1;width:100%;max-width:420px;gap:6px;padding:8px 0;}
-.card-type-badge{display:inline-flex;align-items:center;padding:7px 22px;border-radius:999px;font-size:10px;font-weight:600;letter-spacing:.18em;text-transform:uppercase;margin-bottom:16px;font-family:'Inter Tight',sans-serif;}
+.card-reveal{display:flex;flex-direction:column;align-items:center;justify-content:center;flex:1;width:100%;max-width:420px;gap:6px;padding:8px 16px 0;}
+.card-type-badge{display:inline-flex;align-items:center;padding:7px 22px;border-radius:999px;font-size:10px;font-weight:600;letter-spacing:.18em;text-transform:uppercase;margin-bottom:12px;font-family:'Inter Tight',sans-serif;}
 .badge-truth{background:rgba(248,244,235,.1);color:#d4c9b0;border:1px solid rgba(212,201,176,.2);}
 .badge-dare{background:rgba(212,175,55,.12);color:#c9a35b;border:1px solid rgba(212,175,55,.25);}
-.card-text{font-family:'Cormorant Garamond',serif;font-size:clamp(20px,5vw,28px);font-weight:500;text-align:center;line-height:1.5;color:#f0e4c4;padding:0 8px;max-width:380px;letter-spacing:.01em;}
+.card-text{font-family:'Cormorant Garamond',serif;font-size:clamp(22px,5.5vw,32px);font-weight:500;text-align:center;line-height:1.5;color:#f0e4c4;padding:0 4px;max-width:380px;letter-spacing:.01em;}
 .level-chip{font-size:10px;font-weight:600;letter-spacing:.18em;text-transform:uppercase;padding:5px 14px;border-radius:999px;margin-top:20px;font-family:'Inter Tight',sans-serif;}
 .chip-familiar{background:rgba(212,201,176,.1);color:#c8b898;}
 .chip-light{background:rgba(200,184,152,.1);color:#c8b898;}
 .chip-hot{background:rgba(212,175,55,.12);color:#d4af37;}
 .chip-extremo{background:rgba(212,175,55,.18);color:#e8c86e;}
+.chip-mixto{background:rgba(212,201,176,.1);color:#c8b898;}
 .chip-comunidad{background:rgba(138,100,32,.18);color:#d4af37;}
-.card-next-wrap{width:100%;max-width:420px;margin-top:20px;padding-bottom:8px;}
+
+/* ── ROUND / LEVEL BADGES ── */
+.round-badge{position:fixed;top:16px;right:16px;background:rgba(42,31,14,.9);border:1px solid rgba(212,175,55,.2);border-radius:999px;padding:5px 14px;font-size:10px;color:#c9a35b;font-weight:600;letter-spacing:.1em;text-transform:uppercase;backdrop-filter:blur(8px);z-index:10;}
+.level-badge{position:fixed;top:16px;left:16px;background:rgba(42,31,14,.9);border:1px solid rgba(212,175,55,.2);border-radius:999px;padding:5px 14px;font-size:10px;color:#c9a35b;font-weight:600;letter-spacing:.1em;text-transform:uppercase;backdrop-filter:blur(8px);z-index:10;}
+
+/* ── CARD NEXT BUTTON ── */
+.card-next-wrap{width:100%;max-width:420px;padding:0 16px;}
 .btn-next{background:var(--gold);color:#fff;font-size:13px;padding:17px;border-radius:12px;letter-spacing:.1em;text-transform:uppercase;display:flex;align-items:center;justify-content:center;width:100%;border:none;cursor:pointer;font-family:'Inter Tight',sans-serif;font-weight:600;transition:all .15s;}
 .btn-next:hover{background:var(--golds);}
 .btn-next:active{transform:scale(.97);}
 
-/* ── ROUND BADGE ── */
-.round-badge{position:fixed;top:16px;right:16px;background:rgba(250,245,232,.95);border:1px solid var(--line2);border-radius:999px;padding:5px 14px;font-size:10px;color:var(--dim);font-weight:600;letter-spacing:.1em;text-transform:uppercase;backdrop-filter:blur(8px);z-index:10;}
-#screen-card .round-badge{background:rgba(42,31,14,.9);border-color:rgba(212,175,55,.2);color:#c9a35b;}
-
-/* ── LEVEL BADGE (top-left durante el juego) ── */
-.level-badge{position:fixed;top:16px;left:16px;background:rgba(250,245,232,.95);border:1px solid var(--line2);border-radius:999px;padding:5px 14px;font-size:10px;color:var(--gold);font-weight:600;letter-spacing:.1em;text-transform:uppercase;backdrop-filter:blur(8px);z-index:10;}
-#screen-card .level-badge{background:rgba(42,31,14,.9);border-color:rgba(212,175,55,.2);color:#c9a35b;}
-
-/* ── WELCOME MODAL ── */
-.welcome-sheet{text-align:center;padding:36px 24px 32px;}
-.welcome-sheet .overlay-title{font-size:28px;letter-spacing:.08em;}
-.welcome-user-name{font-family:'Cormorant Garamond',serif;font-size:38px;font-weight:600;color:var(--gold);letter-spacing:.06em;margin-top:10px;line-height:1.2;}
-
 /* ── GAME BOTTOM BAR ── */
-.game-bar{position:fixed;bottom:0;left:0;right:0;z-index:20;background:rgba(248,244,235,.97);border-top:1px solid var(--line);backdrop-filter:blur(12px);padding:10px 16px 14px;display:flex;align-items:center;gap:8px;}
-#screen-card .game-bar{background:rgba(26,22,16,.97);border-top-color:rgba(212,175,55,.15);}
-.game-bar-code{display:flex;flex-direction:column;flex:1;min-width:0;}
-.game-bar-label{font-size:9px;letter-spacing:.25em;text-transform:uppercase;color:var(--faint);font-weight:600;margin-bottom:1px;}
-.game-bar-val{font-family:'Cormorant Garamond',serif;font-size:20px;font-weight:600;letter-spacing:.18em;color:var(--gold);line-height:1.1;}
-#screen-card .game-bar-label{color:rgba(200,184,152,.45);}
-#screen-card .game-bar-val{color:#c9a35b;}
-.game-bar-btn{display:flex;align-items:center;justify-content:center;padding:9px 13px;border-radius:10px;border:1px solid var(--line2);font-size:11px;font-weight:600;cursor:pointer;font-family:'Inter Tight',sans-serif;letter-spacing:.06em;text-transform:uppercase;flex-shrink:0;transition:all .15s;background:transparent;color:var(--dim);}
-.game-bar-btn:hover{border-color:var(--gold);color:var(--gold);}
+.game-bar{position:fixed;bottom:0;left:0;right:0;z-index:20;background:rgba(26,22,16,.97);border-top:1px solid rgba(212,175,55,.15);backdrop-filter:blur(12px);padding:10px 14px 14px;display:flex;align-items:center;gap:8px;}
+.game-bar-btn{display:flex;align-items:center;justify-content:center;padding:10px 14px;border-radius:10px;border:1px solid rgba(212,175,55,.2);font-size:11px;font-weight:600;cursor:pointer;font-family:'Inter Tight',sans-serif;letter-spacing:.06em;text-transform:uppercase;flex-shrink:0;transition:all .15s;background:rgba(212,175,55,.06);color:#c9a35b;flex:1;}
+.game-bar-btn:hover{border-color:rgba(212,175,55,.45);background:rgba(212,175,55,.12);}
 .game-bar-btn:active{transform:scale(.96);}
-#screen-card .game-bar-btn{border-color:rgba(212,175,55,.2);color:#c9a35b;background:rgba(212,175,55,.06);}
-#screen-card .game-bar-btn:hover{border-color:rgba(212,175,55,.45);background:rgba(212,175,55,.12);}
-
-/* ── END SCREEN ── */
-#screen-end{background:var(--bg);justify-content:center;}
-.end-ornament{display:flex;align-items:center;gap:14px;margin:14px 0;}
-.end-ornament::before,.end-ornament::after{content:'';flex:1;height:1px;background:linear-gradient(90deg,transparent,var(--line2));}
-.end-ornament::after{background:linear-gradient(270deg,transparent,var(--line2));}
-.end-ornament-dot{width:5px;height:5px;border-radius:50%;background:var(--gold);}
-.end-players{display:flex;flex-wrap:wrap;gap:10px;justify-content:center;margin:8px 0 16px;}
-.end-player{display:flex;flex-direction:column;align-items:center;gap:5px;}
-.end-player-name{font-size:11px;color:var(--dim);font-weight:500;max-width:64px;text-align:center;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.game-bar-btn.danger{color:#f87171;border-color:rgba(248,113,113,.2);background:rgba(248,113,113,.06);}
+.game-bar-btn.danger:hover{border-color:rgba(248,113,113,.4);background:rgba(248,113,113,.12);}
 
 /* ── OVERLAYS ── */
 .overlay{position:fixed;inset:0;z-index:100;background:rgba(26,22,16,.5);backdrop-filter:blur(4px);display:flex;align-items:flex-end;justify-content:center;padding:0 16px 20px;transition:opacity .25s;}
@@ -182,6 +137,7 @@ textarea{resize:none;line-height:1.5;}
 .overlay-code-num{font-family:'Cormorant Garamond',serif;font-size:32px;font-weight:600;letter-spacing:.2em;color:var(--gold);line-height:1;}
 .copy-btn{background:var(--gold);color:#fff;border:none;border-radius:8px;padding:9px 14px;font-size:11px;font-weight:600;cursor:pointer;font-family:'Inter Tight',sans-serif;letter-spacing:.06em;text-transform:uppercase;flex-shrink:0;transition:background .15s;}
 .copy-btn:hover{background:var(--golds);}
+.share-url{font-size:11px;color:var(--faint);word-break:break-all;padding:10px 12px;background:var(--bg3);border-radius:10px;border:1px solid var(--line);margin-top:0;}
 
 /* Options menu */
 .menu-item{display:flex;align-items:center;justify-content:space-between;padding:13px 16px;border-radius:12px;border:1px solid var(--line);background:var(--bg3);cursor:pointer;transition:all .15s;margin-bottom:8px;}
@@ -194,7 +150,7 @@ textarea{resize:none;line-height:1.5;}
 .menu-item.danger .menu-item-label{color:#7c2d12;}
 .menu-item.danger .menu-item-sub{color:#c08080;}
 
-/* Add player / add card */
+/* Add overlay */
 .row-input{display:flex;gap:8px;}
 .btn-confirm-sm{background:var(--gold);color:#fff;border:none;border-radius:10px;padding:0 18px;font-size:12px;font-weight:600;cursor:pointer;font-family:'Inter Tight',sans-serif;letter-spacing:.06em;text-transform:uppercase;flex-shrink:0;white-space:nowrap;transition:background .15s;}
 .btn-confirm-sm:hover{background:var(--golds);}
@@ -202,13 +158,16 @@ textarea{resize:none;line-height:1.5;}
 .type-tab{flex:1;padding:10px;border-radius:10px;border:1px solid var(--line);background:var(--bg3);color:var(--faint);font-size:12px;font-weight:600;cursor:pointer;text-align:center;transition:all .2s;font-family:'Inter Tight',sans-serif;letter-spacing:.08em;text-transform:uppercase;}
 .type-tab.active{border-color:var(--gold);color:var(--gold);background:var(--gold-light);}
 
-/* ── TOAST ── */
-.toast{position:fixed;bottom:80px;left:50%;transform:translateX(-50%) translateY(20px);background:var(--ink);border:1px solid var(--gold);border-radius:10px;padding:9px 18px;font-size:12px;letter-spacing:.06em;color:var(--gold-light);opacity:0;pointer-events:none;transition:all .3s;z-index:999;white-space:nowrap;font-weight:600;}
-.toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
-
-/* ── BRAND FOOTER ── */
+/* Brand footer */
 .brand-footer{text-align:center;margin-top:4px;padding-top:8px;border-top:1px solid var(--line);}
 .brand-name{font-family:'Cormorant Garamond',serif;font-size:15px;letter-spacing:.2em;text-transform:uppercase;color:var(--dim);}
+
+/* ── TOAST ── */
+.toast{position:fixed;bottom:90px;left:50%;transform:translateX(-50%) translateY(20px);background:var(--ink);border:1px solid var(--gold);border-radius:10px;padding:9px 18px;font-size:12px;letter-spacing:.06em;color:var(--gold-light);opacity:0;pointer-events:none;transition:all .3s;z-index:999;white-space:nowrap;font-weight:600;}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+
+/* Marketing media */
+#mktOverlay{position:fixed;inset:0;z-index:500;background:#000;display:none;align-items:center;justify-content:center;opacity:0;transition:opacity .5s;}
 
 ::-webkit-scrollbar{width:4px;}
 ::-webkit-scrollbar-track{background:transparent;}
@@ -216,16 +175,16 @@ textarea{resize:none;line-height:1.5;}
 
 @media(max-width:400px){
   .hero-title{letter-spacing:.1em;}
-  .btn-truth,.btn-dare{font-size:15px;padding:19px;}
-  .game-code{font-size:42px;}
-  .game-bar-val{font-size:18px;}
-  .ltab{font-size:9px;min-width:48px;}
+  .level-grid{grid-template-columns:1fr 1fr;}
+  .mode-card{padding:18px 12px;}
 }
 </style>
 </head>
 <body>
 
-<!-- ══ BIENVENIDA ══ -->
+<!-- ══════════════════════════════════════════
+     PANTALLA 1: BIENVENIDA
+══════════════════════════════════════════ -->
 <div class="screen" id="screen-welcome">
   <div class="inner" style="padding:16px 0">
     <div style="text-align:center;padding:8px 0 4px">
@@ -233,201 +192,140 @@ textarea{resize:none;line-height:1.5;}
       <h1 class="hero-title">Verdad<br>o Reto</h1>
       <div class="hero-ornament"><div class="hero-ornament-inner">El clásico de las noches épicas</div></div>
     </div>
-    <button class="btn btn-gold" onclick="goSetup()">Nuevo juego</button>
-    <div class="card">
-      <div class="section-label" style="margin-bottom:10px">Unirse con código</div>
-      <div style="display:flex;gap:8px">
-        <input id="joinCode" placeholder="Ej: XBTA2" maxlength="6" style="text-transform:uppercase;letter-spacing:.25em;font-size:22px;font-weight:600;text-align:center;font-family:'Cormorant Garamond',serif" onkeydown="if(event.key==='Enter')joinGame()">
-        <button class="btn btn-outline" style="width:auto;padding:0 18px;min-width:80px;white-space:nowrap" onclick="joinGame()">Entrar</button>
+
+    <div style="text-align:center;margin:4px 0 6px">
+      <div style="font-family:'Cormorant Garamond',serif;font-size:22px;font-weight:500;color:var(--dim);letter-spacing:.04em">¿Quieres jugar?</div>
+    </div>
+
+    <div class="mode-grid">
+      <div class="mode-card" onclick="selectMode('presencial')">
+        <div class="mode-card-icon">🍹</div>
+        <div class="mode-card-label">En Terraza<br>Luna</div>
+        <div class="mode-card-sub">Retos y preguntas<br>en persona</div>
+      </div>
+      <div class="mode-card" onclick="selectMode('distancia')">
+        <div class="mode-card-icon">📱</div>
+        <div class="mode-card-label">A<br>distancia</div>
+        <div class="mode-card-sub">Por videollamada<br>o chat</div>
       </div>
     </div>
+
     <div class="brand-footer"><div class="brand-name">Terraza Luna</div></div>
   </div>
 </div>
 
-<!-- ══ CONFIGURACIÓN ══ -->
-<div class="screen hidden" id="screen-setup">
-  <div class="inner">
-    <div>
-      <div class="section-label">Nuevo juego</div>
-      <h2 class="section-title">Configuración</h2>
-      <div class="section-line"><div class="section-line-dot"></div></div>
-    </div>
-    <div class="card">
-      <div class="section-label" style="margin-bottom:12px">Modalidad</div>
-      <div class="mode-grid">
-        <div class="mode-card active" id="modePresencial" onclick="setMode('presencial')">
-          <div class="mode-card-label">En persona</div>
-          <div class="mode-card-sub">Retos físicos y presenciales</div>
-        </div>
-        <div class="mode-card" id="modeDistancia" onclick="setMode('distancia')">
-          <div class="mode-card-label">A distancia</div>
-          <div class="mode-card-sub">Retos por videollamada o chat</div>
-        </div>
-      </div>
-    </div>
-    <div class="card">
-      <div class="section-label" style="margin-bottom:12px">Número de jugadores</div>
-      <div class="stepper">
-        <button class="stepper-btn" onclick="changeCount(-1)">−</button>
-        <span class="stepper-val" id="countVal">4</span>
-        <button class="stepper-btn" onclick="changeCount(1)">+</button>
-      </div>
-    </div>
-    <div class="card">
-      <div class="section-label" style="margin-bottom:12px">Nivel del juego</div>
-      <div class="level-tabs">
-        <button class="ltab"        data-level="familiar"  onclick="setLevel(this)">Familiar</button>
-        <button class="ltab"        data-level="light"     onclick="setLevel(this)">Light</button>
-        <button class="ltab"        data-level="hot"       onclick="setLevel(this)">Hot</button>
-        <button class="ltab"        data-level="extremo"   onclick="setLevel(this)">Extremo</button>
-        <button class="ltab active" data-level="mixto"     onclick="setLevel(this)">Mixto</button>
-        <button class="ltab"        data-level="comunidad" onclick="setLevel(this)">Comunidad</button>
-      </div>
-    </div>
-    <button class="btn btn-gold" onclick="goNames()">Continuar</button>
-    <button class="btn btn-outline" onclick="goSalir()">Salir</button>
-  </div>
-</div>
 
-<!-- ══ NOMBRES ══ -->
-<div class="screen hidden" id="screen-names">
+<!-- ══════════════════════════════════════════
+     PANTALLA 2: JUGADORES
+══════════════════════════════════════════ -->
+<div class="screen hidden" id="screen-players">
   <div class="inner">
     <div>
-      <div class="section-label">Nuevo juego</div>
-      <h2 class="section-title">Quiénes juegan</h2>
+      <div class="section-label">Nuevo juego · <span id="modeLabelPlayers">En Terraza Luna</span></div>
+      <h2 class="section-title">¿Quién se<br>atreve a jugar?</h2>
       <div class="section-line"><div class="section-line-dot"></div></div>
     </div>
-    <div class="card">
-      <div class="section-label" style="margin-bottom:4px">Nombres de los jugadores</div>
-      <div style="font-size:10px;color:var(--faint);letter-spacing:.05em;margin-bottom:12px">Todos los nombres son obligatorios</div>
+
+    <div class="card" style="padding:16px 16px 12px">
+      <div class="section-label" style="margin-bottom:12px">Nombres de los jugadores</div>
       <div class="names-grid" id="namesGrid"></div>
+      <button class="btn-add-player" style="margin-top:12px" onclick="addPlayerField()">
+        ＋ Agregar jugador
+      </button>
     </div>
-    <button class="btn btn-gold" id="createBtn" onclick="createGame()">Crear juego</button>
-    <button class="btn btn-outline" onclick="show('setup')">Volver</button>
+
+    <button class="btn btn-gold" onclick="goToLevel()">Siguiente</button>
+    <button class="btn btn-outline" onclick="show('welcome')">Volver</button>
   </div>
 </div>
 
-<!-- ══ LOBBY ══ -->
-<div class="screen hidden" id="screen-lobby">
+
+<!-- ══════════════════════════════════════════
+     PANTALLA 3: NIVEL
+══════════════════════════════════════════ -->
+<div class="screen hidden" id="screen-level">
   <div class="inner">
-    <div class="card">
-      <div class="section-label" style="margin-bottom:12px">Jugadores (<span id="lobbyCount">0</span>)</div>
-      <div class="player-pills" id="lobbyPlayers"></div>
+    <div>
+      <div class="section-label">Nuevo juego</div>
+      <h2 class="section-title">Elige el nivel</h2>
+      <div class="section-line"><div class="section-line-dot"></div></div>
     </div>
-    <div class="card" style="display:flex;gap:16px;align-items:center">
-      <div style="flex:1">
-        <div class="section-label" style="margin-bottom:4px">Nivel</div>
-        <div id="lobbyLevelLabel" style="font-family:'Cormorant Garamond',serif;font-size:20px;font-weight:600;color:var(--ink)"></div>
+
+    <div class="level-grid">
+      <div class="level-option" data-level="familiar" onclick="selectLevel('familiar')">
+        <div class="level-option-icon">🌿</div>
+        <div class="level-option-label">Familiar</div>
       </div>
-      <div>
-        <div class="section-label" style="margin-bottom:4px">Modalidad</div>
-        <div id="lobbyModeLabel" style="font-family:'Cormorant Garamond',serif;font-size:20px;font-weight:600;color:var(--ink)"></div>
+      <div class="level-option" data-level="light" onclick="selectLevel('light')">
+        <div class="level-option-icon">✨</div>
+        <div class="level-option-label">Light</div>
+      </div>
+      <div class="level-option" data-level="hot" onclick="selectLevel('hot')">
+        <div class="level-option-icon">🔥</div>
+        <div class="level-option-label">Hot</div>
+      </div>
+      <div class="level-option" data-level="extremo" onclick="selectLevel('extremo')">
+        <div class="level-option-icon">💀</div>
+        <div class="level-option-label">Extremo</div>
+      </div>
+      <div class="level-option" data-level="mixto" onclick="selectLevel('mixto')">
+        <div class="level-option-icon">🎲</div>
+        <div class="level-option-label">Mixto</div>
+      </div>
+      <div class="level-option" data-level="comunidad" onclick="selectLevel('comunidad')">
+        <div class="level-option-icon">🌙</div>
+        <div class="level-option-label">Comunidad</div>
       </div>
     </div>
-    <button class="btn btn-gold" id="startBtn" onclick="startGame()">Iniciar juego</button>
-    <button class="btn btn-outline" style="font-size:11px;padding:11px" onclick="openInviteOverlay()">Invitar</button>
-    <button class="btn btn-outline" style="font-size:11px;padding:11px" onclick="goSalir()">Salir</button>
+
+    <div class="level-desc-box hidden" id="levelDesc"></div>
+
+    <button class="btn btn-gold" id="startGameBtn" onclick="initGame()">Iniciar Juego</button>
+    <button class="btn btn-outline" onclick="show('players')">Volver</button>
   </div>
 </div>
 
-<!-- ══ TURNO ══ -->
-<div class="screen hidden" id="screen-game">
+
+<!-- ══════════════════════════════════════════
+     PANTALLA 4: CARTA / JUEGO
+══════════════════════════════════════════ -->
+<div class="screen hidden" id="screen-card">
   <div class="level-badge" id="levelBadge">Mixto</div>
   <div class="round-badge" id="roundBadge">Ronda 1</div>
-  <div class="player-big">
-    <div class="avatar-big" id="turnAvatar">?</div>
-    <div style="text-align:center">
-      <div class="turn-name" id="turnName">Jugador</div>
-      <div class="turn-sub">Es tu turno · Elige</div>
-    </div>
-  </div>
-  <div class="choices">
-    <button class="btn-truth" onclick="pickCard('truth')">Verdad</button>
-    <button class="btn-dare" onclick="pickCard('dare')">Reto</button>
-  </div>
-  <div class="game-bar">
-    <div class="game-bar-code">
-      <div class="game-bar-label">Código del juego</div>
-      <div class="game-bar-val" id="barCode1">------</div>
-    </div>
-    <button class="game-bar-btn" onclick="openInviteOverlay()">Invitar</button>
-    <button class="game-bar-btn" onclick="openOptionsOverlay()">Opciones</button>
-  </div>
-</div>
 
-<!-- ══ CARTA ══ -->
-<div class="screen hidden" id="screen-card">
-  <div class="level-badge" id="cardLevelBadge">Mixto</div>
-  <div class="round-badge" id="cardRoundBadge">Ronda 1</div>
   <div class="card-reveal">
-    <div class="avatar-big" id="cardAvatar" style="width:64px;height:64px;font-size:22px;margin-bottom:10px"></div>
     <div id="cardBadge"></div>
     <div class="card-text" id="cardText">…</div>
     <div id="cardLevel"></div>
   </div>
-  <div class="card-next-wrap">
-    <button class="btn-next" onclick="nextTurn()">Siguiente</button>
+
+  <div class="card-next-wrap" style="margin-top:28px">
+    <button class="btn-next" id="btnSiguiente" onclick="nextTurn()">Siguiente</button>
   </div>
+
   <div class="game-bar">
-    <div class="game-bar-code">
-      <div class="game-bar-label">Código del juego</div>
-      <div class="game-bar-val" id="barCode2">------</div>
-    </div>
-    <button class="game-bar-btn" onclick="openInviteOverlay()">Invitar</button>
-    <button class="game-bar-btn" onclick="openOptionsOverlay()">Opciones</button>
+    <button class="game-bar-btn" onclick="openInviteOverlay()">📲 Invitar a jugar</button>
+    <button class="game-bar-btn" onclick="openOptionsOverlay()">⋯ Opciones</button>
+    <button class="game-bar-btn danger" onclick="openEndConfirmOverlay()">✕ Terminar</button>
   </div>
 </div>
 
-<!-- ══ FIN ══ -->
-<div class="screen hidden" id="screen-end">
-  <div class="inner" style="padding:16px 0;text-align:center">
-    <div>
-      <div class="section-label">Terraza Luna</div>
-      <h2 class="section-title" style="margin-top:4px">Fin del juego</h2>
-      <div class="end-ornament"><div class="end-ornament-dot"></div></div>
-      <div style="font-size:11px;color:var(--faint);letter-spacing:.15em;text-transform:uppercase;margin-bottom:4px" id="endStats"></div>
-    </div>
-    <div class="end-players" id="endPlayers"></div>
-    <button class="btn btn-gold" onclick="goRematch()">Nuevo juego</button>
-    <button class="btn btn-outline" style="margin-top:8px" onclick="goSalir()">Salir</button>
-  </div>
-</div>
 
-<!-- ══ REMATCH OVERLAY ══ -->
-<div class="overlay hidden" id="rematchOverlay">
-  <div class="overlay-sheet">
-    <div class="overlay-title">Nueva partida</div>
-    <div class="overlay-sub">Mismos jugadores · Elige el nivel</div>
-    <div class="card" style="margin:16px 0">
-      <div class="section-label" style="margin-bottom:12px">Nivel del juego</div>
-      <div class="level-tabs">
-        <button class="ltab"        data-level="familiar"  onclick="setLevel(this)">Familiar</button>
-        <button class="ltab"        data-level="light"     onclick="setLevel(this)">Light</button>
-        <button class="ltab"        data-level="hot"       onclick="setLevel(this)">Hot</button>
-        <button class="ltab"        data-level="extremo"   onclick="setLevel(this)">Extremo</button>
-        <button class="ltab active" data-level="mixto"     onclick="setLevel(this)">Mixto</button>
-        <button class="ltab"        data-level="comunidad" onclick="setLevel(this)">Comunidad</button>
-      </div>
-    </div>
-    <button class="btn btn-gold" id="rematchBtn" onclick="startRematch()">Continuar</button>
-    <button class="overlay-close" onclick="closeOverlay('rematchOverlay')">Cancelar</button>
-  </div>
-</div>
-
-<!-- ══ OVERLAYS ══ -->
+<!-- ══════════════════════════════════════════
+     OVERLAYS
+══════════════════════════════════════════ -->
 
 <!-- Invitar -->
 <div class="overlay hidden" id="inviteOverlay" onclick="closeOverlay('inviteOverlay',event)">
   <div class="overlay-sheet">
-    <div class="overlay-title">Invitar jugadores</div>
-    <div class="overlay-sub">Comparte el código o el link directo</div>
+    <div class="overlay-title">Invitar a jugar</div>
+    <div class="overlay-sub">Comparte el código o el link directo — al entrar verán la misma pantalla</div>
     <div class="overlay-code-box">
       <div class="overlay-code-num" id="overlayCode">------</div>
       <button class="copy-btn" onclick="copyLink()">Copiar link</button>
     </div>
-    <div class="share-url" id="overlayUrl" style="margin-top:0"></div>
-    <button class="btn btn-outline" style="margin-top:10px;width:100%;padding:12px;font-size:12px;display:flex;align-items:center;justify-content:center;gap:8px;border-radius:10px;cursor:pointer;" onclick="shareGame()">📲 Compartir por WhatsApp / Redes</button>
+    <div class="share-url" id="overlayUrl"></div>
+    <button class="btn btn-gold" style="margin-top:12px" onclick="shareGame()">📲 Compartir por WhatsApp / Redes</button>
     <button class="overlay-close" onclick="closeOverlay('inviteOverlay')">Cerrar</button>
   </div>
 </div>
@@ -445,12 +343,17 @@ textarea{resize:none;line-height:1.5;}
       <div><div class="menu-item-label">Agregar pregunta o reto</div><div class="menu-item-sub">Se guarda en De la comunidad</div></div>
       <div class="menu-item-arrow">›</div>
     </div>
-    <div class="overlay-divider"></div>
-    <div class="menu-item danger" onclick="closeOverlay('optionsOverlay');openEndConfirmOverlay()">
-      <div><div class="menu-item-label">Finalizar juego</div><div class="menu-item-sub">Termina la partida para todos</div></div>
-      <div class="menu-item-arrow">›</div>
-    </div>
     <button class="overlay-close" onclick="closeOverlay('optionsOverlay')">Cancelar</button>
+  </div>
+</div>
+
+<!-- Confirmar fin de juego -->
+<div class="overlay hidden" id="endConfirmOverlay" onclick="closeOverlay('endConfirmOverlay',event)">
+  <div class="overlay-sheet">
+    <div class="overlay-title">Terminar juego</div>
+    <div class="overlay-sub">Esto termina la partida para todos los jugadores. Esta acción no se puede deshacer.</div>
+    <button class="btn btn-danger" style="width:100%;padding:14px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:13px;letter-spacing:.08em;text-transform:uppercase;cursor:pointer;font-family:'Inter Tight',sans-serif;font-weight:600;" onclick="endGame()">Terminar juego</button>
+    <button class="overlay-close" onclick="closeOverlay('endConfirmOverlay')">Cancelar</button>
   </div>
 </div>
 
@@ -471,7 +374,7 @@ textarea{resize:none;line-height:1.5;}
 <div class="overlay hidden" id="addCardOverlay" onclick="closeOverlay('addCardOverlay',event)">
   <div class="overlay-sheet">
     <div class="overlay-title">Agregar al juego</div>
-    <div class="overlay-sub">Se añade al mazo actual y se guarda en De la comunidad</div>
+    <div class="overlay-sub">Se añade al mazo y se guarda en De la comunidad</div>
     <div class="type-tabs">
       <button class="type-tab active" id="tabTruth" onclick="setCardType('truth')">Verdad</button>
       <button class="type-tab" id="tabDare" onclick="setCardType('dare')">Reto</button>
@@ -482,498 +385,226 @@ textarea{resize:none;line-height:1.5;}
   </div>
 </div>
 
-<!-- Confirmar fin -->
-<div class="overlay hidden" id="endConfirmOverlay" onclick="closeOverlay('endConfirmOverlay',event)">
-  <div class="overlay-sheet">
-    <div class="overlay-title">Finalizar juego</div>
-    <div class="overlay-sub">Esta acción termina la partida para todos los jugadores y no se puede deshacer.</div>
-    <button class="btn btn-danger" style="width:100%;padding:14px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:13px;letter-spacing:.08em;text-transform:uppercase;cursor:pointer;font-family:'Inter Tight',sans-serif;font-weight:600;" onclick="endGame()">Finalizar partida</button>
-    <button class="overlay-close" onclick="closeOverlay('endConfirmOverlay')">Cancelar</button>
-  </div>
-</div>
-
-<!-- Marketing media fullscreen -->
+<!-- Marketing media -->
 <div id="mktOverlay" style="position:fixed;inset:0;z-index:500;background:#000;display:none;align-items:center;justify-content:center;opacity:0;transition:opacity .5s;">
   <img id="mktImg" style="max-width:100vw;max-height:100vh;object-fit:contain;display:none">
   <video id="mktVideo" style="max-width:100vw;max-height:100vh;object-fit:contain;display:none" playsinline></video>
   <div id="mktCountdown" style="position:absolute;top:18px;right:22px;background:rgba(0,0,0,.45);border:1px solid rgba(255,255,255,.18);border-radius:999px;padding:6px 14px;display:none;align-items:center;gap:7px;backdrop-filter:blur(6px);">
-    <svg width="18" height="18" viewBox="0 0 18 18" style="flex-shrink:0"><circle cx="9" cy="9" r="7.5" fill="none" stroke="rgba(255,255,255,.25)" stroke-width="2"/><circle id="mktCountdownRing" cx="9" cy="9" r="7.5" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-dasharray="47.1" stroke-dashoffset="0" transform="rotate(-90 9 9)" style="transition:stroke-dashoffset 1s linear"/></svg>
+    <svg width="18" height="18" viewBox="0 0 18 18"><circle cx="9" cy="9" r="7.5" fill="none" stroke="rgba(255,255,255,.25)" stroke-width="2"/><circle id="mktCountdownRing" cx="9" cy="9" r="7.5" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-dasharray="47.1" stroke-dashoffset="0" transform="rotate(-90 9 9)" style="transition:stroke-dashoffset 1s linear"/></svg>
     <span id="mktCountdownNum" style="color:#fff;font-size:13px;font-weight:600;font-family:'Inter Tight',sans-serif;min-width:8px;text-align:center"></span>
-  </div>
-  <div id="mktTapMsg" style="position:absolute;bottom:48px;left:0;right:0;text-align:center;color:rgba(255,255,255,.6);font-size:12px;letter-spacing:.18em;text-transform:uppercase;font-family:'Inter Tight',sans-serif;display:none">Toca para reproducir</div>
-</div>
-
-<!-- Registro: teléfono -->
-<div class="overlay hidden" id="regOverlay">
-  <div class="overlay-sheet">
-    <div class="overlay-title">¡Bienvenido!</div>
-    <div class="overlay-sub">Ingresa tu número de teléfono.</div>
-    <input id="regPhone" type="tel" placeholder="999 000 0000" maxlength="20" onkeydown="if(event.key==='Enter')submitPhone()" style="letter-spacing:.05em;font-size:17px;text-align:center">
-    <div id="regPhoneError" style="font-size:11px;color:#c0392b;margin-top:6px;min-height:16px;letter-spacing:.02em"></div>
-    <button class="btn btn-gold" style="margin-top:10px" onclick="submitPhone()">Continuar</button>
-  </div>
-</div>
-
-<!-- Registro: nombre -->
-<div class="overlay hidden" id="regNameOverlay">
-  <div class="overlay-sheet">
-    <div class="overlay-title">¿Cómo te llamas?</div>
-    <div class="overlay-sub">Tu nombre aparecerá en el juego y guardamos tu perfil para la próxima vez.</div>
-    <input id="regName" type="text" placeholder="Tu nombre" maxlength="30" onkeydown="if(event.key==='Enter')submitName()" style="font-size:17px;text-align:center">
-    <button class="btn btn-gold" style="margin-top:10px" onclick="submitName()">Empezar a jugar</button>
-  </div>
-</div>
-
-<!-- ¿Cuál jugador eres? -->
-<div class="overlay hidden" id="claimOverlay">
-  <div class="overlay-sheet">
-    <div class="overlay-title">¿Cuál jugador eres?</div>
-    <div class="overlay-sub">Selecciónate para que solo tú puedas elegir en tu turno. Si todos comparten un dispositivo, elige la opción de abajo.</div>
-    <div id="claimPlayersList" style="display:flex;flex-direction:column;gap:8px;margin-bottom:14px"></div>
-    <button class="btn-outline" style="width:100%;padding:12px;font-size:12px;display:flex;align-items:center;justify-content:center;gap:6px" onclick="claimNone()">📱 Un solo dispositivo (compartido)</button>
   </div>
 </div>
 
 <div class="toast" id="toast"></div>
 
 <script>
+// ── Supabase ──
 const SB='https://biuaxkpyujypiigxolwt.supabase.co';
 const SK='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJpdWF4a3B5dWp5cGlpZ3hvbHd0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk5MDY1ODUsImV4cCI6MjA5NTQ4MjU4NX0.4MJ2WfTo6tDNImcN0E5RCy4ilU2-sXnmRb6_BB85YaQ';
+
+// ── Constantes ──
 const COLORS=['#c0392b','#2980b9','#27ae60','#d35400','#8e44ad','#16a085','#7f6b4a','#2c3e50','#1a7a4a','#8a6420'];
 const LEVELS={
-  familiar:  {label:'Familiar',  chip:'chip-familiar'},
-  light:     {label:'Light',     chip:'chip-light'},
-  hot:       {label:'Hot',       chip:'chip-hot'},
-  extremo:   {label:'Extremo',   chip:'chip-extremo'},
-  mixto:     {label:'Mixto',     chip:'chip-light'},
-  comunidad: {label:'Comunidad', chip:'chip-comunidad'}
+  familiar:{label:'Familiar',chip:'chip-familiar'},
+  light:   {label:'Light',   chip:'chip-light'},
+  hot:     {label:'Hot',     chip:'chip-hot'},
+  extremo: {label:'Extremo', chip:'chip-extremo'},
+  mixto:   {label:'Mixto',   chip:'chip-mixto'},
+  comunidad:{label:'Comunidad',chip:'chip-comunidad'}
+};
+const LEVEL_INFO={
+  familiar: {icon:'🌿',desc:'Ideal para todas las edades. Preguntas y retos divertidos sin contenido adulto. Perfecto para arrancar la noche.'},
+  light:    {icon:'✨',desc:'Un poco más picante. Para amigos con confianza. Diversión garantizada sin pasarse de la raya.'},
+  hot:      {icon:'🔥',desc:'Solo para adultos. Preguntas y retos subidos de tono. Requiere confianza y buen humor entre los jugadores.'},
+  extremo:  {icon:'💀',desc:'Sin filtros, sin límites. El nivel más intenso de Verdad o Reto. Solo para los que de verdad se atreven.'},
+  mixto:    {icon:'🎲',desc:'Una mezcla de todos los niveles. Garantiza variedad y sorpresas para cualquier tipo de grupo.'},
+  comunidad:{icon:'🌙',desc:'Cartas creadas por la comunidad de Terraza Luna. Auténticas, locales y siempre únicas.'}
 };
 
-// ── State ──
-var playerCount=4, selectedLevel='mixto', selectedMode='presencial', selectedCardType='truth', game=null;
-var _pendingPhone='', _pendingGameId=null, _rematchPlayers=null;
-var _userPhone='', _userName='', _userSeenQ=[], _userSeenD=[];
-var _lastPlayers=[];
-var _myPlayerIdx=null; // índice del jugador reclamado en este dispositivo (null = dispositivo compartido)
-var _deviceId=(function(){var id=localStorage.getItem('tor_device_id');if(!id){id=Math.random().toString(36).slice(2)+Date.now().toString(36);localStorage.setItem('tor_device_id',id);}return id;})();
-var _INACTIVITY_MS=10*60*1000; // 10 minutos
-// Card pools
-var allQ=[], allD=[];         // main / fallback pool
-var allQComm=[], allDComm=[]; // community pool
+// ── Estado ──
+var selectedMode='presencial', selectedLevel=null, selectedCardType='truth';
+var game=null, _pendingPlayers=[];
+// Pools de cartas
+var allQ=[], allD=[], allQComm=[], allDComm=[];
 var usedQIdx=[], usedDIdx=[], usedQCommIdx=[], usedDCommIdx=[];
 var commQDone=false, commDDone=false;
 // Realtime
-var _ws=null,_wsRef=0,_wsHb=null,_pollInterval=null;
+var _ws=null, _wsRef=0, _wsHb=null, _pollInterval=null;
 
 // ── API ──
 function h(){return{'apikey':SK,'Authorization':'Bearer '+SK,'Content-Type':'application/json'};}
 async function sbGet(t,f){var r=await fetch(SB+'/rest/v1/'+t+(f||''),{headers:h()});return r.json();}
 async function sbPost(t,b){var r=await fetch(SB+'/rest/v1/'+t,{method:'POST',headers:Object.assign({},h(),{'Prefer':'return=representation'}),body:JSON.stringify(b)});return r.json();}
 async function sbPatch(t,b){return fetch(SB+'/rest/v1/'+t,{method:'PATCH',headers:Object.assign({},h(),{'Prefer':'return=minimal'}),body:JSON.stringify(b)});}
-async function sbDelete(t,f){return fetch(SB+'/rest/v1/'+t+(f||''),{method:'DELETE',headers:h()});}
 
 // ── Helpers ──
 function show(s){document.querySelectorAll('.screen').forEach(function(el){el.classList.toggle('hidden',el.id!=='screen-'+s);});}
 function toast(m,dur){var t=document.getElementById('toast');t.textContent=m;t.classList.add('show');clearTimeout(t._t);t._t=setTimeout(function(){t.classList.remove('show');},dur||2600);}
-function esc(s){return String(s).replace(/[&<>"']/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];});}
+function esc(s){return String(s||'').replace(/[&<>"']/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];});}
 function uid5(){var c='ABCDEFGHJKMNPQRSTUVWXYZ23456789';var r='';for(var i=0;i<5;i++)r+=c[Math.floor(Math.random()*c.length)];return r;}
-function ini(n){return n.trim().substring(0,2).toUpperCase();}
+function ini(n){return String(n||'').trim().substring(0,2).toUpperCase()||'?';}
 function col(i){return COLORS[i%COLORS.length];}
-function setRoundBadge(r){document.querySelectorAll('.round-badge').forEach(function(el){el.textContent='Ronda '+(r||1);});}
-function updateLevelBadge(){
-  var lbl=game?(LEVELS[game.level]?LEVELS[game.level].label:game.level):'';
-  document.querySelectorAll('.level-badge').forEach(function(el){el.textContent=lbl;});
-}
-function setBarCodes(id){document.getElementById('barCode1').textContent=id||'------';document.getElementById('barCode2').textContent=id||'------';}
-function gameUrl(){var base=window.location.origin+window.location.pathname;return game?base+'?id='+game.id:base;}
 function shuffle(arr){for(var i=arr.length-1;i>0;i--){var j=Math.floor(Math.random()*(i+1));var t=arr[i];arr[i]=arr[j];arr[j]=t;}return arr;}
 function resetPools(){allQ=[];allD=[];allQComm=[];allDComm=[];usedQIdx=[];usedDIdx=[];usedQCommIdx=[];usedDCommIdx=[];commQDone=false;commDDone=false;}
+function gameUrl(){var base=window.location.origin+window.location.pathname;return game?base+'?id='+game.id:base;}
+function closeOverlay(id,e){if(e&&e.target!==document.getElementById(id))return;document.getElementById(id).classList.add('hidden');}
 
-// ── Share ──
-function shareGame(){
-  var url=gameUrl();
-  var text='¡Juega Verdad o Reto conmigo en Terraza Luna!'+(game?' Código: '+game.id:'')+'\\n'+url;
-  if(navigator.share){
-    navigator.share({title:'Verdad o Reto · Terraza Luna',text:'¡Juega Verdad o Reto conmigo!',url:url}).catch(function(){});
-  } else {
-    window.open('https://wa.me/?text='+encodeURIComponent(text),'_blank');
-  }
+// ── PANTALLA 1: Selección de modo ──
+function selectMode(mode){
+  selectedMode=mode;
+  selectedLevel=null;
+  document.getElementById('modeLabelPlayers').textContent=mode==='presencial'?'En Terraza Luna':'A distancia';
+  initPlayersGrid();
+  show('players');
 }
 
-// ── Session ──
-function touchActivity(){localStorage.setItem('tor_last_activity',Date.now().toString());}
-function isSessionExpired(){
-  var last=parseInt(localStorage.getItem('tor_last_activity')||'0');
-  if(!last)return false;
-  return (Date.now()-last)>_INACTIVITY_MS;
+// ── PANTALLA 2: Jugadores ──
+function initPlayersGrid(){
+  var g=document.getElementById('namesGrid');
+  g.innerHTML='';
+  addPlayerField();
+  addPlayerField();
+  setTimeout(function(){var f=g.querySelector('input');if(f)f.focus();},200);
 }
 
-// ── Marketing media ──
-async function showMarketingMedia(onDone){
-  try{
-    var rows=await sbGet('tor_media','?order=id.asc');
-    if(!rows||!rows.length){onDone();return;}
-    var item=rows[Math.floor(Math.random()*rows.length)];
-    var ov=document.getElementById('mktOverlay');
-    var img=document.getElementById('mktImg');
-    var vid=document.getElementById('mktVideo');
-    var tap=document.getElementById('mktTapMsg');
-    img.style.display='none';
-    vid.style.display='none';
-    vid.src='';
-    tap.style.display='none';
-    document.getElementById('mktCountdown').style.display='none';
-    ov.style.opacity='0';
-    ov.style.display='flex';
-    setTimeout(function(){ov.style.opacity='1';},20);
-    function dismiss(){
-      ov.style.opacity='0';
-      setTimeout(function(){ov.style.display='none';onDone();},500);
-    }
-    if(item.type==='photo'){
-      img.src=item.url;
-      img.style.display='block';
-      // Contador descendente — leer duración desde Supabase
-      var cdEl=document.getElementById('mktCountdown');
-      var cdNum=document.getElementById('mktCountdownNum');
-      var cdRing=document.getElementById('mktCountdownRing');
-      var CIRC=47.1;
-      var durRows=await fetch(SB+'/rest/v1/tor_settings?key=eq.photo_duration&select=value',{headers:Object.assign({},h(),{'Cache-Control':'no-cache','Pragma':'no-cache'})}).then(function(r){return r.json();}).catch(function(){return[];});
-      var TOTAL=(durRows&&durRows.length)?Math.max(1,parseInt(durRows[0].value)||4):4;
-      var remaining=TOTAL;
-      cdNum.textContent=remaining;
-      cdRing.style.strokeDashoffset='0';
-      cdRing.style.transition='none';
-      cdEl.style.display='flex';
-      // Forzar repaint antes de activar la transición
-      void cdRing.getBoundingClientRect();
-      cdRing.style.transition='stroke-dashoffset 1s linear';
-      cdRing.style.strokeDashoffset=String(CIRC/TOTAL);
-      var cdTick=setInterval(function(){
-        remaining--;
-        cdNum.textContent=Math.max(remaining,0);
-        cdRing.style.strokeDashoffset=String(CIRC/TOTAL*(TOTAL-remaining));
-        if(remaining<=0)clearInterval(cdTick);
-      },1000);
-      setTimeout(function(){clearInterval(cdTick);cdEl.style.display='none';dismiss();},TOTAL*1000);
-    } else {
-      vid.src=item.url;
-      vid.style.display='block';
-      vid.onended=function(){clearInterval(cdTick);document.getElementById('mktCountdown').style.display='none';dismiss();};
-      var cdEl=document.getElementById('mktCountdown');
-      var cdNum=document.getElementById('mktCountdownNum');
-      var cdRing=document.getElementById('mktCountdownRing');
-      var CIRC=47.1;
-      var cdTick=null;
-      function startVideoCountdown(){
-        var TOTAL=Math.round(vid.duration)||0;
-        if(!TOTAL)return;
-        var remaining=TOTAL;
-        cdNum.textContent=remaining;
-        cdRing.style.transition='none';
-        cdRing.style.strokeDashoffset='0';
-        cdEl.style.display='flex';
-        void cdRing.getBoundingClientRect();
-        cdRing.style.transition='stroke-dashoffset 1s linear';
-        cdRing.style.strokeDashoffset=String(CIRC/TOTAL);
-        cdTick=setInterval(function(){
-          remaining--;
-          cdNum.textContent=Math.max(remaining,0);
-          cdRing.style.strokeDashoffset=String(CIRC/TOTAL*(TOTAL-remaining));
-          if(remaining<=0)clearInterval(cdTick);
-        },1000);
-      }
-      if(vid.readyState>=1){startVideoCountdown();}
-      else{vid.onloadedmetadata=startVideoCountdown;}
-      var p=vid.play();
-      if(p&&p.catch){
-        p.catch(function(){
-          tap.style.display='block';
-          ov.onclick=function(){
-            vid.play().then(function(){tap.style.display='none';ov.onclick=null;}).catch(function(){});
-          };
-        });
+function addPlayerField(){
+  var g=document.getElementById('namesGrid');
+  var count=g.children.length;
+  if(count>=10){toast('Máximo 10 jugadores');return;}
+  var row=document.createElement('div');
+  row.className='player-row';
+  var showRemove=count>=2; // Solo mostrar ✕ a partir del tercer jugador
+  row.innerHTML=
+    '<div class="avatar" style="background:'+col(count)+';font-size:'+(count<9?13:11)+'px">'+(count+1)+'</div>'+
+    '<input placeholder="Nombre '+(count+1)+'" maxlength="20" oninput="this.classList.remove(\'error\')">'+
+    (showRemove?'<button class="remove-btn" onclick="removePlayerField(this)" title="Quitar">×</button>':'<div style="width:38px;flex-shrink:0"></div>');
+  g.appendChild(row);
+}
+
+function removePlayerField(btn){
+  var row=btn.parentElement;
+  var g=document.getElementById('namesGrid');
+  if(g.children.length<=2){toast('Mínimo 2 jugadores');return;}
+  row.remove();
+  // Re-numerar avatares
+  Array.from(g.children).forEach(function(r,i){
+    var av=r.querySelector('.avatar');
+    if(av){av.style.background=col(i);av.textContent=i+1;av.style.fontSize=(i<9?13:11)+'px';}
+    var inp=r.querySelector('input');
+    if(inp){inp.placeholder='Nombre '+(i+1);}
+    // Primer y segundo campo no tienen botón de quitar
+    var rb=r.querySelector('.remove-btn');
+    if(i<2&&rb){rb.style.display='none';}
+    else if(i>=2&&!rb){
+      var ph=r.querySelector('div[style*="38px"]');
+      if(ph){
+        var b=document.createElement('button');
+        b.className='remove-btn';b.title='Quitar';b.textContent='×';
+        b.onclick=function(){removePlayerField(b);};
+        r.replaceChild(b,ph);
       }
     }
-  }catch(e){onDone();}
+  });
 }
 
-// ── User seen history ──
-async function loadUserSeen(){
-  if(!_userPhone)return;
-  try{
-    var rows=await sbGet('tor_user_seen','?phone=eq.'+encodeURIComponent(_userPhone)+'&select=card_type,card_id');
-    _userSeenQ=(rows||[]).filter(function(r){return r.card_type==='q';}).map(function(r){return r.card_id;});
-    _userSeenD=(rows||[]).filter(function(r){return r.card_type==='d';}).map(function(r){return r.card_id;});
-  }catch(e){}
-}
-function markCardSeen(cardId,isQ,level){
-  if(!_userPhone||!cardId)return;
-  var type=isQ?'q':'d';
-  if(isQ){if(_userSeenQ.indexOf(cardId)<0)_userSeenQ.push(cardId);}
-  else{if(_userSeenD.indexOf(cardId)<0)_userSeenD.push(cardId);}
-  sbPost('tor_user_seen',{phone:_userPhone,card_type:type,card_id:cardId,level:level||null}).catch(function(){});
-}
-function recordParticipant(gameId,phone,name){
-  if(!phone||!gameId)return;
-  sbPost('tor_game_participants',{game_id:gameId,phone:phone,player_name:name||null}).catch(function(){});
-}
-
-// ── User registration ──
-function goSetup(){
-  // Guardar jugadores de la sesión anterior para pre-llenar nombres
-  if(game&&game.players&&game.players.length){
-    _lastPlayers=game.players.map(function(p){return p.name;});
-    playerCount=game.players.length;
-    document.getElementById('countVal').textContent=playerCount;
-  }
-  resetPools();game=null;stopRealtime();
-  var saved=JSON.parse(localStorage.getItem('tor_user')||'null');
-  if(saved&&!isSessionExpired()){
-    _userPhone=saved.phone;
-    _userName=saved.name||'';
-    loadUserSeen();
-    show('setup');
-    return;
-  }
-  // Sesión expirada o usuario no registrado
-  if(isSessionExpired()){
-    localStorage.removeItem('tor_user');
-    localStorage.removeItem('tor_last_activity');
-  }
-  _userPhone='';_userSeenQ=[];_userSeenD=[];
-  document.getElementById('regPhone').value='';
-  document.getElementById('regPhoneError').textContent='';
-  document.getElementById('regOverlay').classList.remove('hidden');
-}
-
-async function submitPhone(){
-  var phone=document.getElementById('regPhone').value.trim();
-  if(!phone){document.getElementById('regPhoneError').textContent='Ingresa tu número de teléfono';return;}
-  document.getElementById('regPhoneError').textContent='';
-  try{
-    var rows=await sbGet('tor_users','?phone=eq.'+encodeURIComponent(phone)+'&select=id,name,device_id');
-    if(rows&&rows.length){
-      var user=rows[0];
-      // Bloquear si el número ya está activo en otro dispositivo
-      if(user.device_id&&user.device_id!==_deviceId){
-        document.getElementById('regPhoneError').textContent='Este número ya está en uso en otro dispositivo';
-        return;
-      }
-      // Registrar este dispositivo como el activo
-      await sbPatch('tor_users?phone=eq.'+encodeURIComponent(phone),{device_id:_deviceId});
-      _userPhone=phone;
-      _userName=user.name;
-      localStorage.setItem('tor_user',JSON.stringify({phone:phone,name:user.name}));
-      touchActivity();
-      document.getElementById('regOverlay').classList.add('hidden');
-      loadUserSeen();
-      if(_pendingGameId){var _pgid=_pendingGameId;_pendingGameId=null;document.getElementById('joinCode').value=_pgid;showMarketingMedia(function(){joinGame();});}
-      else{showMarketingMedia(function(){show('setup');});}
-      return;
-    }
-    // Número no registrado → pedir nombre
-    _pendingPhone=phone;
-    document.getElementById('regOverlay').classList.add('hidden');
-    document.getElementById('regName').value='';
-    document.getElementById('regNameOverlay').classList.remove('hidden');
-    setTimeout(function(){document.getElementById('regName').focus();},200);
-  }catch(e){document.getElementById('regPhoneError').textContent='Error de conexión, intenta de nuevo';}
-}
-
-async function submitName(){
-  var name=document.getElementById('regName').value.trim();
-  if(!name){toast('Escribe tu nombre');return;}
-  try{
-    await sbPost('tor_users',{phone:_pendingPhone,name:name,device_id:_deviceId});
-    _userPhone=_pendingPhone;
-    _userName=name;
-    _userSeenQ=[];_userSeenD=[];
-    localStorage.setItem('tor_user',JSON.stringify({phone:_pendingPhone,name:name}));
-    touchActivity();
-    document.getElementById('regNameOverlay').classList.add('hidden');
-    if(_pendingGameId){var _pgid=_pendingGameId;_pendingGameId=null;document.getElementById('joinCode').value=_pgid;showMarketingMedia(function(){joinGame();});}
-    else{showMarketingMedia(function(){show('setup');});}
-  }catch(e){toast('Error al guardar, intenta de nuevo');}
-}
-function setMode(m){selectedMode=m;document.getElementById('modePresencial').classList.toggle('active',m==='presencial');document.getElementById('modeDistancia').classList.toggle('active',m==='distancia');}
-function changeCount(d){playerCount=Math.max(2,Math.min(10,playerCount+d));document.getElementById('countVal').textContent=playerCount;}
-function setLevel(btn){selectedLevel=btn.dataset.level;document.querySelectorAll('.ltab').forEach(function(b){b.classList.toggle('active',b===btn);});}
-function goNames(){
-  show('names');
-  var g=document.getElementById('namesGrid');g.innerHTML='';
-  for(var i=0;i<playerCount;i++){
-    var row=document.createElement('div');row.className='player-row';
-    var savedName=_lastPlayers[i]?esc(_lastPlayers[i]):'';
-    row.innerHTML='<div class="avatar" style="background:'+col(i)+'">'+(i+1)+'</div><input placeholder="Nombre '+(i+1)+'" maxlength="20" value="'+savedName+'" oninput="this.classList.remove(\'error\')">';
-    g.appendChild(row);
-  }
-  _lastPlayers=[];
-  var cb=document.getElementById('createBtn');cb.disabled=false;cb.textContent='Crear juego';
-  setTimeout(function(){var f=document.querySelector('#namesGrid input');if(f)f.focus();},200);
-}
-
-// ── Create game ──
-async function createGame(){
+function goToLevel(){
   var inputs=document.querySelectorAll('#namesGrid input');
   var players=[], hasError=false;
   inputs.forEach(function(inp,i){
     var name=inp.value.trim();
-    if(!name){
-      inp.classList.add('error');
-      inp.focus();
-      hasError=true;
-    } else {
-      players.push({name:name,color:col(i)});
-    }
+    if(!name){inp.classList.add('error');hasError=true;}
+    else{players.push({name:name,color:col(i)});}
   });
   if(hasError){toast('Completa todos los nombres');return;}
-  // Verificar nombres únicos
   var nameSet=new Set(players.map(function(p){return p.name.toLowerCase();}));
   if(nameSet.size!==players.length){toast('No puede haber nombres repetidos');return;}
-  var btn=document.getElementById('createBtn');btn.disabled=true;btn.textContent='Creando…';
-  var id=uid5();
-  try{
-    await sbPost('tor_games',{id:id,players:players,level:selectedLevel,mode:selectedMode,status:'lobby',current_player_index:0,round:1});
-    game={id:id,players:players,level:selectedLevel,mode:selectedMode,status:'lobby',current_player_index:0,round:1,current_card:null};
-    recordParticipant(id,_userPhone,_userName);
-    showLobby();
-  }catch(e){toast('Error al crear partida');}finally{btn.disabled=false;btn.textContent='Crear juego';}
+  _pendingPlayers=players;
+  // Reset level selection
+  document.querySelectorAll('.level-option').forEach(function(el){el.classList.remove('active');});
+  document.getElementById('levelDesc').classList.add('hidden');
+  selectedLevel=null;
+  show('level');
 }
 
-// ── Lobby ──
-function showLobby(){
-  renderLobbyPlayers();
-  document.getElementById('lobbyLevelLabel').textContent=LEVELS[game.level]?LEVELS[game.level].label:game.level;
-  document.getElementById('lobbyModeLabel').textContent=game.mode==='distancia'?'A distancia':'En persona';
-  show('lobby');
-  startRealtime();
-  startPolling();
-  // Claim: cargar desde localStorage; si no hay, intentar auto-match por nombre; si no, pedir selección
-  loadMyClaim();
-  if(_myPlayerIdx===null){
-    tryAutoMatch().then(function(matched){if(!matched)setTimeout(openClaimOverlay,400);});
-  }
-}
-function renderLobbyPlayers(){
-  var pp=document.getElementById('lobbyPlayers');pp.innerHTML='';
-  document.getElementById('lobbyCount').textContent=game.players.length;
-  game.players.forEach(function(p){
-    var d=document.createElement('div');d.className='player-pill';
-    d.innerHTML='<div class="avatar" style="background:'+p.color+'">'+ini(p.name)+'</div><span class="player-pill-name">'+esc(p.name)+'</span>';
-    pp.appendChild(d);
+// ── PANTALLA 3: Nivel ──
+function selectLevel(level){
+  selectedLevel=level;
+  document.querySelectorAll('.level-option').forEach(function(el){
+    el.classList.toggle('active',el.dataset.level===level);
   });
-}
-function copyLink(){
-  var url=gameUrl();
-  navigator.clipboard.writeText(url).then(function(){toast('Link copiado');}).catch(function(){toast(url);});
+  var info=LEVEL_INFO[level]||{};
+  var desc=document.getElementById('levelDesc');
+  desc.innerHTML='<strong style="color:var(--gold)">'+(LEVELS[level]?LEVELS[level].label:level)+'</strong> — '+esc(info.desc||'');
+  desc.classList.remove('hidden');
 }
 
-// ── Join ──
-async function joinGame(){
-  var code=document.getElementById('joinCode').value.trim().toUpperCase();
-  if(!code){toast('Ingresa el código');return;}
-  // Verificar registro antes de unirse
-  if(!_userPhone){
-    var saved=JSON.parse(localStorage.getItem('tor_user')||'null');
-    if(saved&&!isSessionExpired()){_userPhone=saved.phone;_userName=saved.name||'';loadUserSeen();}
-    else{
-      if(isSessionExpired()){localStorage.removeItem('tor_user');localStorage.removeItem('tor_last_activity');}
-      _pendingGameId=code;
-      _userPhone='';_userSeenQ=[];_userSeenD=[];
-      document.getElementById('regPhone').value='';
-      document.getElementById('regPhoneError').textContent='';
-      document.getElementById('regOverlay').classList.remove('hidden');
-      return;
-    }
-  }
+// ── INICIAR JUEGO ──
+async function initGame(){
+  if(!selectedLevel){toast('Elige un nivel para continuar');return;}
+  var btn=document.getElementById('startGameBtn');
+  btn.disabled=true;btn.textContent='Iniciando…';
   try{
-    var rows=await sbGet('tor_games','?id=eq.'+code+'&select=*');
-    if(!rows||!rows.length){toast('Código no encontrado');return;}
-    game=rows[0];
-    recordParticipant(game.id,_userPhone,_userName);
-    if(game.status==='lobby'){showLobby();}
-    else if(game.status==='playing'){loadCardsAndPlay();}
-    else if(game.status==='finished'){showEnd();}
-    else{toast('Esta partida ya fue cerrada o no existe');show('welcome');} // 'closed' or unknown → welcome
-  }catch(e){toast('Error de conexión');}
-}
-
-// ── Start ──
-async function startGame(){
-  var btn=document.getElementById('startBtn');btn.disabled=true;btn.textContent='Iniciando…';
-  await sbPatch('tor_games?id=eq.'+game.id,{status:'playing',current_player_index:0,round:1,current_card:null});
-  game.status='playing';game.current_player_index=0;game.round=1;game.current_card=null;
-  await loadCardsAndPlay();
-  btn.disabled=false;btn.textContent='Iniciar juego';
-}
-
-// ── Load cards ──
-async function loadCardsAndPlay(){
-  // Ensure realtime + polling are running (critical for players joining mid-game)
-  startRealtime();
-  startPolling();
-  // Claim de jugador — solo si no está establecido (re-entrada a partida en curso)
-  // No llamar loadMyClaim() si ya hay claim: evita invalidarlo por actualización stale
-  if(_myPlayerIdx===null){
-    loadMyClaim();
-    if(_myPlayerIdx===null){
-      tryAutoMatch().then(function(matched){if(!matched)setTimeout(openClaimOverlay,400);});
-    }
+    // Orden aleatorio de jugadores
+    var shuffled=shuffle([..._pendingPlayers]);
+    var id=uid5();
+    resetPools();
+    await loadCardPool(game&&game.level?game.level:selectedLevel,selectedMode);
+    // Primera carta aleatoria
+    var firstCard=pickRandomCard();
+    if(!firstCard){toast('No hay cartas disponibles para este nivel');btn.disabled=false;btn.textContent='Iniciar Juego';return;}
+    await sbPost('tor_games',{id:id,players:shuffled,level:selectedLevel,mode:selectedMode,status:'playing',current_player_index:0,round:1,current_card:firstCard});
+    game={id:id,players:shuffled,level:selectedLevel,mode:selectedMode,status:'playing',current_player_index:0,round:1,current_card:firstCard};
+    startRealtime();
+    startPolling();
+    showCard(firstCard);
+  }catch(e){
+    toast('Error al crear el juego');
+    btn.disabled=false;btn.textContent='Iniciar Juego';
   }
-  // Only fetch if pools are empty
-  if(allQ.length||allQComm.length){setBarCodes(game.id);showTurn();return;}
-  var lvl=game.level, mode=game.mode||'presencial';
+}
+
+// ── Cargar pool de cartas ──
+async function loadCardPool(lvl,mode){
+  if(allQ.length||allQComm.length)return; // Ya cargadas
+  lvl=lvl||'mixto';mode=mode||'presencial';
   if(lvl==='comunidad'){
-    // Community cards first, then all oficial cards as fallback
     var res=await Promise.all([
       sbGet('tor_questions','?source=eq.comunidad&order=id.asc'),
       sbGet('tor_dares','?source=eq.comunidad&mode=eq.'+mode+'&order=id.asc'),
       sbGet('tor_questions','?source=eq.oficial&order=id.asc'),
       sbGet('tor_dares','?source=eq.oficial&mode=eq.'+mode+'&order=id.asc')
     ]);
-    allQComm=shuffle(res[0]||[]);
-    allDComm=shuffle(res[1]||[]);
-    allQ=shuffle(res[2]||[]);
-    allD=shuffle(res[3]||[]);
-    // If no community cards at all, use all cards as main pool
-    if(!allQComm.length){commQDone=true;}
-    if(!allDComm.length){commDDone=true;}
-    // If main pool also empty (no oficial cards), fall back to ALL
+    allQComm=shuffle(res[0]||[]);allDComm=shuffle(res[1]||[]);
+    allQ=shuffle(res[2]||[]);allD=shuffle(res[3]||[]);
+    if(!allQComm.length)commQDone=true;
+    if(!allDComm.length)commDDone=true;
     if(!allQ.length){
       var r2=await Promise.all([sbGet('tor_questions','?order=id.asc'),sbGet('tor_dares','?mode=eq.'+mode+'&order=id.asc')]);
       allQ=shuffle(r2[0]||[]);allD=shuffle(r2[1]||[]);
     }
-  } else {
+  }else{
     var qf=lvl==='mixto'?'?order=id.asc':'?level=eq.'+lvl+'&order=id.asc';
     var df=lvl==='mixto'?'?mode=eq.'+mode+'&order=id.asc':'?level=eq.'+lvl+'&mode=eq.'+mode+'&order=id.asc';
     var res2=await Promise.all([sbGet('tor_questions',qf),sbGet('tor_dares',df)]);
     allQ=shuffle(res2[0]||[]);allD=shuffle(res2[1]||[]);
     commQDone=true;commDDone=true;
   }
-  // Filtrar cartas ya vistas por este usuario
-  if(_userPhone&&_userSeenQ.length){
-    var fq=allQ.filter(function(c){return _userSeenQ.indexOf(c.id)<0;});
-    if(fq.length>0)allQ=fq;
-  }
-  if(_userPhone&&_userSeenD.length){
-    var fd=allD.filter(function(c){return _userSeenD.indexOf(c.id)<0;});
-    if(fd.length>0)allD=fd;
-  }
-  if(_userPhone&&_userSeenQ.length&&allQComm.length){
-    var fqc=allQComm.filter(function(c){return _userSeenQ.indexOf(c.id)<0;});
-    if(fqc.length>0)allQComm=fqc;
-  }
-  if(_userPhone&&_userSeenD.length&&allDComm.length){
-    var fdc=allDComm.filter(function(c){return _userSeenD.indexOf(c.id)<0;});
-    if(fdc.length>0)allDComm=fdc;
-  }
-  setBarCodes(game.id);
-  updateLevelBadge();
-  showTurn();
 }
 
-// ── Draw from correct pool ──
+// ── Sacar carta aleatoria ──
+function pickRandomCard(){
+  // 50/50 verdad o reto; si un pool está vacío intenta el otro
+  var types=Math.random()<0.5?['truth','dare']:['dare','truth'];
+  for(var ti=0;ti<types.length;ti++){
+    var result=drawCard(types[ti]);
+    if(result&&result.pick){
+      return {type:types[ti],text:result.pick.text,level:result.level||result.pick.level||'familiar'};
+    }
+  }
+  return null;
+}
+
+// ── Sacar del pool ──
 function drawCard(type){
   var isQ=type==='truth';
   var commPool=isQ?allQComm:allDComm;
@@ -982,252 +613,184 @@ function drawCard(type){
   var mainPool=isQ?allQ:allD;
   var mainUsed=isQ?usedQIdx:usedDIdx;
 
-  // Try community pool first (if not done)
   if(!commDone&&commPool.length>0){
     if(commUsed.length<commPool.length){
       var avail=commPool.filter(function(_,i){return commUsed.indexOf(i)<0;});
-      var pick=avail[Math.floor(Math.random()*avail.length)];
-      commUsed.push(commPool.indexOf(pick));
-      if(isQ)usedQCommIdx=commUsed;else usedDCommIdx=commUsed;
-      return {pick:pick,level:'comunidad'};
-    } else {
-      // Community exhausted → switch to main
-      if(isQ)commQDone=true;else commDDone=true;
-      toast('Preguntas de la comunidad agotadas');
+      if(avail.length){
+        var pick=avail[Math.floor(Math.random()*avail.length)];
+        commUsed.push(commPool.indexOf(pick));
+        if(isQ)usedQCommIdx=commUsed;else usedDCommIdx=commUsed;
+        return{pick:pick,level:'comunidad'};
+      }
     }
+    if(isQ)commQDone=true;else commDDone=true;
   }
 
-  // Main / fallback pool
+  if(!mainPool.length)return null;
   if(mainUsed.length>=mainPool.length){
     if(isQ)usedQIdx=[];else usedDIdx=[];
     mainUsed=isQ?usedQIdx:usedDIdx;
     toast('Cartas mezcladas de nuevo');
   }
   var avail2=mainPool.filter(function(_,i){return mainUsed.indexOf(i)<0;});
+  if(!avail2.length)return null;
   var pick2=avail2[Math.floor(Math.random()*avail2.length)];
   mainUsed.push(mainPool.indexOf(pick2));
   if(isQ)usedQIdx=mainUsed;else usedDIdx=mainUsed;
-  return {pick:pick2,level:null};
+  return{pick:pick2,level:null};
 }
 
-// ── Turn ──
-function showTurn(){
-  show('game');
-  var idx=Math.min(game.current_player_index||0,game.players.length-1);
-  var p=game.players[idx];
-  document.getElementById('turnAvatar').textContent=ini(p.name);
-  document.getElementById('turnAvatar').style.background=p.color;
-  document.getElementById('turnName').textContent=p.name;
-  setRoundBadge(game.round);
-  setBarCodes(game.id);
-  updateLevelBadge();
-  var isMyTurn=(_myPlayerIdx===null||_myPlayerIdx===game.current_player_index);
-  document.querySelectorAll('.btn-truth,.btn-dare').forEach(function(b){b.disabled=!isMyTurn;});
-  document.querySelector('.turn-sub').textContent=isMyTurn?'Es tu turno · Elige':'Esperando que '+p.name+' elija…';
-}
-
-// ── Pick card ──
-async function pickCard(type){
-  if(_myPlayerIdx!==null&&_myPlayerIdx!==game.current_player_index){
-    toast('No es tu turno — espera el tuyo');
-    return;
-  }
-  document.querySelectorAll('.btn-truth,.btn-dare').forEach(function(b){b.disabled=true;});
-  var result=drawCard(type);
-  var pick=result.pick;
-  var cardLevel=result.level||pick.level||'familiar';
-  var card={type:type,text:pick.text,level:cardLevel};
-  game.current_card=card;
-  // Registrar carta vista y actividad
-  markCardSeen(pick.id, type==='truth', cardLevel);
-  touchActivity();
-  sbPatch('tor_games?id=eq.'+game.id,{current_card:card,current_player_index:game.current_player_index,round:game.round});
-  showCard(card);
-}
-
+// ── Mostrar carta ──
 function showCard(card){
+  if(!game||!card)return;
   show('card');
   var idx=Math.min(game.current_player_index||0,game.players.length-1);
   var p=game.players[idx];
-  document.getElementById('cardAvatar').textContent=ini(p.name);
-  document.getElementById('cardAvatar').style.background=p.color;
-  document.getElementById('cardText').textContent=card.text;
+
+  // Formato: "Luis, tómate un shot de tequila"
+  var raw=card.text||'';
+  var formatted=p.name+', '+raw.charAt(0).toLowerCase()+raw.slice(1);
+  document.getElementById('cardText').textContent=formatted;
+
+  // Badge verdad/reto
   var isT=card.type==='truth';
-  document.getElementById('cardBadge').innerHTML='<div class="card-type-badge '+(isT?'badge-truth':'badge-dare')+'">'+(isT?'Verdad':'Reto')+'</div>';
+  document.getElementById('cardBadge').innerHTML=
+    '<div class="card-type-badge '+(isT?'badge-truth':'badge-dare')+'">'+(isT?'Verdad':'Reto')+'</div>';
+
+  // Chip de nivel
   var lv=card.level||'familiar';
-  var info=LEVELS[lv]||LEVELS.familiar;
-  document.getElementById('cardLevel').innerHTML='<div class="level-chip '+info.chip+'">'+info.label+'</div>';
-  setRoundBadge(game.round);
-  setBarCodes(game.id);
-  updateLevelBadge();
+  var lvInfo=LEVELS[lv]||LEVELS.familiar;
+  document.getElementById('cardLevel').innerHTML=
+    '<div class="level-chip '+lvInfo.chip+'">'+lvInfo.label+'</div>';
+
+  // Badges de ronda y nivel (fijos)
+  document.getElementById('roundBadge').textContent='Ronda '+(game.round||1);
+  document.getElementById('levelBadge').textContent=LEVELS[game.level]?LEVELS[game.level].label:game.level;
 }
 
-// ── Next turn ──
+// ── Siguiente turno ──
 async function nextTurn(){
+  if(!game)return;
+  document.getElementById('btnSiguiente').disabled=true;
   var n=game.players.length;
   var next=(game.current_player_index+1)%n;
   var newRound=game.round+(next===0?1:0);
-  game.current_player_index=next;game.round=newRound;game.current_card=null;
-  await sbPatch('tor_games?id=eq.'+game.id,{current_player_index:next,round:newRound,current_card:null});
-  showTurn();
+  game.current_player_index=next;
+  game.round=newRound;
+
+  var card=pickRandomCard();
+  if(!card){
+    // Reintentar con otro tipo si uno de los pools está vacío
+    card=pickRandomCard();
+  }
+  if(!card){
+    toast('No hay más cartas disponibles');
+    document.getElementById('btnSiguiente').disabled=false;
+    return;
+  }
+  game.current_card=card;
+
+  sbPatch('tor_games?id=eq.'+game.id,{current_player_index:next,round:newRound,current_card:card}).catch(function(){});
+  showCard(card);
+  document.getElementById('btnSiguiente').disabled=false;
 }
 
-// ── End game (finished — shows end screen for all) ──
+// ── Terminar juego ──
 async function endGame(){
   closeOverlay('endConfirmOverlay');
-  await sbPatch('tor_games?id=eq.'+game.id,{status:'finished'});
-  game.status='finished';
-  showEnd();
-}
-function showEnd(){
-  // No detenemos realtime aquí — seguimos escuchando para detectar status='closed'
-  // stopRealtime() se llama en goHome() y cuando syncDisplay detecta 'closed'
-  document.getElementById('endStats').textContent='Ronda '+(game.round||1)+' · '+game.players.length+' jugadores';
-  var ep=document.getElementById('endPlayers');ep.innerHTML='';
-  game.players.forEach(function(p){
-    var d=document.createElement('div');d.className='end-player';
-    d.innerHTML='<div class="avatar" style="background:'+p.color+';width:46px;height:46px;font-size:14px">'+ini(p.name)+'</div><div class="end-player-name">'+esc(p.name)+'</div>';
-    ep.appendChild(d);
-  });
-  show('end');
-}
-
-// ── Rematch ──
-function goRematch(){
-  if(!game||!game.players||!game.players.length){goSetup();return;}
-  // Guardar jugadores del juego actual (sin claims)
-  _rematchPlayers=game.players.map(function(p){return{name:p.name,color:p.color};});
-  selectedMode=game.mode||'presencial';
-  // Sincronizar nivel seleccionado en el overlay
-  document.querySelectorAll('#rematchOverlay .ltab').forEach(function(b){
-    b.classList.toggle('active',b.dataset.level===selectedLevel);
-  });
-  document.getElementById('rematchOverlay').classList.remove('hidden');
-}
-
-async function startRematch(){
-  if(!_rematchPlayers||!_rematchPlayers.length){toast('Error al iniciar');return;}
-  var btn=document.getElementById('rematchBtn');btn.disabled=true;btn.textContent='Creando…';
-  var newId=uid5();
-  var oldGameId=game?game.id:null;
-  try{
-    // 1. Crear nuevo juego con los mismos jugadores
-    await sbPost('tor_games',{id:newId,players:_rematchPlayers,level:selectedLevel,mode:selectedMode,status:'lobby',current_player_index:0,round:1});
-    // 2. Parar realtime viejo antes de señalizar (no queremos recibir nuestro propio mensaje)
-    stopRealtime();
-    resetPools();
-    if(oldGameId)localStorage.removeItem('tor_claim_'+oldGameId);
-    // 3. Señalizar rematch en el juego viejo para que todos los dispositivos se unan automáticamente
-    if(oldGameId){
-      try{await sbPatch('tor_games?id=eq.'+oldGameId,{current_card:{rematch_id:newId}});}catch(e){}
-    }
-    // 4. El host va directo al nuevo lobby
-    game={id:newId,players:_rematchPlayers,level:selectedLevel,mode:selectedMode,status:'lobby',current_player_index:0,round:1,current_card:null};
-    _myPlayerIdx=null;
-    _rematchPlayers=null;
-    recordParticipant(newId,_userPhone,_userName);
-    closeOverlay('rematchOverlay');
-    showLobby();
-  }catch(e){toast('Error al crear partida');}
-  finally{btn.disabled=false;btn.textContent='Continuar';}
-}
-
-async function autoJoinRematch(newGameId){
-  // Llamado en dispositivos no-host cuando detectan la señal de rematch vía realtime
-  if(game)localStorage.removeItem('tor_claim_'+game.id);
-  stopRealtime();
-  resetPools();
-  _myPlayerIdx=null;
-  try{
-    var rows=await sbGet('tor_games','?id=eq.'+newGameId+'&select=*');
-    if(!rows||!rows.length){toast('Error al unirse al nuevo juego');return;}
-    game=rows[0];
-    recordParticipant(game.id,_userPhone,_userName);
-    if(game.status==='lobby')showLobby();
-    else if(game.status==='playing')loadCardsAndPlay();
-  }catch(e){toast('Error al unirse al nuevo juego');}
-}
-
-// ── Go home (closed — sends all to welcome) ──
-async function goHome(){
-  if(game&&(game.status==='playing'||game.status==='lobby')){
-    await sbPatch('tor_games?id=eq.'+game.id,{status:'closed'});
-  }
-  stopRealtime();
-  resetPools();
-  game=null;
-  _myPlayerIdx=null;
-  document.getElementById('joinCode').value='';
-  show('welcome');
-}
-
-// ── Salir: cierra sesión de juego + sesión local ──
-async function goSalir(){
   if(game){
-    localStorage.removeItem('tor_claim_'+game.id); // Limpiar claim al salir
-    if(game.status==='playing'||game.status==='lobby'||game.status==='finished'){
-      await sbPatch('tor_games?id=eq.'+game.id,{status:'closed'});
-    }
+    try{await sbPatch('tor_games?id=eq.'+game.id,{status:'closed'});}catch(e){}
   }
   stopRealtime();
   resetPools();
   game=null;
-  _myPlayerIdx=null;
-  _lastPlayers=[];
-  localStorage.removeItem('tor_user');
-  localStorage.removeItem('tor_last_activity');
-  _userPhone='';_userName='';_userSeenQ=[];_userSeenD=[];
-  document.getElementById('joinCode').value='';
+  selectedLevel=null;
   show('welcome');
 }
 
-// ── Overlays ──
-function closeOverlay(id,e){if(e&&e.target!==document.getElementById(id))return;document.getElementById(id).classList.add('hidden');}
-function openInviteOverlay(){document.getElementById('overlayCode').textContent=game?game.id:'------';document.getElementById('overlayUrl').textContent=gameUrl();document.getElementById('inviteOverlay').classList.remove('hidden');}
-function openOptionsOverlay(){document.getElementById('optionsOverlay').classList.remove('hidden');}
-function openAddPlayerOverlay(){document.getElementById('newPlayerName').value='';document.getElementById('addPlayerOverlay').classList.remove('hidden');setTimeout(function(){document.getElementById('newPlayerName').focus();},200);}
-function openAddCardOverlay(){document.getElementById('newCardText').value='';setCardType('truth');document.getElementById('addCardOverlay').classList.remove('hidden');setTimeout(function(){document.getElementById('newCardText').focus();},200);}
-function openEndConfirmOverlay(){document.getElementById('endConfirmOverlay').classList.remove('hidden');}
+// ── Invitar ──
+function openInviteOverlay(){
+  document.getElementById('overlayCode').textContent=game?game.id:'------';
+  document.getElementById('overlayUrl').textContent=gameUrl();
+  document.getElementById('inviteOverlay').classList.remove('hidden');
+}
+function copyLink(){
+  var url=gameUrl();
+  if(navigator.clipboard){
+    navigator.clipboard.writeText(url).then(function(){toast('Link copiado');}).catch(function(){toast(url,4000);});
+  }else{toast(url,4000);}
+}
+function shareGame(){
+  var url=gameUrl();
+  var text='¡Juega Verdad o Reto conmigo en Terraza Luna! Código: '+(game?game.id:'')+'\n'+url;
+  if(navigator.share){
+    navigator.share({title:'Verdad o Reto · Terraza Luna',text:'¡Únete a nuestra partida!',url:url}).catch(function(){});
+  }else{
+    window.open('https://wa.me/?text='+encodeURIComponent(text),'_blank');
+  }
+}
 
-// ── Add player ──
+// ── Opciones ──
+function openOptionsOverlay(){document.getElementById('optionsOverlay').classList.remove('hidden');}
+function openEndConfirmOverlay(){document.getElementById('endConfirmOverlay').classList.remove('hidden');}
+function openAddPlayerOverlay(){
+  document.getElementById('newPlayerName').value='';
+  document.getElementById('addPlayerOverlay').classList.remove('hidden');
+  setTimeout(function(){document.getElementById('newPlayerName').focus();},200);
+}
+function openAddCardOverlay(){
+  document.getElementById('newCardText').value='';
+  setCardType('truth');
+  document.getElementById('addCardOverlay').classList.remove('hidden');
+  setTimeout(function(){document.getElementById('newCardText').focus();},200);
+}
+
+// ── Agregar jugador durante el juego ──
 async function confirmAddPlayer(){
   var name=document.getElementById('newPlayerName').value.trim();
   if(!name){toast('Escribe un nombre');return;}
+  if(!game){closeOverlay('addPlayerOverlay');return;}
   var updated=game.players.concat([{name:name,color:col(game.players.length)}]);
-  await sbPatch('tor_games?id=eq.'+game.id,{players:updated});
-  game.players=updated;
-  closeOverlay('addPlayerOverlay');
-  toast(name+' se unió al juego');
+  try{
+    await sbPatch('tor_games?id=eq.'+game.id,{players:updated});
+    game.players=updated;
+    closeOverlay('addPlayerOverlay');
+    toast(name+' se unió al juego');
+  }catch(e){toast('Error al agregar jugador');}
 }
 
-// ── Add question/dare ──
-function setCardType(type){selectedCardType=type;document.getElementById('tabTruth').classList.toggle('active',type==='truth');document.getElementById('tabDare').classList.toggle('active',type==='dare');}
+// ── Agregar carta durante el juego ──
+function setCardType(type){
+  selectedCardType=type;
+  document.getElementById('tabTruth').classList.toggle('active',type==='truth');
+  document.getElementById('tabDare').classList.toggle('active',type==='dare');
+}
 async function confirmAddCard(){
   var text=document.getElementById('newCardText').value.trim();
   if(!text){toast('Escribe el contenido');return;}
+  if(!game){closeOverlay('addCardOverlay');return;}
   var type=selectedCardType;
   var lvl=(game.level==='mixto'||game.level==='comunidad')?'familiar':game.level;
-  var newCard={text:text,level:lvl,source:'comunidad',added_by_phone:_userPhone||null};
+  var newCard={text:text,level:lvl,source:'comunidad'};
   try{
     if(type==='truth'){
       var res=await sbPost('tor_questions',newCard);
       var saved=(res&&res[0])||newCard;
-      allQComm.push(saved);
-      commQDone=false;
-    } else {
+      allQComm.push(saved);commQDone=false;
+    }else{
       var res2=await sbPost('tor_dares',Object.assign({},newCard,{mode:game.mode||'presencial'}));
       var saved2=(res2&&res2[0])||newCard;
-      allDComm.push(saved2);
-      commDDone=false;
+      allDComm.push(saved2);commDDone=false;
     }
     closeOverlay('addCardOverlay');
-    toast('Guardada en De la comunidad');
+    toast('Guardada y añadida al mazo');
   }catch(e){toast('Error al guardar');}
 }
 
-// ══ REALTIME ══
+// ══════════════════════════════════════════
+// REALTIME / SYNC (para multiplayer vía link)
+// ══════════════════════════════════════════
 
-// Semantic comparison — only process if relevant state actually changed
 function stateChanged(rec){
   if(!game)return true;
   return(
@@ -1242,45 +805,29 @@ function stateChanged(rec){
 function applyRemoteState(rec){
   if(!game||rec.id!==game.id)return;
   if(!stateChanged(rec))return;
-  // Si los jugadores cambiaron y teníamos un claim, verificar que no fue sobreescrito
-  var myIdx=_myPlayerIdx;
   game=Object.assign(game,rec);
-  if(myIdx!==null&&rec.players){
-    if(!game.players[myIdx]||game.players[myIdx].claimed_by!==_deviceId){
-      writeClaimToSB(myIdx).catch(function(){});
-    }
-  }
-  // Detectar señal de rematch del host
-  if(game.status==='finished'&&game.current_card&&game.current_card.rematch_id){
-    autoJoinRematch(game.current_card.rematch_id);
-    return;
-  }
   syncDisplay();
 }
 
 function syncDisplay(){
-  // Status: closed → everyone goes to welcome
-  if(game.status==='closed'){
+  if(!game)return;
+  if(game.status==='closed'||game.status==='finished'){
     stopRealtime();
     resetPools();
-    var g=game;game=null;
+    game=null;
     show('welcome');
     return;
   }
-  // Status: finished → show end screen
-  if(game.status==='finished'){
-    showEnd();
-    return;
-  }
-  var cur=document.querySelector('.screen:not(.hidden)');
-  if(!cur)return;
   if(game.status==='playing'){
-    if(!allQ.length&&!allQComm.length){loadCardsAndPlay();return;}
+    // Si no hay cartas cargadas (joined via link), cargarlas primero
+    if(!allQ.length&&!allQComm.length){
+      loadCardPool(game.level,game.mode).then(function(){
+        if(game&&game.current_card)showCard(game.current_card);
+        else if(game){var c=pickRandomCard();if(c){game.current_card=c;showCard(c);}}
+      }).catch(function(){});
+      return;
+    }
     if(game.current_card)showCard(game.current_card);
-    else showTurn();
-  } else if(game.status==='lobby'){
-    renderLobbyPlayers();
-    if(cur.id!=='screen-lobby')showLobby();
   }
 }
 
@@ -1296,7 +843,7 @@ function startRealtime(){
     _ws.onmessage=function(m){
       try{var d=JSON.parse(m.data);if(d&&d.event==='postgres_changes'&&d.payload&&d.payload.record)applyRemoteState(d.payload.record);}catch(e){}
     };
-    _ws.onclose=function(){clearInterval(_wsHb);_ws=null;if(game&&game.status!=='finished'&&game.status!=='closed')setTimeout(startRealtime,5000);};
+    _ws.onclose=function(){clearInterval(_wsHb);_ws=null;if(game&&game.status==='playing')setTimeout(startRealtime,5000);};
     _ws.onerror=function(){try{_ws.close();}catch(e){}};
   }catch(e){}
 }
@@ -1310,159 +857,81 @@ function stopRealtime(){
 function startPolling(){
   if(_pollInterval)return;
   _pollInterval=setInterval(async function(){
-    if(!game||game.status==='finished'||game.status==='closed'){clearInterval(_pollInterval);_pollInterval=null;return;}
+    if(!game||game.status==='closed'){clearInterval(_pollInterval);_pollInterval=null;return;}
     try{
-      var rows=await sbGet('tor_games','?id=eq.'+game.id+'&select=id,status,current_player_index,round,current_card,players,updated_at');
+      var rows=await sbGet('tor_games','?id=eq.'+game.id+'&select=id,status,current_player_index,round,current_card,players');
       if(rows&&rows.length)applyRemoteState(rows[0]);
     }catch(e){}
   },2500);
 }
 
-// ── Claim de jugador (quién eres tú en este dispositivo) ──
-function loadMyClaim(){
-  if(!game)return;
-  var saved=localStorage.getItem('tor_claim_'+game.id);
-  if(saved===null||saved===''){_myPlayerIdx=null;return;}
-  var idx=parseInt(saved);
-  // Verificar que el claim sigue siendo de este dispositivo en Supabase
-  if(game.players&&game.players[idx]&&game.players[idx].claimed_by===_deviceId){
-    _myPlayerIdx=idx;
-  } else {
-    localStorage.removeItem('tor_claim_'+game.id);
-    _myPlayerIdx=null;
-  }
-}
-function saveMyClaim(idx){
-  _myPlayerIdx=idx;
-  if(!game)return;
-  if(idx===null)localStorage.removeItem('tor_claim_'+game.id);
-  else localStorage.setItem('tor_claim_'+game.id,String(idx));
-}
-async function writeClaimToSB(idx){
-  // IMPORTANTE: siempre fetch frescos antes de escribir para no sobreescribir
-  // los claims de otros dispositivos (race condition si dos entran al mismo tiempo)
+// ══════════════════════════════════════════
+// MARKETING MEDIA
+// ══════════════════════════════════════════
+async function showMarketingMedia(onDone){
   try{
-    var freshRows=await sbGet('tor_games','?id=eq.'+game.id+'&select=players');
-    if(freshRows&&freshRows.length)game.players=freshRows[0].players;
-  }catch(e){}
-  var updated=game.players.map(function(p,i){
-    if(i===idx)return Object.assign({},p,{claimed_by:_deviceId,claimed_phone:_userPhone||null});
-    if(p.claimed_by===_deviceId)return Object.assign({},p,{claimed_by:null,claimed_phone:null});
-    return p;
-  });
-  await sbPatch('tor_games?id=eq.'+game.id,{players:updated});
-  game.players=updated;
-}
-async function tryAutoMatch(){
-  if(!game||!game.players)return false;
-  var idx=-1;
-  // 1. Buscar por teléfono (más seguro — identidad verificada)
-  if(_userPhone){
-    idx=game.players.findIndex(function(p){
-      return p.claimed_phone===_userPhone&&(!p.claimed_by||p.claimed_by===_deviceId);
-    });
-  }
-  // 2. Fallback: buscar por nombre solo si no hay teléfono guardado en el slot
-  if(idx<0&&_userName){
-    idx=game.players.findIndex(function(p){
-      return p.name.toLowerCase()===_userName.toLowerCase()&&
-             (!p.claimed_by||p.claimed_by===_deviceId)&&
-             !p.claimed_phone; // Solo si el slot no tiene teléfono vinculado
-    });
-  }
-  if(idx>=0){
-    saveMyClaim(idx);
-    await writeClaimToSB(idx);
-    toast('Jugando como '+game.players[idx].name);
-    return true;
-  }
-  return false;
-}
-async function openClaimOverlay(){
-  if(!game||!game.players)return;
-  // Fetch datos frescos para ver claims actuales
-  try{
-    var rows=await sbGet('tor_games','?id=eq.'+game.id+'&select=players');
-    if(rows&&rows.length)game.players=rows[0].players;
-  }catch(e){}
-  var list=document.getElementById('claimPlayersList');
-  list.innerHTML='';
-  var anyAvailable=false;
-  game.players.forEach(function(p,i){
-    var takenByOther=p.claimed_by&&p.claimed_by!==_deviceId;
-    var takenByMe=p.claimed_by&&p.claimed_by===_deviceId;
-    var d=document.createElement('div');
-    d.className='player-pill';
-    d.style.padding='12px 14px';
-    if(takenByOther){
-      d.style.opacity='0.38';
-      d.style.cursor='not-allowed';
-      d.innerHTML='<div class="avatar" style="background:'+p.color+'">'+ini(p.name)+'</div>'
-        +'<span class="player-pill-name" style="font-size:15px">'+esc(p.name)+'</span>'
-        +'<span style="margin-left:auto;font-size:11px;color:var(--faint);font-weight:700;letter-spacing:.06em;text-transform:uppercase">Ocupado</span>';
-    } else if(takenByMe){
-      d.style.cursor='pointer';
-      d.style.borderColor='var(--gold)';
-      d.style.background='var(--gold-light)';
-      d.innerHTML='<div class="avatar" style="background:'+p.color+'">'+ini(p.name)+'</div>'
-        +'<span class="player-pill-name" style="font-size:15px;color:var(--gold)">'+esc(p.name)+'</span>'
-        +'<span style="margin-left:auto;font-size:11px;color:var(--gold);font-weight:700;letter-spacing:.06em;text-transform:uppercase">✓ Tú</span>';
-      d.onclick=function(){claimPlayer(i);};
-      anyAvailable=true;
-    } else {
-      d.style.cursor='pointer';
-      d.innerHTML='<div class="avatar" style="background:'+p.color+'">'+ini(p.name)+'</div>'
-        +'<span class="player-pill-name" style="font-size:15px">'+esc(p.name)+'</span>'
-        +'<span style="margin-left:auto;font-size:11px;color:var(--gold);font-weight:700;letter-spacing:.06em;text-transform:uppercase">Soy yo ›</span>';
-      d.onclick=function(){claimPlayer(i);};
-      anyAvailable=true;
+    var rows=await sbGet('tor_media','?order=id.asc');
+    if(!rows||!rows.length){onDone();return;}
+    var item=rows[Math.floor(Math.random()*rows.length)];
+    var ov=document.getElementById('mktOverlay');
+    var img=document.getElementById('mktImg');
+    var vid=document.getElementById('mktVideo');
+    img.style.display='none';vid.style.display='none';vid.src='';
+    document.getElementById('mktCountdown').style.display='none';
+    ov.style.opacity='0';ov.style.display='flex';
+    setTimeout(function(){ov.style.opacity='1';},20);
+    function dismiss(){ov.style.opacity='0';setTimeout(function(){ov.style.display='none';onDone();},500);}
+    if(item.type==='photo'){
+      img.src=item.url;img.style.display='block';
+      var cdEl=document.getElementById('mktCountdown');
+      var cdNum=document.getElementById('mktCountdownNum');
+      var cdRing=document.getElementById('mktCountdownRing');
+      var CIRC=47.1;
+      var durRows=await fetch(SB+'/rest/v1/tor_settings?key=eq.photo_duration&select=value',{headers:h()}).then(function(r){return r.json();}).catch(function(){return[];});
+      var TOTAL=(durRows&&durRows.length)?Math.max(1,parseInt(durRows[0].value)||4):4;
+      var remaining=TOTAL;
+      cdNum.textContent=remaining;cdRing.style.strokeDashoffset='0';cdRing.style.transition='none';
+      cdEl.style.display='flex';void cdRing.getBoundingClientRect();
+      cdRing.style.transition='stroke-dashoffset 1s linear';
+      cdRing.style.strokeDashoffset=String(CIRC/TOTAL);
+      var cdTick=setInterval(function(){remaining--;cdNum.textContent=Math.max(remaining,0);cdRing.style.strokeDashoffset=String(CIRC/TOTAL*(TOTAL-remaining));if(remaining<=0)clearInterval(cdTick);},1000);
+      setTimeout(function(){clearInterval(cdTick);cdEl.style.display='none';dismiss();},TOTAL*1000);
+    }else{
+      vid.src=item.url;vid.style.display='block';
+      vid.onended=function(){dismiss();};
+      var p=vid.play();if(p&&p.catch){p.catch(function(){});}
     }
-    list.appendChild(d);
-  });
-  document.getElementById('claimOverlay').classList.remove('hidden');
-}
-async function claimPlayer(idx){
-  saveMyClaim(idx);
-  await writeClaimToSB(idx);
-  document.getElementById('claimOverlay').classList.add('hidden');
-  toast('Eres '+game.players[idx].name+' · Solo tú podrás elegir en tu turno');
-  var isMyTurn=(_myPlayerIdx===null||_myPlayerIdx===game.current_player_index);
-  document.querySelectorAll('.btn-truth,.btn-dare').forEach(function(b){b.disabled=!isMyTurn;});
-}
-async function claimNone(){
-  // Liberar claim de este dispositivo en Supabase si existía
-  if(_myPlayerIdx!==null){
-    var updated=game.players.map(function(p){
-      return p.claimed_by===_deviceId?Object.assign({},p,{claimed_by:null}):p;
-    });
-    await sbPatch('tor_games?id=eq.'+game.id,{players:updated});
-    game.players=updated;
-  }
-  saveMyClaim(null);
-  document.getElementById('claimOverlay').classList.add('hidden');
-  document.querySelectorAll('.btn-truth,.btn-dare').forEach(function(b){b.disabled=false;});
+  }catch(e){onDone();}
 }
 
-// ── Init ──
-(function(){
+// ══════════════════════════════════════════
+// INIT: Unirse a juego existente vía URL
+// ══════════════════════════════════════════
+(async function(){
   var p=new URLSearchParams(window.location.search);
   var id=p.get('id');
   if(!id)return;
-  document.getElementById('joinCode').value=id;
-  var saved=JSON.parse(localStorage.getItem('tor_user')||'null');
-  if(saved&&!isSessionExpired()){
-    _userPhone=saved.phone;_userName=saved.name||'';
-    loadUserSeen();
-    joinGame();
-  } else {
-    // Guardar el ID de partida y pedir registro primero
-    if(isSessionExpired()){localStorage.removeItem('tor_user');localStorage.removeItem('tor_last_activity');}
-    _pendingGameId=id;
-    _userPhone='';_userSeenQ=[];_userSeenD=[];
-    document.getElementById('regPhone').value='';
-    document.getElementById('regPhoneError').textContent='';
-    document.getElementById('regOverlay').classList.remove('hidden');
-  }
+  // Mostrar cargando brevemente
+  try{
+    var rows=await sbGet('tor_games','?id=eq.'+id+'&select=*');
+    if(!rows||!rows.length){toast('Código de juego no encontrado');return;}
+    game=rows[0];
+    if(game.status==='playing'){
+      resetPools();
+      await loadCardPool(game.level,game.mode);
+      startRealtime();
+      startPolling();
+      if(game.current_card){showCard(game.current_card);}
+      else{var c=pickRandomCard();if(c){game.current_card=c;showCard(c);}}
+    }else if(game.status==='lobby'){
+      // En el nuevo flujo no hay lobby — mostrar welcome
+      toast('El juego aún no ha iniciado');
+      game=null;
+    }else{
+      toast('Este juego ya terminó');
+      game=null;
+    }
+  }catch(e){toast('Error al unirse al juego');}
 })();
 </script>
 </body>
