@@ -252,6 +252,11 @@ tr:hover td{background:var(--bg3);}
         <div class="nav-item-label">Marketing</div>
         <div class="nav-item-count" id="cnt-marketing">—</div>
       </div>
+      <div class="nav-item" id="nav-feedback" onclick="showSection('feedback')">
+        <div class="nav-item-icon">💬</div>
+        <div class="nav-item-label">Feedback</div>
+        <div class="nav-item-count" id="cnt-feedback">—</div>
+      </div>
     </div>
     <div class="sidebar-footer">
       <div class="sidebar-footer-text">Terraza Luna © 2025</div>
@@ -477,6 +482,32 @@ tr:hover td{background:var(--bg3);}
       </div>
     </div>
 
+    <!-- ── FEEDBACK ── -->
+    <div class="section" id="section-feedback">
+      <div class="page-header">
+        <div class="page-label">Opiniones</div>
+        <div class="page-title">Feedback</div>
+        <div class="page-sub">Comentarios enviados por jugadores al terminar una partida</div>
+      </div>
+      <div class="stats-grid" id="stats-feedback"></div>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Comentario</th>
+              <th style="width:170px">Fecha</th>
+            </tr>
+          </thead>
+          <tbody id="tbody-feedback"></tbody>
+        </table>
+        <div id="loading-feedback" class="loading">Cargando comentarios…</div>
+        <div id="empty-feedback" class="empty hidden">
+          <div class="empty-icon">💬</div>
+          <div class="empty-text">Aún no hay comentarios de jugadores</div>
+        </div>
+      </div>
+    </div>
+
   </div><!-- /main -->
 </div><!-- /app -->
 
@@ -689,7 +720,7 @@ function showSection(name){
 
 // ── LOAD ALL DATA ──
 async function loadAll(){
-  await Promise.all([loadPreguntas(),loadRetos(),loadPartidas(),loadMarketing(),loadPhotoDuration()]);
+  await Promise.all([loadPreguntas(),loadRetos(),loadPartidas(),loadMarketing(),loadPhotoDuration(),loadFeedback()]);
   await Promise.all([loadParticipants(),loadSeen()]);
   await loadUsuarios(); // Cargar usuarios DESPUÉS de participants y seen para que renderUsuarios() tenga los datos correctos
   renderStats();
@@ -1264,6 +1295,34 @@ async function confirmDelete(){
 // ── MARKETING ──
 var allMarketing=[];
 var _photoDuration=4;
+
+// ── FEEDBACK ──
+var allFeedback=[];
+async function loadFeedback(){
+  try{
+    var rows=await sbGet('tor_feedback','?order=created_at.desc&select=*');
+    allFeedback=rows||[];
+    document.getElementById('cnt-feedback').textContent=allFeedback.length;
+    renderFeedback();
+    document.getElementById('loading-feedback').style.display='none';
+  }catch(e){document.getElementById('loading-feedback').textContent='Error al cargar comentarios';}
+}
+function renderFeedback(){
+  var tb=document.getElementById('tbody-feedback');
+  var empty=document.getElementById('empty-feedback');
+  if(!allFeedback.length){tb.innerHTML='';empty.classList.remove('hidden');return;}
+  empty.classList.add('hidden');
+  tb.innerHTML=allFeedback.map(function(f){
+    var d=new Date(f.created_at);
+    var ds=d.toLocaleDateString('es-MX',{day:'2-digit',month:'short',year:'numeric'})+' '+
+           d.getHours().toString().padStart(2,'0')+':'+d.getMinutes().toString().padStart(2,'0');
+    return '<tr><td style="max-width:520px;word-break:break-word;line-height:1.5">'+esc(f.text||'')+'</td>'+
+           '<td style="font-size:11px;color:var(--faint);white-space:nowrap">'+ds+'</td></tr>';
+  }).join('');
+  // Stat card: total comentarios
+  var sg=document.getElementById('stats-feedback');
+  sg.innerHTML='<div class="stat-card"><div class="stat-val">'+allFeedback.length+'</div><div class="stat-label">Comentarios</div></div>';
+}
 
 async function loadPhotoDuration(){
   try{
