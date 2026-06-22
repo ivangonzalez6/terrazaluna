@@ -1,6 +1,6 @@
 // ── Verdad o Reto · Service Worker ──
 // Incrementa VOR_VERSION al publicar cambios que quieras que los usuarios reciban.
-const VOR_VERSION = 'vor-v2';
+const VOR_VERSION = 'vor-v3';
 
 const STATIC_CACHE = VOR_VERSION + '-static';
 const FONT_CACHE   = VOR_VERSION + '-fonts';

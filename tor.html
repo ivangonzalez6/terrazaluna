@@ -1037,8 +1037,11 @@ function urlBase64ToUint8Array(base64String) {
   return Uint8Array.from([...rawData].map(c => c.charCodeAt(0)));
 }
 
-async function subscribePush(reg) {
+async function subscribePush() {
   try {
+    // Esperar SW activo (navigator.serviceWorker.ready garantiza estado 'active')
+    const reg = await navigator.serviceWorker.ready;
+
     // ¿Ya está suscrito?
     let sub = await reg.pushManager.getSubscription();
     if (!sub) {
@@ -1047,9 +1050,10 @@ async function subscribePush(reg) {
         applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY),
       });
     }
-    // Guardar en Supabase (SB y SK definidos en el script principal)
+
+    // Guardar en Supabase — on_conflict evita error por endpoint duplicado
     const j = sub.toJSON();
-    const resp = await fetch(SB + '/rest/v1/push_subscriptions', {
+    const resp = await fetch(SB + '/rest/v1/push_subscriptions?on_conflict=endpoint', {
       method: 'POST',
       headers: {
         'apikey': SK,
@@ -1063,14 +1067,29 @@ async function subscribePush(reg) {
         auth:     j.keys.auth,
       }),
     });
-    if (resp.ok || resp.status === 409) {
+    if (resp.ok || resp.status === 201) {
       console.log('[VoR Push] Suscripción guardada ✓');
     } else {
-      const err = await resp.text();
-      console.warn('[VoR Push] Error al guardar suscripción:', resp.status, err);
+      const txt = await resp.text();
+      console.warn('[VoR Push] Error Supabase:', resp.status, txt);
     }
   } catch (err) {
-    console.warn('[VoR Push] No se pudo suscribir:', err);
+    console.warn('[VoR Push] Error al suscribir:', err);
+  }
+}
+
+function initPush() {
+  if (!('serviceWorker' in navigator) || !('PushManager' in window) || !('Notification' in window)) return;
+  if (Notification.permission === 'granted') {
+    // Ya tiene permiso → suscribir de inmediato
+    subscribePush();
+  } else if (Notification.permission === 'default') {
+    // Pedir permiso la próxima vez que el usuario toque "Jugar"
+    document.addEventListener('vorNotifPrompt', function() {
+      Notification.requestPermission().then(function(perm) {
+        if (perm === 'granted') subscribePush();
+      });
+    }, { once: true });
   }
 }
 
@@ -1078,7 +1097,6 @@ if ('serviceWorker' in navigator) {
   window.addEventListener('load', function() {
     navigator.serviceWorker.register('/sw-vor.js', { scope: '/tor' })
       .then(function(reg) {
-        // Actualización disponible
         reg.addEventListener('updatefound', function() {
           var newSW = reg.installing;
           newSW.addEventListener('statechange', function() {
@@ -1087,21 +1105,7 @@ if ('serviceWorker' in navigator) {
             }
           });
         });
-
-        // Solicitar permiso de notificaciones tras interacción del usuario
-        if ('PushManager' in window && 'Notification' in window) {
-          // Solo pedimos si el usuario aún no ha decidido
-          if (Notification.permission === 'default') {
-            // Esperamos a que el usuario haga click en "Jugar"
-            document.addEventListener('vorNotifPrompt', function() {
-              Notification.requestPermission().then(function(perm) {
-                if (perm === 'granted') subscribePush(reg);
-              });
-            }, { once: true });
-          } else if (Notification.permission === 'granted') {
-            subscribePush(reg);
-          }
-        }
+        initPush();
       })
       .catch(function(err) {
         console.warn('[VoR PWA] Service worker no pudo registrarse:', err);
