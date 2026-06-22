@@ -4,6 +4,16 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0, user-scalable=no">
 <title>Verdad o Reto · Terraza Luna</title>
+
+<!-- PWA -->
+<link rel="manifest" href="/manifest-vor.json">
+<meta name="theme-color" content="#080807">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="VoR">
+<link rel="apple-touch-icon" href="/icons/vor-192.png">
+<link rel="apple-touch-startup-image" href="/icons/vor-512.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;0,700;1,300;1,400;1,500&family=Inter+Tight:wght@300;400;500;600&display=swap" rel="stylesheet">
@@ -11,15 +21,15 @@
 *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;touch-action:manipulation}
 html{touch-action:pan-x pan-y;-ms-touch-action:pan-x pan-y;}
 :root{
-  --bg:#f8f4eb;--bg2:#ffffff;--bg3:#faf5e8;
-  --ink:#1a1610;--dim:#4a4337;--faint:#7a7264;
-  --line:#ddd4be;--line2:#c8b898;
-  --gold:#8a6420;--golds:#6b4d18;
-  --gold-light:#f0e4c4;--gold-pale:#faf5e8;
-  --warm:#e8e0d0;--warm2:#d4c9b0;
+  --bg:#080807;--bg2:#111110;--bg3:#161614;
+  --ink:#f0ebe0;--dim:rgba(240,235,224,.68);--faint:rgba(240,235,224,.38);
+  --line:rgba(255,255,255,.07);--line2:rgba(255,255,255,.13);
+  --gold:#c9a35b;--golds:#e0bc74;
+  --gold-light:rgba(201,163,91,.14);--gold-pale:rgba(201,163,91,.08);
+  --warm:rgba(255,255,255,.04);--warm2:rgba(255,255,255,.08);
 }
 html,body{min-height:100%;background:var(--bg);color:var(--ink);font-family:'Inter Tight',sans-serif;overflow-x:hidden;}
-body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellipse 80vw 60vh at 90% -5%,rgba(138,100,32,.06) 0%,transparent 60%),radial-gradient(ellipse 60vw 50vh at -5% 100%,rgba(138,100,32,.04) 0%,transparent 60%);pointer-events:none;z-index:0;}
+body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellipse 80vw 60vh at 90% -5%,rgba(201,163,91,.06) 0%,transparent 60%),radial-gradient(ellipse 60vw 50vh at -5% 100%,rgba(201,163,91,.04) 0%,transparent 60%);pointer-events:none;z-index:0;}
 
 /* ── SCREENS ── */
 .screen{position:fixed;inset:0;display:flex;flex-direction:column;align-items:center;padding:24px 20px 32px;overflow-y:auto;transition:opacity .3s,transform .3s;z-index:1;}
@@ -46,7 +56,7 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
 input,select,textarea{width:100%;background:var(--bg3);border:1px solid var(--line);border-radius:10px;color:var(--ink);font-size:15px;font-family:'Inter Tight',sans-serif;padding:13px 15px;outline:none;transition:border-color .2s;}
 input:focus,select:focus,textarea:focus{border-color:var(--gold);}
 input::placeholder,textarea::placeholder{color:var(--faint);}
-input.error{border-color:#fca5a5;background:#fff8f8;}
+input.error{border-color:rgba(248,113,113,.6);background:rgba(248,113,113,.06);}
 textarea{resize:none;line-height:1.5;}
 
 /* ── BUTTONS ── */
@@ -58,8 +68,8 @@ textarea{resize:none;line-height:1.5;}
 .btn-gold:hover{background:var(--golds);}
 .btn-outline{background:transparent;color:var(--dim);border:1px solid var(--line2);font-size:12px;}
 .btn-outline:hover{border-color:var(--gold);color:var(--gold);}
-.btn-danger{background:transparent;color:#7c2d12;border:1px solid rgba(252,165,165,.6);font-size:12px;}
-.btn-danger:hover{background:#fff1f2;}
+.btn-danger{background:transparent;color:#f87171;border:1px solid rgba(248,113,113,.35);font-size:12px;}
+.btn-danger:hover{background:rgba(248,113,113,.08);}
 
 /* ── MODE CARDS ── */
 .mode-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
@@ -74,7 +84,7 @@ textarea{resize:none;line-height:1.5;}
 .player-row{display:flex;align-items:center;gap:10px;}
 .avatar{width:38px;height:38px;border-radius:50%;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;color:#fff;font-family:'Cormorant Garamond',serif;}
 .remove-btn{background:transparent;border:1px solid var(--line);border-radius:8px;color:var(--faint);font-size:16px;width:38px;height:38px;flex-shrink:0;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .15s;line-height:1;}
-.remove-btn:hover{border-color:rgba(252,165,165,.6);color:#c0392b;background:#fff8f8;}
+.remove-btn:hover{border-color:rgba(248,113,113,.4);color:#f87171;background:rgba(248,113,113,.06);}
 .btn-add-player{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;padding:13px;border-radius:12px;border:1px dashed var(--line2);background:transparent;font-size:12px;font-weight:600;cursor:pointer;color:var(--dim);font-family:'Inter Tight',sans-serif;letter-spacing:.08em;text-transform:uppercase;transition:all .15s;}
 .btn-add-player:hover{border-color:var(--gold);color:var(--gold);background:var(--gold-pale);}
 
@@ -90,8 +100,8 @@ textarea{resize:none;line-height:1.5;}
 .level-desc-box.hidden{display:none;}
 
 /* ── CARD SCREEN ── */
-#screen-card{background:linear-gradient(180deg,#2a1f0e 0%,#1a1610 100%);justify-content:center;padding-bottom:80px;}
-#screen-card::before{content:'';position:fixed;top:-100px;right:-80px;width:320px;height:320px;border-radius:50%;background:radial-gradient(circle,rgba(212,168,75,.09),transparent 70%);pointer-events:none;}
+#screen-card{background:linear-gradient(180deg,#100e08 0%,#080807 100%);justify-content:center;padding-bottom:80px;}
+#screen-card::before{content:'';position:fixed;top:-100px;right:-80px;width:320px;height:320px;border-radius:50%;background:radial-gradient(circle,rgba(201,163,91,.07),transparent 70%);pointer-events:none;}
 .card-reveal{display:flex;flex-direction:column;align-items:center;justify-content:center;flex:1;width:100%;max-width:420px;gap:6px;padding:8px 16px 0;}
 .card-type-badge{display:inline-flex;align-items:center;padding:7px 22px;border-radius:999px;font-size:10px;font-weight:600;letter-spacing:.18em;text-transform:uppercase;margin-bottom:12px;font-family:'Inter Tight',sans-serif;}
 .badge-truth{background:rgba(248,244,235,.1);color:#d4c9b0;border:1px solid rgba(212,201,176,.2);}
@@ -146,10 +156,10 @@ textarea{resize:none;line-height:1.5;}
 .menu-item-label{font-size:14px;font-weight:600;color:var(--ink);}
 .menu-item-sub{font-size:11px;color:var(--faint);margin-top:2px;}
 .menu-item-arrow{font-size:16px;color:var(--faint);margin-left:8px;}
-.menu-item.danger{border-color:rgba(252,165,165,.35);background:#fff8f8;}
-.menu-item.danger:hover{background:#fff1f2;border-color:rgba(248,113,113,.5);}
-.menu-item.danger .menu-item-label{color:#7c2d12;}
-.menu-item.danger .menu-item-sub{color:#c08080;}
+.menu-item.danger{border-color:rgba(248,113,113,.2);background:rgba(248,113,113,.05);}
+.menu-item.danger:hover{background:rgba(248,113,113,.1);border-color:rgba(248,113,113,.35);}
+.menu-item.danger .menu-item-label{color:#f87171;}
+.menu-item.danger .menu-item-sub{color:rgba(248,113,113,.6);}
 
 /* Add overlay */
 .row-input{display:flex;gap:8px;}
@@ -164,7 +174,7 @@ textarea{resize:none;line-height:1.5;}
 .brand-name{font-family:'Cormorant Garamond',serif;font-size:15px;letter-spacing:.2em;text-transform:uppercase;color:var(--dim);}
 
 /* ── TOAST ── */
-.toast{position:fixed;bottom:90px;left:50%;transform:translateX(-50%) translateY(20px);background:var(--ink);border:1px solid var(--gold);border-radius:10px;padding:9px 18px;font-size:12px;letter-spacing:.06em;color:var(--gold-light);opacity:0;pointer-events:none;transition:all .3s;z-index:999;white-space:nowrap;font-weight:600;}
+.toast{position:fixed;bottom:90px;left:50%;transform:translateX(-50%) translateY(20px);background:#1c1a12;border:1px solid rgba(201,163,91,.4);border-radius:10px;padding:9px 18px;font-size:12px;letter-spacing:.06em;color:var(--gold);opacity:0;pointer-events:none;transition:all .3s;z-index:999;white-space:nowrap;font-weight:600;}
 .toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
 
 /* Marketing media */
@@ -1012,6 +1022,28 @@ async function showMarketingMedia(onDone){
     }
   }catch(e){toast('Error al unirse al juego');}
 })();
+</script>
+
+<!-- PWA Service Worker -->
+<script>
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', function() {
+    navigator.serviceWorker.register('/sw-vor.js', { scope: '/tor' })
+      .then(function(reg) {
+        reg.addEventListener('updatefound', function() {
+          var newSW = reg.installing;
+          newSW.addEventListener('statechange', function() {
+            if (newSW.state === 'installed' && navigator.serviceWorker.controller) {
+              console.log('[VoR PWA] Nueva versión disponible');
+            }
+          });
+        });
+      })
+      .catch(function(err) {
+        console.warn('[VoR PWA] Service worker no pudo registrarse:', err);
+      });
+  });
+}
 </script>
 </body>
 </html>
