@@ -1047,13 +1047,13 @@ async function subscribePush(reg) {
         applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY),
       });
     }
-    // Guardar en Supabase
+    // Guardar en Supabase (SB y SK definidos en el script principal)
     const j = sub.toJSON();
-    await fetch(SUPA + '/rest/v1/push_subscriptions', {
+    const resp = await fetch(SB + '/rest/v1/push_subscriptions', {
       method: 'POST',
       headers: {
-        'apikey': KEY,
-        'Authorization': 'Bearer ' + KEY,
+        'apikey': SK,
+        'Authorization': 'Bearer ' + SK,
         'Content-Type': 'application/json',
         'Prefer': 'resolution=ignore-duplicates',
       },
@@ -1063,7 +1063,12 @@ async function subscribePush(reg) {
         auth:     j.keys.auth,
       }),
     });
-    console.log('[VoR Push] Suscripción guardada');
+    if (resp.ok || resp.status === 409) {
+      console.log('[VoR Push] Suscripción guardada ✓');
+    } else {
+      const err = await resp.text();
+      console.warn('[VoR Push] Error al guardar suscripción:', resp.status, err);
+    }
   } catch (err) {
     console.warn('[VoR Push] No se pudo suscribir:', err);
   }
