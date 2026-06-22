@@ -909,7 +909,7 @@ async function loadPosSalesForDate(dateISO){
   // Devuelve total + lista de productos unificados + breakdown por método de pago
   var start=dateISO+'T00:00:00';
   var end=dateISO+'T23:59:59';
-  var r=await sfetch('/rest/v1/history?select=total,closed_at,items,payment_method&closed_at=gte.'+encodeURIComponent(start)+'&closed_at=lte.'+encodeURIComponent(end));
+  var r=await sfetch('/rest/v1/history?select=total,opened_at,items,payment_method&opened_at=gte.'+encodeURIComponent(start)+'&opened_at=lte.'+encodeURIComponent(end));
   if(!Array.isArray(r))return{total:0,products:{},methods:{}};
   var products={};// {name:{q,total}}
   var methods={efectivo:0,tarjeta:0,transferencia:0};

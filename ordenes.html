@@ -2272,7 +2272,7 @@ async function renderKitchen(){
 // ══ CAJA ══
 function pRange(p){var n=new Date(),s=new Date(n);if(p==='day')s.setHours(0,0,0,0);else if(p==='week'){var d=s.getDay();s.setDate(s.getDate()-(d===0?6:d-1));s.setHours(0,0,0,0);}else if(p==='month'){s.setDate(1);s.setHours(0,0,0,0);}else{s.setMonth(0,1);s.setHours(0,0,0,0);}return{from:s.getTime(),to:n.getTime()};}
 function pLabel(p){return{day:'Hoy',week:'Esta semana',month:'Este mes',year:'Este año'}[p];}
-function filtHist(p){var r=pRange(p);return appHistory.filter(function(h){return h.closedAt>=r.from&&h.closedAt<=r.to;});}
+function filtHist(p){var r=pRange(p);return appHistory.filter(function(h){return h.openedAt>=r.from&&h.openedAt<=r.to;});}
 function renderStats(){
   document.querySelectorAll('.per-tab').forEach(function(b){b.classList.toggle('active',b.getAttribute('data-period')===curPeriod);});
   var f=filtHist(curPeriod),tot=f.reduce(function(s,h){return s+h.total;},0);
@@ -2281,7 +2281,7 @@ function renderStats(){
   if(!f.length){list.innerHTML='<div class="empty"><div class="etit crescent">Sin registros</div><div class="esub">No hay cuentas en este período</div></div>';return;}
   var isDay=curPeriod==='day';
   f.forEach(function(h){
-    var d=new Date(h.closedAt),ds=d.toLocaleDateString('es-MX',{day:'2-digit',month:'short'})+' '+d.getHours().toString().padStart(2,'0')+':'+d.getMinutes().toString().padStart(2,'0');
+    var d=new Date(h.openedAt),ds=d.toLocaleDateString('es-MX',{day:'2-digit',month:'short'})+' '+d.getHours().toString().padStart(2,'0')+':'+d.getMinutes().toString().padStart(2,'0');
     var el=document.createElement('div');el.className='hi';
     el.innerHTML='<div class="hi-top"><div><div class="hi-tbl">'+(typeof h.table==='number'?'Mesa '+h.table.toString().padStart(2,'0'):esc(String(h.table).charAt(0).toUpperCase()+String(h.table).slice(1)))+(h.tableNote?' <span style="font-size:11px;font-weight:400;color:var(--faint)">· '+esc(h.tableNote)+'</span>':'')+'</div><div class="hi-date">'+ds+'</div></div><div><div class="hi-tot">'+money(h.total)+'</div><div class="hi-it">'+h.itemCount+' prod.'+(h.editNote?' · <em style="color:var(--gold)">'+esc(h.editNote)+'</em>':'')+'</div></div></div><div class="hi-acts"><button class="hi-vb" data-id="'+h.id+'">Ver</button>'+(isDay?'<button class="hi-eb" data-id="'+h.id+'">Editar</button><button class="hi-db" data-id="'+h.id+'">Eliminar</button>':'')+'</div>';
     (function(rec){
