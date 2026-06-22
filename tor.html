@@ -431,6 +431,8 @@ var usedQIdx=[], usedDIdx=[], usedQCommIdx=[], usedDCommIdx=[];
 var commQDone=false, commDDone=false;
 // Realtime
 var _ws=null, _wsRef=0, _wsHb=null, _pollInterval=null;
+// Marketing media
+var _cardCount=0; // cartas mostradas en el juego actual (para cadencia de marketing)
 
 // ── API ──
 function h(){return{'apikey':SK,'Authorization':'Bearer '+SK,'Content-Type':'application/json'};}
@@ -524,6 +526,9 @@ function goToLevel(){
   document.querySelectorAll('.level-option').forEach(function(el){el.classList.remove('active');});
   document.getElementById('levelDesc').classList.add('hidden');
   selectedLevel=null;
+  // Resetear botón de inicio (puede quedar deshabilitado del juego anterior)
+  var sBtn=document.getElementById('startGameBtn');
+  sBtn.disabled=false;sBtn.textContent='Iniciar Juego';
   show('level');
 }
 
@@ -559,7 +564,12 @@ async function initGame(){
     startRealtime();
     startPolling();
     started=true;   // a partir de aquí cambia de pantalla → no re-habilitar botón
-    showCard(firstCard);
+    _cardCount=0;
+    // Mostrar media de marketing antes de la primera carta
+    showMarketingMedia(function(){
+      _cardCount=1;
+      showCard(firstCard);
+    });
   }catch(e){
     toast('Error al crear el juego');
   }finally{
@@ -632,11 +642,8 @@ function drawCard(type){
   }
 
   if(!mainPool.length)return null;
-  if(mainUsed.length>=mainPool.length){
-    if(isQ)usedQIdx=[];else usedDIdx=[];
-    mainUsed=isQ?usedQIdx:usedDIdx;
-    toast('Cartas mezcladas de nuevo');
-  }
+  // Sin repetición: si ya se usaron todas, no reciclar
+  if(mainUsed.length>=mainPool.length)return null;
   var avail2=mainPool.filter(function(_,i){return mainUsed.indexOf(i)<0;});
   if(!avail2.length)return null;
   var pick2=avail2[Math.floor(Math.random()*avail2.length)];
@@ -696,8 +703,15 @@ async function nextTurn(){
   game.current_card=card;
 
   sbPatch('tor_games?id=eq.'+game.id,{current_player_index:next,round:newRound,current_card:card}).catch(function(){});
-  showCard(card);
-  document.getElementById('btnSiguiente').disabled=false;
+  var btnSig=document.getElementById('btnSiguiente');
+  _cardCount++;
+  // Mostrar media de marketing cada 7 cartas
+  if(_cardCount%7===0){
+    showMarketingMedia(function(){showCard(card);btnSig.disabled=false;});
+  }else{
+    showCard(card);
+    btnSig.disabled=false;
+  }
 }
 
 // ── Terminar juego ──
