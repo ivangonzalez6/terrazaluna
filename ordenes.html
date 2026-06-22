@@ -538,6 +538,7 @@ h2.sec::after{content:'';flex:1;height:1px;background:var(--line);margin-left:6p
           <div class="ma" style="margin-top:8px">
             <button class="btn btn-g" style="border-color:#3a7a3a;color:#3a7a3a" id="promo2x1Btn">2×1</button>
             <button class="btn btn-g" style="border-color:var(--gold);color:var(--gold)" id="canjearPremioBtn">🎁 Premio</button>
+            <button class="btn btn-g" style="border-color:#a855f7;color:#a855f7" id="cumpleDescuentoBtn">🎂 10%</button>
             <button class="btn btn-d" id="clearTableBtn">Vaciar</button>
           </div>
         </details>
@@ -951,6 +952,10 @@ h2.sec::after{content:'';flex:1;height:1px;background:var(--line);margin-left:6p
       <span style="font-size:10px;letter-spacing:.25em;text-transform:uppercase;color:var(--faint);font-weight:600">Total a cobrar</span>
       <span id="payModalTotal" style="font-family:'Cormorant Garamond',serif;font-size:28px;font-weight:600;color:var(--gold)"></span>
     </div>
+    <!-- Aviso verificar edad -->
+    <div style="background:#fff8e1;border:1px solid #f0c040;border-radius:10px;padding:9px 13px;margin-bottom:10px;font-size:11px;color:#7a5a00;line-height:1.5;display:flex;align-items:flex-start;gap:6px">
+      <span style="flex-shrink:0">⚠️</span><span><strong>Verifica la edad</strong> con documento oficial antes de servir alcohol.</span>
+    </div>
     <!-- Método de pago obligatorio -->
     <label class="flbl">Método de pago</label>
     <div id="payMethodGrid" style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin-top:5px;margin-bottom:6px">
@@ -1172,17 +1177,21 @@ async function insertFinanceMovements(rec){
     if(!products[name])products[name]={q:0,total:0};
     products[name].q+=it.q;products[name].total+=it.p*it.q;
   });
+  // Factor neto para tarjeta: 3.5% comisión Point Air + 16% IVA sobre comisión
+  var CARD_NET_FACTOR = 1 - 0.035 * 1.16; // ≈ 0.9594
   for(var i=0;i<methodsUsed.length;i++){
     var pm=methodsUsed[i],amt=methods[pm];
     if(amt<=0)continue;
+    var grossAmt=amt;
+    var netAmt=(pm==='tarjeta')?Math.round(amt*CARD_NET_FACTOR*100)/100:amt;
     var fmId='fm-'+rec.id+(methodsUsed.length>1?'-'+pm:'');
     var fmRec={
       id:fmId,kind:'ingreso',category:'Ingresos',subcategory:'ventas',
-      description:'Mesa '+rec.table+(rec.tableNote?' · '+rec.tableNote:'')+' · '+pm.charAt(0).toUpperCase()+pm.slice(1),
-      amount:amt,payment_method:pm,movement_date:today,
+      description:'Mesa '+rec.table+(rec.tableNote?' · '+rec.tableNote:'')+' · '+pm.charAt(0).toUpperCase()+pm.slice(1)+(pm==='tarjeta'?' (neto)':''),
+      amount:netAmt,payment_method:pm,movement_date:today,
       created_by:loggedUser?loggedUser.username:'',
       auto_generated:true,
-      metadata:{hist_id:rec.id,products:i===0?products:{},methods:i===0?methods:{},total_day:rec.total}
+      metadata:{hist_id:rec.id,products:i===0?products:{},methods:i===0?methods:{},total_day:rec.total,gross_amount:pm==='tarjeta'?grossAmt:undefined}
     };
     await spost('/rest/v1/finance_movements',fmRec);
   }
@@ -1197,14 +1206,16 @@ async function updateFinanceMovements(histId,newTotal,paymentMethod){
     var refDt=new Date(histRec.openedAt||histRec.closedAt);
     today=refDt.getFullYear()+'-'+String(refDt.getMonth()+1).padStart(2,'0')+'-'+String(refDt.getDate()).padStart(2,'0');
   }
+  var CARD_NET_FACTOR=1-0.035*1.16;
   var pm=paymentMethod||'efectivo';
+  var netTotal=(pm==='tarjeta')?Math.round(newTotal*CARD_NET_FACTOR*100)/100:newTotal;
   var fmRec={
     id:'fm-'+histId,kind:'ingreso',category:'Ingresos',subcategory:'ventas',
-    description:'Mesa '+(histRec?histRec.table:'?')+(histRec&&histRec.tableNote?' · '+histRec.tableNote:'')+' · '+pm.charAt(0).toUpperCase()+pm.slice(1)+' (editado)',
-    amount:newTotal,payment_method:pm,movement_date:today,
+    description:'Mesa '+(histRec?histRec.table:'?')+(histRec&&histRec.tableNote?' · '+histRec.tableNote:'')+' · '+pm.charAt(0).toUpperCase()+pm.slice(1)+(pm==='tarjeta'?' (neto)':'')+' (editado)',
+    amount:netTotal,payment_method:pm,movement_date:today,
     created_by:loggedUser?loggedUser.username:'',
     auto_generated:true,
-    metadata:{hist_id:histId,total_day:newTotal}
+    metadata:{hist_id:histId,total_day:newTotal,gross_amount:pm==='tarjeta'?newTotal:undefined}
   };
   await spost('/rest/v1/finance_movements',fmRec);
 }
@@ -2283,7 +2294,10 @@ function renderStats(){
   f.forEach(function(h){
     var d=new Date(h.openedAt),ds=d.toLocaleDateString('es-MX',{day:'2-digit',month:'short'})+' '+d.getHours().toString().padStart(2,'0')+':'+d.getMinutes().toString().padStart(2,'0');
     var el=document.createElement('div');el.className='hi';
-    el.innerHTML='<div class="hi-top"><div><div class="hi-tbl">'+(typeof h.table==='number'?'Mesa '+h.table.toString().padStart(2,'0'):esc(String(h.table).charAt(0).toUpperCase()+String(h.table).slice(1)))+(h.tableNote?' <span style="font-size:11px;font-weight:400;color:var(--faint)">· '+esc(h.tableNote)+'</span>':'')+'</div><div class="hi-date">'+ds+'</div></div><div><div class="hi-tot">'+money(h.total)+'</div><div class="hi-it">'+h.itemCount+' prod.'+(h.editNote?' · <em style="color:var(--gold)">'+esc(h.editNote)+'</em>':'')+'</div></div></div><div class="hi-acts"><button class="hi-vb" data-id="'+h.id+'">Ver</button>'+(isDay?'<button class="hi-eb" data-id="'+h.id+'">Editar</button><button class="hi-db" data-id="'+h.id+'">Eliminar</button>':'')+'</div>';
+    var CARD_NET=1-0.035*1.16;
+    var isCard=h.paymentMethod==='tarjeta';
+    var netLbl=isCard?'<div style="font-size:10px;color:var(--faint);font-weight:400">neto '+money(Math.round(h.total*CARD_NET*100)/100)+'</div>':'';
+    el.innerHTML='<div class="hi-top"><div><div class="hi-tbl">'+(typeof h.table==='number'?'Mesa '+h.table.toString().padStart(2,'0'):esc(String(h.table).charAt(0).toUpperCase()+String(h.table).slice(1)))+(h.tableNote?' <span style="font-size:11px;font-weight:400;color:var(--faint)">· '+esc(h.tableNote)+'</span>':'')+'</div><div class="hi-date">'+ds+(isCard?' 💳':'')+'</div></div><div><div class="hi-tot">'+money(h.total)+netLbl+'</div><div class="hi-it">'+h.itemCount+' prod.'+(h.editNote?' · <em style="color:var(--gold)">'+esc(h.editNote)+'</em>':'')+'</div></div></div><div class="hi-acts"><button class="hi-vb" data-id="'+h.id+'">Ver</button>'+(isDay?'<button class="hi-eb" data-id="'+h.id+'">Editar</button><button class="hi-db" data-id="'+h.id+'">Eliminar</button>':'')+'</div>';
     (function(rec){
       el.querySelector('.hi-vb').addEventListener('click',function(e){e.stopPropagation();showHistDetail(rec);});
       if(isDay){
@@ -3996,6 +4010,25 @@ function isPrizeRedeemed(clientId, nivel){ return localStorage.getItem(_prizeKey
 function markPrizeRedeemedLocally(clientId, nivel){ localStorage.setItem(_prizeKey(clientId,nivel),'1'); }
 
 // ── Abrir flujo de canje desde botón "Premio" ──
+// ── Descuento 10% mes de cumpleaños ──
+gid('cumpleDescuentoBtn').addEventListener('click', function(){
+  if(!curTable){showToast('Selecciona una mesa primero');return;}
+  var sub=tblSubtotal(curTable);
+  if(sub<=0){showToast('La cuenta está vacía');return;}
+  openConfirm('Descuento cumpleaños 10%','¿Aplicar 10% de descuento por mes de cumpleaños? Asegúrate de haber verificado el documento oficial del cliente.','Aplicar descuento',function(){
+    initTbl(curTable);
+    var o=orders[curTable];
+    // Quitar descuento previo de cumpleaños si existe
+    o.discounts=(o.discounts||[]).filter(function(d){return d.label!=='Descuento cumpleaños 10%';});
+    // Calcular 10% sobre subtotal actual (ya con otros descuentos aplicados)
+    var base=tblSubtotal(curTable)+tblDiscount(curTable); // total neto hasta ahora
+    var discAmt=-Math.round(base*0.10*100)/100;
+    o.discounts.push({label:'Descuento cumpleaños 10%',amount:discAmt});
+    saveOrders(orders);renderCart();updateCartBar();
+    showToast('✓ 10% cumpleaños aplicado — '+money(discAmt));
+  });
+});
+
 gid('canjearPremioBtn').addEventListener('click', function(){
   if(!curTable){showToast('Selecciona una mesa primero');return;}
   var o=orders[curTable];

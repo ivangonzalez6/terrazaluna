@@ -1086,7 +1086,7 @@ function buildMovementRow(m,withActions){
       '<div class="mv-cat">'+esc(lbl)+' '+(pmIcon?'<span style="font-size:11px;opacity:.7">'+pmIcon+'</span>':'')+'</div>'+
       '<div class="mv-desc">'+esc(dateLabel)+pmTag+extra+'</div>'+
     '</div>'+
-    '<div class="mv-amt '+(m.kind==='ingreso'?'ing':'eg')+'">'+(m.kind==='ingreso'?'+':'−')+money(m.amount)+'</div>'+
+    '<div class="mv-amt '+(m.kind==='ingreso'?'ing':'eg')+'">'+(m.kind==='ingreso'?'+':'−')+money(m.amount)+(m.payment_method==='tarjeta'&&m.metadata&&m.metadata.gross_amount?'<div style="font-size:9px;color:var(--faint);font-weight:400;letter-spacing:.04em">cobrado '+money(m.metadata.gross_amount)+'</div>':'')+'</div>'+
     (withActions?
       '<button class="mv-edit" title="Editar" style="background:none;border:none;color:var(--faint);font-size:13px;cursor:pointer;padding:4px 6px;opacity:.6">✎</button>'+
       '<button class="mv-del" title="Eliminar">✕</button>'
