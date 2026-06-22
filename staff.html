@@ -460,7 +460,7 @@ function nivelActual(visitas){
 async function loadClientes(){
   try{
     const [clientes,rewards,redemptions]=await Promise.all([
-      api('GET','loyalty_clients',null,'?order=nombre.asc&select=*'),
+      api('GET','loyalty_clients',null,'?order=created_at.desc&select=*'),
       api('GET','loyalty_rewards',null,'?activo=eq.true&order=visitas_requeridas.asc&select=*'),
       api('GET','loyalty_redemptions',null,'?select=client_id,nivel')
     ]);
@@ -498,7 +498,7 @@ function renderClientes(list){
     }
     tb.innerHTML+=`<tr>
       <td><a class="client-name-link" onclick="verDetalleCliente('${c.id}')">${c.nombre}</a>${!c.activo?' <span style="color:var(--faint);font-size:11px">(inactivo)</span>':''}</td>
-      <td style="color:var(--faint)">${c.whatsapp}</td>
+      <td><a href="https://wa.me/${c.whatsapp.replace(/\D/g,'')}" target="_blank" style="color:var(--faint);text-decoration:none;border-bottom:1px dashed var(--line2)" onmouseover="this.style.color='#25D366'" onmouseout="this.style.color='var(--faint)'">${c.whatsapp}</a></td>
       <td>${nivelStr}</td>
       <td>${c.visitas_totales}</td>
       <td><strong>${c.sellos}</strong>/10</td>
@@ -607,7 +607,7 @@ async function verDetalleCliente(id){
     const bd=c.fecha_nacimiento?new Date(c.fecha_nacimiento+'T12:00:00').toLocaleDateString('es-MX',{day:'numeric',month:'long',year:'numeric'}):'—';
     const conocio={instagram:'Instagram',tiktok:'TikTok',facebook:'Facebook',recomendacion:'Recomendación',google:'Google Maps',pasando:'Pasaba por aquí',evento:'Evento',otro:'Otro'};
     document.getElementById('cdContact').innerHTML=`
-      📱 <strong>WhatsApp:</strong> ${c.whatsapp}<br>
+      📱 <strong>WhatsApp:</strong> <a href="https://wa.me/${c.whatsapp.replace(/\D/g,'')}" target="_blank" style="color:var(--dim);text-decoration:none;border-bottom:1px dashed var(--line2)">${c.whatsapp}</a><br>
       ${c.email?`✉️ <strong>Email:</strong> ${c.email}<br>`:''}
       🎂 <strong>Cumpleaños:</strong> ${bd}<br>
       ${c.como_nos_conocio?`🔍 <strong>Nos conoció por:</strong> ${conocio[c.como_nos_conocio]||c.como_nos_conocio}`:''}`;
