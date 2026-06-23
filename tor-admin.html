@@ -2408,8 +2408,8 @@ function renderCodigos(){
     var expStr=exp.toLocaleString('es-MX',{day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'});
     var etiqueta=c.phone&&c.phone.startsWith('promo:')?'<span style="font-size:11px;background:var(--gold-pale);color:var(--gold);border-radius:6px;padding:2px 8px;font-weight:600">'+esc(c.phone.replace('promo:',''))+'</span>':esc(c.phone||'—');
     var actions='<div class="td-actions">'+
-      '<button class="btn-view" onclick="copiarCodigo(''+esc(c.code)+'')">📋</button>';
-    if(activo)actions+='<button class="btn-delete" onclick="revocarCodigo(''+esc(c.id)+'')">✗ Revocar</button>';
+      '<button class="btn-view" onclick="copiarCodigo(\''+esc(c.code)+'\')">📋</button>';
+    if(activo)actions+='<button class="btn-delete" onclick="revocarCodigo(\''+esc(c.id)+'\')">✗ Revocar</button>';
     actions+='</div>';
     return '<tr>'+
       '<td style="font-family:'Cormorant Garamond',serif;font-size:20px;font-weight:700;letter-spacing:.15em;color:var(--gold)">'+esc(c.code)+'</td>'+
@@ -2474,8 +2474,8 @@ async function generarCodigosLote(){
     document.getElementById('gcResultLabel').textContent=_codigosGenerados.length+' código'+(n>1?'s':'')+' generado'+(n>1?'s':'')+' · Vigencia: '+vigencia+(etiqueta?' · '+etiqueta:'');
     document.getElementById('gcListaCodigos').innerHTML=_codigosGenerados.map(function(code){
       return '<div style="display:flex;align-items:center;justify-content:space-between;padding:8px 10px;border-bottom:1px solid var(--line);">'+
-        '<span style="font-family:'Cormorant Garamond',serif;font-size:22px;font-weight:700;letter-spacing:.2em;color:var(--gold)">'+esc(code)+'</span>'+
-        '<button onclick="copiarCodigo(''+esc(code)+'')" style="font-size:11px;background:var(--bg3);border:1px solid var(--line2);border-radius:6px;padding:4px 10px;cursor:pointer;color:var(--dim);">Copiar</button>'+
+        '<span style="font-family:\'Cormorant Garamond\',serif;font-size:22px;font-weight:700;letter-spacing:.2em;color:var(--gold)">'+esc(code)+'</span>'+
+        '<button onclick="copiarCodigo(\''+esc(code)+'\')" style="font-size:11px;background:var(--bg3);border:1px solid var(--line2);border-radius:6px;padding:4px 10px;cursor:pointer;color:var(--dim);">Copiar</button>'+
       '</div>';
     }).join('');
     document.getElementById('gcForm').style.display='none';
@@ -2512,19 +2512,3 @@ async function revocarCodigo(id){
     toast('✗ Código revocado');
   }catch(e){toast('Error: '+(e.message||e));}
 }
-r: ' + (data.error || 'Respuesta inesperada del servidor');
-    }
-  } catch(e) {
-    res.style.display = 'block';
-    res.style.background = 'rgba(239,68,68,.1)';
-    res.style.border = '1px solid rgba(239,68,68,.3)';
-    res.style.color = '#ef4444';
-    res.textContent = '✗ Error de red: ' + e.message;
-  } finally {
-    btn.disabled = false;
-    btn.textContent = '🔔 Enviar a todos los dispositivos';
-  }
-}
-</script>
-</body>
-</html>
