@@ -404,6 +404,11 @@ tr:hover td{background:var(--bg3);}
           <option value="extremo">Extremo</option>
           <option value="xxx">XXX 🔞</option>
         </select>
+        <select class="filter-select" id="filter-preguntas-mode" onchange="filterPreguntas()">
+          <option value="">Toda modalidad</option>
+          <option value="presencial">Presencial</option>
+          <option value="distancia">A distancia</option>
+        </select>
         <select class="filter-select" id="filter-preguntas-source" onchange="filterPreguntas()">
           <option value="">Toda fuente</option>
           <option value="oficial">Oficial</option>
@@ -419,7 +424,7 @@ tr:hover td{background:var(--bg3);}
               <th>Nivel</th>
               <th>Fuente</th>
               <th>Añadida por</th>
-              <th>Fecha</th>
+              <th style="cursor:pointer;user-select:none" onclick="toggleSort('preguntas')">Fecha <span id="sort-icon-preguntas">↕</span></th>
               <th></th>
             </tr>
           </thead>
@@ -470,7 +475,7 @@ tr:hover td{background:var(--bg3);}
               <th>Modalidad</th>
               <th>Fuente</th>
               <th>Añadido por</th>
-              <th>Fecha</th>
+              <th style="cursor:pointer;user-select:none" onclick="toggleSort('retos')">Fecha <span id="sort-icon-retos">↕</span></th>
               <th></th>
             </tr>
           </thead>
@@ -1229,7 +1234,7 @@ function statCardLevel(val,label){
 }
 
 function renderStatsPreguntas(){
-  var byLevel={familiar:0,light:0,hot:0,extremo:0};
+  var byLevel={familiar:0,light:0,hot:0,extremo:0,xxx:0};
   allPreguntas.forEach(q=>{if(byLevel[q.level]!==undefined)byLevel[q.level]++;});
   document.getElementById('stats-preguntas').innerHTML=
     statCard(allPreguntas.length,'Total')+
@@ -1237,11 +1242,12 @@ function renderStatsPreguntas(){
     statCardLevel(byLevel.light,'Light')+
     statCardLevel(byLevel.hot,'Hot')+
     statCardLevel(byLevel.extremo,'Extremo')+
+    statCard(byLevel.xxx,'XXX 🔞')+
     statCard(allPreguntas.filter(q=>q.source==='comunidad').length,'Comunidad');
 }
 
 function renderStatsRetos(){
-  var byLevel={familiar:0,light:0,hot:0,extremo:0};
+  var byLevel={familiar:0,light:0,hot:0,extremo:0,mixto:0,xxx:0};
   allRetos.forEach(d=>{if(byLevel[d.level]!==undefined)byLevel[d.level]++;});
   document.getElementById('stats-retos').innerHTML=
     statCard(allRetos.length,'Total')+
@@ -1249,6 +1255,8 @@ function renderStatsRetos(){
     statCardLevel(byLevel.light,'Light')+
     statCardLevel(byLevel.hot,'Hot')+
     statCardLevel(byLevel.extremo,'Extremo')+
+    statCardLevel(byLevel.mixto,'Mixto')+
+    statCard(byLevel.xxx,'XXX 🔞')+
     statCard(allRetos.filter(d=>d.source==='comunidad').length,'Comunidad');
 }
 
@@ -1432,13 +1440,35 @@ function openUserDetail(phone){
 }
 
 // ── PREGUNTAS ──
+// ── Sort state ──
+var _sortPreguntas='desc', _sortRetos='desc'; // 'asc' | 'desc' | ''
+
+function toggleSort(which){
+  var state=which==='preguntas'?_sortPreguntas:_sortRetos;
+  var next=state==='desc'?'asc':state==='asc'?'':  'desc';
+  if(which==='preguntas'){_sortPreguntas=next;}else{_sortRetos=next;}
+  var icon=document.getElementById('sort-icon-'+which);
+  if(icon)icon.textContent=next==='desc'?'↓':next==='asc'?'↑':'↕';
+  if(which==='preguntas'){pregPage=0;renderPreguntas();}else{retosPage=0;renderRetos();}
+}
+
+function applySort(arr,field,dir){
+  if(!dir)return arr;
+  return arr.slice().sort(function(a,b){
+    var av=a[field]||'', bv=b[field]||'';
+    return dir==='desc'?bv.localeCompare(av):av.localeCompare(bv);
+  });
+}
+
 function filterPreguntas(){
   var q=document.getElementById('search-preguntas').value.toLowerCase();
   var lv=document.getElementById('filter-preguntas-level').value;
+  var mode=document.getElementById('filter-preguntas-mode').value;
   var src=document.getElementById('filter-preguntas-source').value;
   filteredPreguntas=allPreguntas.filter(p=>
     (p.text||'').toLowerCase().includes(q)&&
     (!lv||p.level===lv)&&
+    (!mode||p.mode===mode)&&
     (!src||p.source===src)
   );
   pregPage=0;
@@ -1448,7 +1478,8 @@ function filterPreguntas(){
 function renderPreguntas(){
   var tb=document.getElementById('tbody-preguntas');
   var empty=document.getElementById('empty-preguntas');
-  var start=pregPage*PAGE_SIZE, slice=filteredPreguntas.slice(start,start+PAGE_SIZE);
+  var sorted=applySort(filteredPreguntas,'created_at',_sortPreguntas);
+  var start=pregPage*PAGE_SIZE, slice=sorted.slice(start,start+PAGE_SIZE);
   if(!filteredPreguntas.length){tb.innerHTML='';empty.classList.remove('hidden');renderPagination('preguntas');return;}
   empty.classList.add('hidden');
   tb.innerHTML=slice.map(q=>{
@@ -1487,7 +1518,8 @@ function filterRetos(){
 function renderRetos(){
   var tb=document.getElementById('tbody-retos');
   var empty=document.getElementById('empty-retos');
-  var start=retosPage*PAGE_SIZE, slice=filteredRetos.slice(start,start+PAGE_SIZE);
+  var sorted=applySort(filteredRetos,'created_at',_sortRetos);
+  var start=retosPage*PAGE_SIZE, slice=sorted.slice(start,start+PAGE_SIZE);
   if(!filteredRetos.length){tb.innerHTML='';empty.classList.remove('hidden');renderPagination('retos');return;}
   empty.classList.add('hidden');
   tb.innerHTML=slice.map(d=>{
