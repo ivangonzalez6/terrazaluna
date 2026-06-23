@@ -332,7 +332,7 @@ textarea{resize:none;line-height:1.5;}
 <div class="overlay hidden" id="inviteOverlay" onclick="closeOverlay('inviteOverlay',event)">
   <div class="overlay-sheet">
     <div class="overlay-title">Invitar a jugar</div>
-    <div class="overlay-sub">Comparte el código o el link directo — al entrar verán la misma pantalla</div>
+    <div class="overlay-sub">¿Te atreves a jugar verdad o reto conmigo?</div>
     <div class="overlay-code-box">
       <div class="overlay-code-num" id="overlayCode">------</div>
       <button class="copy-btn" onclick="copyLink()">Copiar link</button>
@@ -570,6 +570,8 @@ var commQDone=false, commDDone=false;
 var _ws=null, _wsRef=0, _wsHb=null, _pollInterval=null;
 // Marketing media
 var _cardCount=0; // cartas mostradas en el juego actual (para cadencia de marketing)
+var _cardShownAt=null; // timestamp cuando se mostró la carta actual
+var _trackedCard=null; // carta actual siendo trackeada
 
 // ── API ──
 function h(){return{'apikey':SK,'Authorization':'Bearer '+SK,'Content-Type':'application/json'};}
@@ -724,10 +726,13 @@ async function validateCodigoXXX(){
   if(code.length<4){errEl.textContent='Ingresa el código completo.';errEl.style.display='block';return;}
   errEl.style.display='none';
   try{
-    var r=await sbGet('tor_unlock_codes','?code=eq.'+code+'&used=eq.false&select=id,expires_at');
-    if(!Array.isArray(r)||r.length===0){errEl.textContent='Código inválido, ya usado o expirado.';errEl.style.display='block';return;}
-    if(new Date(r[0].expires_at)<new Date()){errEl.textContent='Este código ya expiró.';errEl.style.display='block';return;}
-    await sbPatch('tor_unlock_codes?id=eq.'+r[0].id,{used:true});
+    var r=await sbGet('tor_unlock_codes','?code=eq.'+code+'&select=id,expires_at,used,multi_use');
+    if(!Array.isArray(r)||r.length===0){errEl.textContent='Código inválido o no encontrado.';errEl.style.display='block';return;}
+    var rec=r[0];
+    if(new Date(rec.expires_at)<new Date()){errEl.textContent='Este código ya expiró.';errEl.style.display='block';return;}
+    if(rec.used&&!rec.multi_use){errEl.textContent='Este código ya fue utilizado.';errEl.style.display='block';return;}
+    // Solo marcar como usado si es de un solo uso
+    if(!rec.multi_use) await sbPatch('tor_unlock_codes?id=eq.'+rec.id,{used:true});
     document.getElementById('codeXXXOverlay').classList.add('hidden');
     unlockPaidLevels();
     abrirDisclaimer();
@@ -965,9 +970,27 @@ function drawCard(type){
   return{pick:pick2,level:null};
 }
 
+// ── Registrar stat de engagement ──
+async function recordCardStat(card,durSecs){
+  if(!card||!card.id||!game)return;
+  try{
+    var ctype=card.type==='truth'?'pregunta':'reto';
+    await sbPost('tor_card_stats',{
+      card_type:ctype,
+      card_id:card.id,
+      game_id:game.id,
+      level:card.level||game.level,
+      mode:game.mode||'presencial',
+      duration_seconds:Math.round(durSecs*10)/10
+    });
+  }catch(e){}
+}
+
 // ── Mostrar carta ──
 function showCard(card){
   if(!game||!card)return;
+  _cardShownAt=Date.now();
+  _trackedCard=card;
   show('card');
   var idx=Math.min(game.current_player_index||0,game.players.length-1);
   var p=game.players[idx];
@@ -996,6 +1019,12 @@ function showCard(card){
 // ── Siguiente turno ──
 async function nextTurn(){
   if(!game)return;
+  // Registrar tiempo en carta actual antes de avanzar
+  if(_cardShownAt&&_trackedCard){
+    var dur=(Date.now()-_cardShownAt)/1000;
+    recordCardStat(_trackedCard,dur).catch(function(){});
+    _cardShownAt=null;_trackedCard=null;
+  }
   document.getElementById('btnSiguiente').disabled=true;
   var n=game.players.length;
   var next=(game.current_player_index+1)%n;

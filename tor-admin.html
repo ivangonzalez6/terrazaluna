@@ -318,6 +318,10 @@ tr:hover td{background:var(--bg3);}
         <div class="nav-item-count" id="cnt-feedback">—</div>
       </div>
       <div class="nav-section">Herramientas</div>
+      <div class="nav-item" id="nav-engagement" onclick="showSection('engagement')">
+        <div class="nav-item-icon">🔥</div>
+        <div class="nav-item-label">Engagement</div>
+      </div>
       <div class="nav-item" id="nav-analytics" onclick="showSection('analytics')">
         <div class="nav-item-icon">📊</div>
         <div class="nav-item-label">Analytics</div>
@@ -392,6 +396,7 @@ tr:hover td{background:var(--bg3);}
         <div class="page-label">Contenido</div>
         <div class="page-title">Preguntas</div>
         <div class="page-sub">Todas las preguntas de verdad — editar, eliminar o agregar nuevas</div>
+        <button class="btn-add" onclick="openAddModal('pregunta')" style="margin-top:12px;font-size:13px;padding:12px 22px;">＋ Nueva pregunta</button>
       </div>
       <div class="stats-grid" id="stats-preguntas"></div>
       <div class="toolbar">
@@ -414,7 +419,6 @@ tr:hover td{background:var(--bg3);}
           <option value="oficial">Oficial</option>
           <option value="comunidad">Comunidad</option>
         </select>
-        <button class="btn-add" onclick="openAddModal('pregunta')">＋ Nueva</button>
       </div>
       <div class="table-wrap">
         <table>
@@ -442,6 +446,7 @@ tr:hover td{background:var(--bg3);}
         <div class="page-label">Contenido</div>
         <div class="page-title">Retos</div>
         <div class="page-sub">Todos los retos — editar, eliminar o agregar nuevos</div>
+        <button class="btn-add" onclick="openAddModal('reto')" style="margin-top:12px;font-size:13px;padding:12px 22px;">＋ Nuevo reto</button>
       </div>
       <div class="stats-grid" id="stats-retos"></div>
       <div class="toolbar">
@@ -464,7 +469,6 @@ tr:hover td{background:var(--bg3);}
           <option value="oficial">Oficial</option>
           <option value="comunidad">Comunidad</option>
         </select>
-        <button class="btn-add" onclick="openAddModal('reto')">＋ Nuevo</button>
       </div>
       <div class="table-wrap">
         <table>
@@ -842,8 +846,139 @@ tr:hover td{background:var(--bg3);}
         <div class="empty-text">No hay códigos generados aún</div>
       </div>
     </div>
+    <!-- ── ENGAGEMENT ── -->
+    <div class="section" id="section-engagement">
+      <div class="page-header">
+        <div class="page-label">Algoritmo</div>
+        <div class="page-title">Engagement de cartas</div>
+        <div class="page-sub">Tiempo promedio que los jugadores permanecen en cada carta. Cartas con más tiempo = más interesantes. Usa la IA para generar contenido similar al más popular.</div>
+      </div>
+
+      <!-- Filtros -->
+      <div class="toolbar" style="flex-wrap:wrap;gap:10px;margin-bottom:16px;">
+        <select id="eng-filter-level" onchange="filterEngagement()" style="background:var(--bg3);border:1px solid var(--line2);border-radius:10px;color:var(--ink);font-size:13px;padding:9px 12px;font-family:'Inter Tight',sans-serif;cursor:pointer;">
+          <option value="">Todos los niveles</option>
+          <option value="familiar">Familiar</option>
+          <option value="light">Light</option>
+          <option value="hot">Hot</option>
+          <option value="extremo">Extremo</option>
+          <option value="xxx">XXX</option>
+        </select>
+        <select id="eng-filter-mode" onchange="filterEngagement()" style="background:var(--bg3);border:1px solid var(--line2);border-radius:10px;color:var(--ink);font-size:13px;padding:9px 12px;font-family:'Inter Tight',sans-serif;cursor:pointer;">
+          <option value="">Presencial y distancia</option>
+          <option value="presencial">Presencial</option>
+          <option value="distancia">Distancia</option>
+        </select>
+        <select id="eng-filter-type" onchange="filterEngagement()" style="background:var(--bg3);border:1px solid var(--line2);border-radius:10px;color:var(--ink);font-size:13px;padding:9px 12px;font-family:'Inter Tight',sans-serif;cursor:pointer;">
+          <option value="">Preguntas y retos</option>
+          <option value="pregunta">Solo preguntas</option>
+          <option value="reto">Solo retos</option>
+        </select>
+        <select id="eng-filter-sort" onchange="filterEngagement()" style="background:var(--bg3);border:1px solid var(--line2);border-radius:10px;color:var(--ink);font-size:13px;padding:9px 12px;font-family:'Inter Tight',sans-serif;cursor:pointer;">
+          <option value="desc">Más tiempo primero (populares)</option>
+          <option value="asc">Menos tiempo primero (descartadas)</option>
+        </select>
+        <button onclick="loadEngagement()" style="background:var(--bg3);border:1px solid var(--line2);border-radius:10px;color:var(--gold);font-size:12px;font-weight:700;padding:9px 16px;cursor:pointer;font-family:'Inter Tight',sans-serif;letter-spacing:.06em;text-transform:uppercase;">↻ Actualizar</button>
+      </div>
+
+      <!-- Stats rápidos -->
+      <div id="eng-stats" style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:16px;"></div>
+
+      <!-- Tabla -->
+      <div class="table-wrap" id="eng-table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th style="width:40%">Carta</th>
+              <th>Tipo</th>
+              <th>Nivel</th>
+              <th>Modo</th>
+              <th>Mostrada</th>
+              <th>⏱ Prom.</th>
+              <th>% Rápida</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody id="eng-tbody">
+            <tr><td colspan="8" style="text-align:center;padding:40px;color:var(--faint)">Cargando…</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div id="eng-empty" class="empty-state hidden">
+        <div class="empty-icon">🔥</div>
+        <div class="empty-text">Aún no hay datos de engagement</div>
+        <div class="empty-sub">Los datos se acumulan mientras los jugadores usan el juego</div>
+      </div>
+    </div><!-- /section-engagement -->
+
   </div><!-- /main -->
 </div><!-- /app -->
+
+<!-- ── MODAL: GENERAR CON CLAUDE ── -->
+<div class="modal-overlay hidden" id="modal-generate-ai">
+  <div class="modal" style="max-width:520px">
+    <div class="modal-header">
+      <div class="modal-title">Generar con Claude AI</div>
+      <div class="modal-sub" id="gen-ai-sub">Genera contenido similar al más popular</div>
+    </div>
+    <div class="modal-body">
+      <div id="gen-ai-form">
+        <div style="background:var(--bg3);border:1px solid var(--line);border-radius:12px;padding:12px 14px;margin-bottom:14px;">
+          <div style="font-size:10px;letter-spacing:.2em;text-transform:uppercase;color:var(--gold);font-weight:700;margin-bottom:8px;">Ejemplos seleccionados</div>
+          <div id="gen-ai-samples" style="font-size:13px;color:var(--dim);line-height:1.7;"></div>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:14px;">
+          <div>
+            <div style="font-size:10px;letter-spacing:.15em;text-transform:uppercase;color:var(--faint);margin-bottom:6px;">Tipo</div>
+            <select id="gen-ai-type" style="width:100%;background:var(--bg3);border:1px solid var(--line2);border-radius:8px;color:var(--ink);font-size:13px;padding:8px 10px;font-family:'Inter Tight',sans-serif;">
+              <option value="pregunta">Pregunta</option>
+              <option value="reto">Reto</option>
+            </select>
+          </div>
+          <div>
+            <div style="font-size:10px;letter-spacing:.15em;text-transform:uppercase;color:var(--faint);margin-bottom:6px;">Nivel</div>
+            <select id="gen-ai-level" style="width:100%;background:var(--bg3);border:1px solid var(--line2);border-radius:8px;color:var(--ink);font-size:13px;padding:8px 10px;font-family:'Inter Tight',sans-serif;">
+              <option value="familiar">Familiar</option>
+              <option value="light">Light</option>
+              <option value="hot">Hot</option>
+              <option value="extremo">Extremo</option>
+              <option value="xxx">XXX</option>
+            </select>
+          </div>
+          <div>
+            <div style="font-size:10px;letter-spacing:.15em;text-transform:uppercase;color:var(--faint);margin-bottom:6px;">Modalidad</div>
+            <select id="gen-ai-mode" style="width:100%;background:var(--bg3);border:1px solid var(--line2);border-radius:8px;color:var(--ink);font-size:13px;padding:8px 10px;font-family:'Inter Tight',sans-serif;">
+              <option value="presencial">Presencial</option>
+              <option value="distancia">Distancia</option>
+            </select>
+          </div>
+        </div>
+        <div style="margin-bottom:14px;">
+          <div style="font-size:10px;letter-spacing:.15em;text-transform:uppercase;color:var(--faint);margin-bottom:6px;">Cuántas generar</div>
+          <input id="gen-ai-count" type="number" min="5" max="50" value="20" style="width:100%;background:var(--bg3);border:1px solid var(--line2);border-radius:8px;color:var(--ink);font-size:15px;padding:8px 12px;font-family:'Inter Tight',sans-serif;text-align:center;">
+        </div>
+        <div id="gen-ai-error" style="color:#c0392b;font-size:12px;margin-bottom:10px;display:none;"></div>
+        <button onclick="runGenerateAI()" id="gen-ai-btn" style="width:100%;background:var(--gold);color:#fff;border:none;border-radius:10px;padding:14px;font-size:13px;font-weight:700;cursor:pointer;font-family:'Inter Tight',sans-serif;letter-spacing:.06em;text-transform:uppercase;">✨ Generar con Claude</button>
+      </div>
+
+      <!-- Resultados -->
+      <div id="gen-ai-results" style="display:none;">
+        <div style="font-size:10px;letter-spacing:.2em;text-transform:uppercase;color:var(--gold);font-weight:700;margin-bottom:10px;">Contenido generado — selecciona los que quieras insertar</div>
+        <div style="margin-bottom:10px;display:flex;gap:8px;">
+          <button onclick="selectAllGenerated(true)" style="background:transparent;border:1px solid var(--line2);border-radius:8px;color:var(--dim);font-size:11px;font-weight:600;padding:6px 12px;cursor:pointer;font-family:'Inter Tight',sans-serif;">Seleccionar todo</button>
+          <button onclick="selectAllGenerated(false)" style="background:transparent;border:1px solid var(--line2);border-radius:8px;color:var(--dim);font-size:11px;font-weight:600;padding:6px 12px;cursor:pointer;font-family:'Inter Tight',sans-serif;">Deseleccionar</button>
+        </div>
+        <div id="gen-ai-list" style="max-height:320px;overflow-y:auto;display:flex;flex-direction:column;gap:6px;"></div>
+        <div id="gen-ai-insert-error" style="color:#c0392b;font-size:12px;margin-top:8px;display:none;"></div>
+        <button onclick="insertGenerated()" id="gen-ai-insert-btn" style="width:100%;margin-top:14px;background:#27ae60;color:#fff;border:none;border-radius:10px;padding:13px;font-size:13px;font-weight:700;cursor:pointer;font-family:'Inter Tight',sans-serif;letter-spacing:.06em;text-transform:uppercase;">💾 Insertar seleccionados en BD</button>
+        <button onclick="resetGenerateAI()" style="width:100%;margin-top:8px;background:transparent;border:1px solid var(--line);border-radius:10px;padding:11px;font-size:12px;font-weight:600;cursor:pointer;color:var(--dim);font-family:'Inter Tight',sans-serif;letter-spacing:.06em;text-transform:uppercase;">← Generar de nuevo</button>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-secondary" onclick="closeModal('modal-generate-ai')">Cerrar</button>
+    </div>
+  </div>
+</div>
 
 <!-- ── MODAL: USER DETAIL ── -->
 <!-- Modal: Generar códigos -->
@@ -1141,6 +1276,7 @@ function showSection(name){
   if(name==='push') loadPushDevices();
   if(name==='pagos') loadPagos();
   if(name==='codigos') loadCodigos();
+  if(name==='engagement') loadEngagement();
 }
 
 // ── LOAD ALL DATA ──
@@ -1247,7 +1383,7 @@ function renderStatsPreguntas(){
 }
 
 function renderStatsRetos(){
-  var byLevel={familiar:0,light:0,hot:0,extremo:0,mixto:0,xxx:0};
+  var byLevel={familiar:0,light:0,hot:0,extremo:0,xxx:0};
   allRetos.forEach(d=>{if(byLevel[d.level]!==undefined)byLevel[d.level]++;});
   document.getElementById('stats-retos').innerHTML=
     statCard(allRetos.length,'Total')+
@@ -1255,7 +1391,6 @@ function renderStatsRetos(){
     statCardLevel(byLevel.light,'Light')+
     statCardLevel(byLevel.hot,'Hot')+
     statCardLevel(byLevel.extremo,'Extremo')+
-    statCardLevel(byLevel.mixto,'Mixto')+
     statCard(byLevel.xxx,'XXX 🔞')+
     statCard(allRetos.filter(d=>d.source==='comunidad').length,'Comunidad');
 }
@@ -1662,6 +1797,7 @@ async function saveEdit(){
 function openAddModal(type){
   addType=type;
   document.getElementById('ma-title').textContent='Nueva '+(type==='pregunta'?'pregunta':'reto');
+  document.getElementById('ma-sub').textContent='Se añade al mazo';
   document.getElementById('ma-sub').textContent='';
   document.getElementById('ma-text').value='';
   document.getElementById('ma-level').value='familiar';
@@ -2527,7 +2663,7 @@ async function generarCodigosLote(){
   var expires=new Date(Date.now()+horas*60*60*1000).toISOString();
   var phone='promo:'+(etiqueta||'manual');
   var lote=[];
-  for(var i=0;i<n;i++)lote.push({code:mkCode(),phone:phone,expires_at:expires});
+  for(var i=0;i<n;i++)lote.push({code:mkCode(),phone:phone,expires_at:expires,multi_use:true});
   try{
     var r=await fetch(SB+'/rest/v1/tor_unlock_codes',{
       method:'POST',
@@ -2581,6 +2717,208 @@ async function revocarCodigo(id){
     filterCodigos();
     toast('✗ Código revocado');
   }catch(e){toast('Error: '+(e.message||e));}
+}
+
+// ══════════════════════════════════════════
+// ENGAGEMENT
+// ══════════════════════════════════════════
+var _engData=[], _engFiltered=[];
+
+async function loadEngagement(){
+  var tbody=document.getElementById('eng-tbody');
+  tbody.innerHTML='<tr><td colspan="8" style="text-align:center;padding:40px;color:var(--faint)">Cargando datos…</td></tr>';
+  document.getElementById('eng-empty').classList.add('hidden');
+  try{
+    var rows=await sbGet('tor_card_engagement','?order=avg_duration.desc&limit=500');
+    _engData=rows||[];
+    renderEngStats();
+    filterEngagement();
+  }catch(e){
+    tbody.innerHTML='<tr><td colspan="8" style="text-align:center;padding:40px;color:#f87171">Error al cargar: '+(e.message||e)+'</td></tr>';
+  }
+}
+
+function renderEngStats(){
+  var total=_engData.length;
+  var avgAll=total?(_engData.reduce(function(s,r){return s+parseFloat(r.avg_duration||0);},0)/total).toFixed(1):0;
+  var popular=_engData.filter(function(r){return parseFloat(r.avg_duration||0)>=30;}).length;
+  var discarded=_engData.filter(function(r){return parseFloat(r.avg_duration||0)<8;}).length;
+  var statsEl=document.getElementById('eng-stats');
+  statsEl.innerHTML=
+    '<div style="background:var(--bg3);border:1px solid var(--line);border-radius:12px;padding:14px;text-align:center"><div style="font-size:22px;font-weight:700;color:var(--gold)">'+total+'</div><div style="font-size:10px;letter-spacing:.15em;text-transform:uppercase;color:var(--faint);margin-top:2px">Cartas con datos</div></div>'+
+    '<div style="background:var(--bg3);border:1px solid var(--line);border-radius:12px;padding:14px;text-align:center"><div style="font-size:22px;font-weight:700;color:#27ae60">'+popular+'</div><div style="font-size:10px;letter-spacing:.15em;text-transform:uppercase;color:var(--faint);margin-top:2px">Populares (≥30s)</div></div>'+
+    '<div style="background:var(--bg3);border:1px solid var(--line);border-radius:12px;padding:14px;text-align:center"><div style="font-size:22px;font-weight:700;color:#e74c3c">'+discarded+'</div><div style="font-size:10px;letter-spacing:.15em;text-transform:uppercase;color:var(--faint);margin-top:2px">Descartadas (<8s)</div></div>';
+}
+
+function filterEngagement(){
+  var lvl=document.getElementById('eng-filter-level').value;
+  var mode=document.getElementById('eng-filter-mode').value;
+  var type=document.getElementById('eng-filter-type').value;
+  var sort=document.getElementById('eng-filter-sort').value;
+  _engFiltered=_engData.filter(function(r){
+    if(lvl&&r.level!==lvl)return false;
+    if(mode&&r.mode!==mode)return false;
+    if(type&&r.card_type!==type)return false;
+    return true;
+  });
+  _engFiltered.sort(function(a,b){
+    var da=parseFloat(a.avg_duration||0),db=parseFloat(b.avg_duration||0);
+    return sort==='asc'?da-db:db-da;
+  });
+  renderEngTable();
+}
+
+function renderEngTable(){
+  var tbody=document.getElementById('eng-tbody');
+  var emptyEl=document.getElementById('eng-empty');
+  if(!_engFiltered.length){
+    tbody.innerHTML='';
+    emptyEl.classList.remove('hidden');
+    return;
+  }
+  emptyEl.classList.add('hidden');
+  var html='';
+  _engFiltered.forEach(function(r){
+    var avg=parseFloat(r.avg_duration||0);
+    var pct=parseFloat(r.pct_descartada||0);
+    // Color coding: verde=popular, amarillo=medio, rojo=descartada
+    var color=avg>=30?'#27ae60':avg>=15?'#e0bc74':'#e74c3c';
+    var durLabel=avg>=60?(Math.floor(avg/60)+'m '+(Math.round(avg%60))+'s'):avg.toFixed(0)+'s';
+    var txt=esc(r.text||'');
+    var shortTxt=txt.length>70?txt.substring(0,70)+'…':txt;
+    var typeLabel=r.card_type==='pregunta'?'<span class="pill pill-truth">Verdad</span>':'<span class="pill pill-dare">Reto</span>';
+    var lvlLabel=levelPill(r.level);
+    var modeLabel=r.mode==='distancia'?'📱 Distancia':'👥 Presencial';
+    html+='<tr>'+
+      '<td style="max-width:0;width:40%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis" title="'+txt+'">'+shortTxt+'</td>'+
+      '<td>'+typeLabel+'</td>'+
+      '<td>'+lvlLabel+'</td>'+
+      '<td style="font-size:12px;color:var(--dim)">'+modeLabel+'</td>'+
+      '<td style="text-align:center;font-weight:700">'+r.veces_mostrada+'</td>'+
+      '<td style="text-align:center;font-weight:700;color:'+color+'">'+durLabel+'</td>'+
+      '<td style="text-align:center;color:'+(pct>50?'#e74c3c':pct>25?'#e0bc74':'var(--faint)')+'">'+pct+'%</td>'+
+      '<td><button onclick="openGenerateAI(\''+esc(r.card_type)+'\',\''+esc(r.level)+'\',\''+esc(r.mode)+'\',['+JSON.stringify(r.text).replace(/'/g,"\\'")+'])" style="background:transparent;border:1px solid var(--gold);border-radius:6px;color:var(--gold);font-size:10px;font-weight:700;padding:4px 8px;cursor:pointer;white-space:nowrap">✨ Generar</button></td>'+
+      '</tr>';
+  });
+  tbody.innerHTML=html;
+}
+
+// ── IA: Generar similares ──
+var _genAISamples=[];
+
+function openGenerateAI(type,level,mode,sampleTexts){
+  // Buscar las top 5 más populares del mismo tipo+nivel+modo para usar como ejemplos
+  var topSamples=_engData
+    .filter(function(r){return r.card_type===type&&r.level===level&&r.mode===mode&&r.text;})
+    .sort(function(a,b){return parseFloat(b.avg_duration||0)-parseFloat(a.avg_duration||0);})
+    .slice(0,6).map(function(r){return r.text;});
+  // Agregar la seleccionada si no está
+  if(sampleTexts&&sampleTexts[0]&&topSamples.indexOf(sampleTexts[0])<0)topSamples.unshift(sampleTexts[0]);
+  _genAISamples=topSamples.slice(0,6);
+  document.getElementById('gen-ai-type').value=type;
+  document.getElementById('gen-ai-level').value=level;
+  document.getElementById('gen-ai-mode').value=mode;
+  document.getElementById('gen-ai-sub').textContent='Similar a las más populares de nivel '+level+' / '+mode;
+  var samplesEl=document.getElementById('gen-ai-samples');
+  samplesEl.innerHTML=_genAISamples.map(function(s){return '<div style="margin-bottom:4px;padding:6px 8px;background:var(--bg2);border-radius:6px;font-size:12px">'+esc(s)+'</div>';}).join('');
+  document.getElementById('gen-ai-form').style.display='block';
+  document.getElementById('gen-ai-results').style.display='none';
+  document.getElementById('gen-ai-error').style.display='none';
+  var btn=document.getElementById('gen-ai-btn');
+  btn.disabled=false;btn.textContent='✨ Generar con Claude';
+  openModal('modal-generate-ai');
+}
+
+function resetGenerateAI(){
+  document.getElementById('gen-ai-form').style.display='block';
+  document.getElementById('gen-ai-results').style.display='none';
+  document.getElementById('gen-ai-error').style.display='none';
+  var btn=document.getElementById('gen-ai-btn');
+  btn.disabled=false;btn.textContent='✨ Generar con Claude';
+}
+
+async function runGenerateAI(){
+  var type=document.getElementById('gen-ai-type').value;
+  var level=document.getElementById('gen-ai-level').value;
+  var mode=document.getElementById('gen-ai-mode').value;
+  var count=parseInt(document.getElementById('gen-ai-count').value)||20;
+  var errEl=document.getElementById('gen-ai-error');
+  errEl.style.display='none';
+  var btn=document.getElementById('gen-ai-btn');
+  btn.disabled=true;btn.textContent='Generando… (puede tardar ~10s)';
+  try{
+    var res=await fetch(SB+'/functions/v1/generate-similar',{
+      method:'POST',
+      headers:{'Content-Type':'application/json','Authorization':'Bearer '+SK,'apikey':SK},
+      body:JSON.stringify({card_type:type,level:level,mode:mode,samples:_genAISamples,count:count})
+    });
+    var data=await res.json();
+    if(data.error){errEl.textContent='Error: '+data.error;errEl.style.display='block';btn.disabled=false;btn.textContent='✨ Generar con Claude';return;}
+    if(!data.generated||!data.generated.length){errEl.textContent='No se generó contenido. Verifica la configuración de ANTHROPIC_API_KEY.';errEl.style.display='block';btn.disabled=false;btn.textContent='✨ Generar con Claude';return;}
+    renderGeneratedList(data.generated);
+    document.getElementById('gen-ai-form').style.display='none';
+    document.getElementById('gen-ai-results').style.display='block';
+  }catch(e){
+    errEl.textContent='Error de red: '+(e.message||e);errEl.style.display='block';
+    btn.disabled=false;btn.textContent='✨ Generar con Claude';
+  }
+}
+
+var _generatedItems=[];
+
+function renderGeneratedList(items){
+  _generatedItems=items;
+  var list=document.getElementById('gen-ai-list');
+  list.innerHTML=items.map(function(txt,i){
+    return '<div style="display:flex;align-items:flex-start;gap:8px;background:var(--bg3);border:1px solid var(--line);border-radius:8px;padding:10px 12px;">'+
+      '<input type="checkbox" id="gen-item-'+i+'" checked style="margin-top:2px;accent-color:var(--gold);cursor:pointer;flex-shrink:0;">'+
+      '<label for="gen-item-'+i+'" style="font-size:13px;color:var(--ink);line-height:1.5;cursor:pointer">'+esc(txt)+'</label>'+
+      '</div>';
+  }).join('');
+}
+
+function selectAllGenerated(val){
+  _generatedItems.forEach(function(_,i){
+    var cb=document.getElementById('gen-item-'+i);
+    if(cb)cb.checked=val;
+  });
+}
+
+async function insertGenerated(){
+  var type=document.getElementById('gen-ai-type').value;
+  var level=document.getElementById('gen-ai-level').value;
+  var mode=document.getElementById('gen-ai-mode').value;
+  var errEl=document.getElementById('gen-ai-insert-error');
+  errEl.style.display='none';
+  var selected=_generatedItems.filter(function(_,i){
+    var cb=document.getElementById('gen-item-'+i);
+    return cb&&cb.checked;
+  });
+  if(!selected.length){errEl.textContent='Selecciona al menos un elemento.';errEl.style.display='block';return;}
+  var btn=document.getElementById('gen-ai-insert-btn');
+  btn.disabled=true;btn.textContent='Insertando…';
+  try{
+    var table=type==='pregunta'?'tor_questions':'tor_dares';
+    var rows=selected.map(function(txt){
+      var row={text:txt,level:level,source:'oficial'};
+      if(type==='reto')row.mode=mode;
+      return row;
+    });
+    var r=await fetch(SB+'/rest/v1/'+table,{
+      method:'POST',
+      headers:Object.assign({},h(),{'Prefer':'return=minimal'}),
+      body:JSON.stringify(rows)
+    });
+    if(!r.ok){var err=await r.text();errEl.textContent='Error BD: '+err;errEl.style.display='block';btn.disabled=false;btn.textContent='💾 Insertar seleccionados en BD';return;}
+    toast('✅ '+selected.length+' cartas insertadas en la BD');
+    closeModal('modal-generate-ai');
+    // Recargar datos de preguntas/retos en background
+    if(type==='pregunta')loadPreguntas().catch(function(){});
+    else loadRetos().catch(function(){});
+  }catch(e){
+    errEl.textContent='Error: '+(e.message||e);errEl.style.display='block';
+    btn.disabled=false;btn.textContent='💾 Insertar seleccionados en BD';
+  }
 }
 </script>
 </body>
