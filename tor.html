@@ -317,9 +317,10 @@ textarea{resize:none;line-height:1.5;}
   </div>
 
   <div class="game-bar">
-    <button class="game-bar-btn" onclick="openInviteOverlay()">📲 Invitar a jugar</button>
-    <button class="game-bar-btn" onclick="openOptionsOverlay()">⋯ Opciones</button>
-    <button class="game-bar-btn danger" onclick="openEndConfirmOverlay()">✕ Terminar</button>
+    <button class="game-bar-btn" onclick="openInviteOverlay()">📲 Invitar</button>
+    <button class="game-bar-btn" style="border-color:rgba(212,175,55,.45);background:rgba(212,175,55,.1);" onclick="openAddCardOverlay()">✏️ Proponer</button>
+    <button class="game-bar-btn" onclick="openOptionsOverlay()">⋯ Más</button>
+    <button class="game-bar-btn danger" onclick="openEndConfirmOverlay()">✕ Salir</button>
   </div>
 </div>
 
@@ -549,13 +550,13 @@ const LEVELS={
   xxx:     {label:'XXX 🔞',  chip:'chip-extremo'}
 };
 const LEVEL_INFO={
-  familiar: {icon:'🌿',desc:'Ideal para todas las edades. Preguntas y retos divertidos sin contenido adulto. Perfecto para arrancar la noche.'},
-  light:    {icon:'✨',desc:'Un poco más picante. Para amigos con confianza. Diversión garantizada sin pasarse de la raya.'},
-  hot:      {icon:'🔥',desc:'Solo para adultos. Preguntas y retos subidos de tono. Requiere confianza y buen humor entre los jugadores.'},
-  extremo:  {icon:'💀',desc:'Sin filtros, sin límites. El nivel más intenso de Verdad o Reto. Solo para los que de verdad se atreven.'},
+  familiar: {icon:'🌿',desc:'El nivel de entrada. Preguntas y retos divertidos aptos para cualquier persona y cualquier ambiente. Sin contenido adulto — perfecto para romper el hielo.'},
+  light:    {icon:'✨',desc:'Un escalón arriba del familiar. Preguntas más personales y retos con algo de picardía. Para adultos que empiezan a soltar la lengua.'},
+  hot:      {icon:'🔥',desc:'La temperatura sube. Preguntas atrevidas y retos subidos de tono para adultos con confianza. Un nivel más arriba que Light, pero aún con límites.'},
+  extremo:  {icon:'💀',desc:'Casi sin filtros. Preguntas y retos muy directos y explícitos. Solo para grupos con mucha confianza. Un escalón debajo del XXX.'},
   mixto:    {icon:'🎲',desc:'Una mezcla de todos los niveles. Garantiza variedad y sorpresas para cualquier tipo de grupo.'},
   comunidad:{icon:'🌙',desc:'Cartas creadas por la comunidad de Terraza Luna. Auténticas, locales y siempre únicas.'},
-  xxx:      {icon:'🔞',desc:'Nivel adulto desbloqueado. Solo para mayores de 18 años con consentimiento de todos los participantes. Contenido muy explícito.'}
+  xxx:      {icon:'🔞',desc:'El nivel más alto. Contenido completamente explícito y sin censura. Solo para mayores de 18 con consentimiento de todos. Requiere código de acceso.'}
 };
 
 // ── Estado ──
