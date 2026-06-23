@@ -677,8 +677,8 @@ function _setLevel(level){
 
 // Maneja clic en nivel de pago (hot, extremo, xxx)
 function handleLockedLevel(level){
-  if(_xxxUnlocked){_setLevel(level);return;}
-  openXXXModal();
+  _setLevel(level); // Guardar nivel siempre, con o sin desbloqueo
+  if(!_xxxUnlocked){openXXXModal();}
 }
 
 // Desbloquear hot + extremo + mixto + xxx (ambas modalidades)
