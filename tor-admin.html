@@ -337,6 +337,10 @@ tr:hover td{background:var(--bg3);}
         <div class="nav-item-count" id="cnt-push">—</div>
       </div>
       <div class="nav-section">XXX</div>
+      <div class="nav-item" id="nav-config" onclick="showSection('config')">
+        <div class="nav-item-icon">⚙️</div>
+        <div class="nav-item-label">Configuración</div>
+      </div>
       <div class="nav-item" id="nav-pagos" onclick="showSection('pagos')">
         <div class="nav-item-icon">💳</div>
         <div class="nav-item-label">Pagos XXX</div>
@@ -759,6 +763,80 @@ tr:hover td{background:var(--bg3);}
             <div class="empty-text">Nadie tiene la PWA instalada aún</div>
           </div>
         </div>
+      </div>
+    </div>
+
+    <!-- ── CONFIGURACIÓN ── -->
+    <div class="section" id="section-config">
+      <div class="page-header">
+        <div class="page-label">XXX · Acceso</div>
+        <div class="page-title">Configuración de precios</div>
+        <div class="page-sub">Cambia el precio y los datos de pago. Los cambios se reflejan en tiempo real para todos los usuarios.</div>
+      </div>
+
+      <!-- Preview de la tarjeta de pago -->
+      <div id="cfg-preview" style="background:var(--bg3);border:1px solid var(--line2);border-radius:16px;padding:20px;margin-bottom:20px;max-width:420px;">
+        <div style="font-size:10px;letter-spacing:.2em;text-transform:uppercase;color:var(--gold);font-weight:700;margin-bottom:12px;">Vista previa — cómo lo ven los usuarios</div>
+        <div style="font-size:13px;line-height:1.9;color:var(--ink);">
+          <div>💳 <strong>Transfiere <span id="cfg-prev-precio" style="color:var(--gold)">—</span></strong> a:</div>
+          <div style="margin:8px 0;padding:10px 14px;background:var(--bg2);border-radius:10px;font-size:14px;line-height:1.7;">
+            Banco: <span id="cfg-prev-banco" style="font-weight:600">—</span> &nbsp;·&nbsp; CLABE: <span id="cfg-prev-clabe" style="font-weight:600">—</span><br>
+            Cuenta: <span id="cfg-prev-cuenta" style="font-weight:600">—</span><br>
+            <span style="font-size:12px;color:var(--faint)">Beneficiario: <span id="cfg-prev-bene">—</span></span>
+          </div>
+          <div style="font-size:12px;color:var(--faint)">📌 Concepto: Acceso + tu nombre</div>
+        </div>
+      </div>
+
+      <!-- Formulario de edición -->
+      <div style="display:flex;flex-direction:column;gap:14px;max-width:420px;">
+
+        <div>
+          <label style="display:block;font-size:10px;letter-spacing:.2em;text-transform:uppercase;color:var(--gold);font-weight:700;margin-bottom:8px;">Precio (MXN)</label>
+          <div style="display:flex;align-items:center;gap:8px;">
+            <span style="font-size:18px;font-weight:700;color:var(--ink)">$</span>
+            <input id="cfg-precio" type="number" min="0" step="1" placeholder="100"
+              style="flex:1;background:var(--bg3);border:1px solid var(--line2);border-radius:10px;color:var(--ink);font-size:22px;font-weight:700;padding:12px 14px;font-family:'Cormorant Garamond',serif;letter-spacing:.04em;"
+              oninput="updateCfgPreview()">
+            <span style="font-size:14px;color:var(--faint);font-weight:600">MXN</span>
+          </div>
+        </div>
+
+        <div>
+          <label style="display:block;font-size:10px;letter-spacing:.2em;text-transform:uppercase;color:var(--faint);font-weight:700;margin-bottom:6px;">Banco</label>
+          <input id="cfg-banco" type="text" placeholder="BBVA"
+            style="width:100%;box-sizing:border-box;background:var(--bg3);border:1px solid var(--line2);border-radius:10px;color:var(--ink);font-size:14px;padding:10px 14px;font-family:'Inter Tight',sans-serif;"
+            oninput="updateCfgPreview()">
+        </div>
+
+        <div>
+          <label style="display:block;font-size:10px;letter-spacing:.2em;text-transform:uppercase;color:var(--faint);font-weight:700;margin-bottom:6px;">CLABE interbancaria</label>
+          <input id="cfg-clabe" type="text" placeholder="012 650 01503672852 7"
+            style="width:100%;box-sizing:border-box;background:var(--bg3);border:1px solid var(--line2);border-radius:10px;color:var(--ink);font-size:14px;padding:10px 14px;font-family:'Inter Tight',sans-serif;"
+            oninput="updateCfgPreview()">
+        </div>
+
+        <div>
+          <label style="display:block;font-size:10px;letter-spacing:.2em;text-transform:uppercase;color:var(--faint);font-weight:700;margin-bottom:6px;">Número de cuenta</label>
+          <input id="cfg-cuenta" type="text" placeholder="150 367 2852"
+            style="width:100%;box-sizing:border-box;background:var(--bg3);border:1px solid var(--line2);border-radius:10px;color:var(--ink);font-size:14px;padding:10px 14px;font-family:'Inter Tight',sans-serif;"
+            oninput="updateCfgPreview()">
+        </div>
+
+        <div>
+          <label style="display:block;font-size:10px;letter-spacing:.2em;text-transform:uppercase;color:var(--faint);font-weight:700;margin-bottom:6px;">Beneficiario</label>
+          <input id="cfg-beneficiario" type="text" placeholder="Terraza Luna"
+            style="width:100%;box-sizing:border-box;background:var(--bg3);border:1px solid var(--line2);border-radius:10px;color:var(--ink);font-size:14px;padding:10px 14px;font-family:'Inter Tight',sans-serif;"
+            oninput="updateCfgPreview()">
+        </div>
+
+        <div id="cfg-error" style="color:#c0392b;font-size:12px;display:none;"></div>
+        <div id="cfg-success" style="color:#27ae60;font-size:12px;font-weight:600;display:none;">✓ Configuración guardada correctamente</div>
+
+        <button onclick="saveConfig()" id="cfg-save-btn"
+          style="background:var(--gold);color:#fff;border:none;border-radius:12px;padding:15px;font-size:13px;font-weight:700;cursor:pointer;font-family:'Inter Tight',sans-serif;letter-spacing:.08em;text-transform:uppercase;width:100%;margin-top:4px;">
+          Guardar cambios
+        </button>
       </div>
     </div>
 
@@ -1277,6 +1355,7 @@ function showSection(name){
   if(name==='pagos') loadPagos();
   if(name==='codigos') loadCodigos();
   if(name==='engagement') loadEngagement();
+  if(name==='config') loadConfigAdmin();
 }
 
 // ── LOAD ALL DATA ──
@@ -2717,6 +2796,98 @@ async function revocarCodigo(id){
     filterCodigos();
     toast('✗ Código revocado');
   }catch(e){toast('Error: '+(e.message||e));}
+}
+
+// ══════════════════════════════════════════
+// CONFIGURACIÓN (precio, banco, CLABE, etc.)
+// ══════════════════════════════════════════
+var _adminConfig={};
+
+async function loadConfigAdmin(){
+  var btn=document.getElementById('cfg-save-btn');
+  var errEl=document.getElementById('cfg-error');
+  var okEl=document.getElementById('cfg-success');
+  errEl.style.display='none';okEl.style.display='none';
+  try{
+    var rows=await sbGet('tor_config','?select=key,value');
+    if(rows&&rows.length){
+      rows.forEach(function(r){_adminConfig[r.key]=r.value;});
+      document.getElementById('cfg-precio').value=_adminConfig.precio_xxx||'100';
+      document.getElementById('cfg-banco').value=_adminConfig.banco||'';
+      document.getElementById('cfg-clabe').value=_adminConfig.clabe||'';
+      document.getElementById('cfg-cuenta').value=_adminConfig.cuenta||'';
+      document.getElementById('cfg-beneficiario').value=_adminConfig.beneficiario||'';
+      updateCfgPreview();
+    }
+  }catch(e){
+    errEl.textContent='Error al cargar configuración: '+(e.message||e);
+    errEl.style.display='block';
+  }
+}
+
+function updateCfgPreview(){
+  var precio=document.getElementById('cfg-precio').value||'—';
+  var banco=document.getElementById('cfg-banco').value||'—';
+  var clabe=document.getElementById('cfg-clabe').value||'—';
+  var cuenta=document.getElementById('cfg-cuenta').value||'—';
+  var bene=document.getElementById('cfg-beneficiario').value||'—';
+  document.getElementById('cfg-prev-precio').textContent='$'+precio+' MXN';
+  document.getElementById('cfg-prev-banco').textContent=banco;
+  document.getElementById('cfg-prev-clabe').textContent=clabe;
+  document.getElementById('cfg-prev-cuenta').textContent=cuenta;
+  document.getElementById('cfg-prev-bene').textContent=bene;
+}
+
+async function saveConfig(){
+  var errEl=document.getElementById('cfg-error');
+  var okEl=document.getElementById('cfg-success');
+  var btn=document.getElementById('cfg-save-btn');
+  errEl.style.display='none';okEl.style.display='none';
+
+  var precio=document.getElementById('cfg-precio').value.trim();
+  var banco=document.getElementById('cfg-banco').value.trim();
+  var clabe=document.getElementById('cfg-clabe').value.trim();
+  var cuenta=document.getElementById('cfg-cuenta').value.trim();
+  var bene=document.getElementById('cfg-beneficiario').value.trim();
+
+  if(!precio||isNaN(parseFloat(precio))||parseFloat(precio)<0){
+    errEl.textContent='El precio debe ser un número válido.';errEl.style.display='block';return;
+  }
+
+  btn.disabled=true;btn.textContent='Guardando…';
+
+  var updates=[
+    {key:'precio_xxx',value:precio},
+    {key:'banco',value:banco},
+    {key:'clabe',value:clabe},
+    {key:'cuenta',value:cuenta},
+    {key:'beneficiario',value:bene}
+  ];
+
+  try{
+    // UPSERT uno por uno (PostgREST no soporta bulk upsert por PK fácilmente en anon)
+    var ok=true;
+    for(var i=0;i<updates.length;i++){
+      var u=updates[i];
+      var r=await fetch(SB+'/rest/v1/tor_config?key=eq.'+encodeURIComponent(u.key),{
+        method:'PATCH',
+        headers:Object.assign({},h(),{'Prefer':'return=minimal'}),
+        body:JSON.stringify({value:u.value,updated_at:new Date().toISOString()})
+      });
+      if(!r.ok){ok=false;var txt=await r.text();errEl.textContent='Error guardando '+u.key+': '+txt;errEl.style.display='block';break;}
+    }
+    if(ok){
+      okEl.style.display='block';
+      setTimeout(function(){okEl.style.display='none';},3500);
+      toast('✓ Configuración guardada');
+      // Actualizar caché local
+      updates.forEach(function(u){_adminConfig[u.key]=u.value;});
+    }
+  }catch(e){
+    errEl.textContent='Error: '+(e.message||e);errEl.style.display='block';
+  }finally{
+    btn.disabled=false;btn.textContent='Guardar cambios';
+  }
 }
 
 // ══════════════════════════════════════════

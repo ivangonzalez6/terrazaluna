@@ -395,11 +395,11 @@ textarea{resize:none;line-height:1.5;}
 
       <div style="background:var(--bg3);border:1px solid var(--line2);border-radius:12px;padding:14px 16px;margin-bottom:14px;font-size:13px;line-height:1.8;color:var(--ink);">
         <div style="font-weight:600;margin-bottom:6px;font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--dim);">Instrucciones de pago</div>
-        <div>💳 <strong>Transfiere $100 MXN</strong> a:</div>
+        <div>💳 <strong>Transfiere <span id="pago-precio">$100 MXN</span></strong> a:</div>
         <div style="margin:6px 0 4px;padding:10px 12px;background:var(--gold-pale);border-radius:8px;font-family:'Cormorant Garamond',serif;font-size:15px;letter-spacing:.04em;">
-          Banco: BBVA &nbsp;·&nbsp; CLABE: 012 650 01503672852 7<br>
-          Cuenta: 150 367 2852<br>
-          <span style="font-size:12px;font-family:'Inter Tight',sans-serif;color:var(--dim);">Beneficiario: Terraza Luna</span>
+          Banco: <span id="pago-banco">BBVA</span> &nbsp;·&nbsp; CLABE: <span id="pago-clabe">012 650 01503672852 7</span><br>
+          Cuenta: <span id="pago-cuenta">150 367 2852</span><br>
+          <span style="font-size:12px;font-family:'Inter Tight',sans-serif;color:var(--dim);">Beneficiario: <span id="pago-beneficiario">Terraza Luna</span></span>
         </div>
         <div style="font-size:12px;color:var(--dim);">📌 Concepto: <strong>Acceso + tu nombre</strong></div>
       </div>
@@ -572,6 +572,7 @@ var _ws=null, _wsRef=0, _wsHb=null, _pollInterval=null;
 var _cardCount=0; // cartas mostradas en el juego actual (para cadencia de marketing)
 var _cardShownAt=null; // timestamp cuando se mostró la carta actual
 var _trackedCard=null; // carta actual siendo trackeada
+var _config={}; // configuración dinámica desde tor_config
 
 // ── API ──
 function h(){return{'apikey':SK,'Authorization':'Bearer '+SK,'Content-Type':'application/json'};}
@@ -968,6 +969,28 @@ function drawCard(type){
   mainUsed.push(mainPool.indexOf(pick2));
   if(isQ)usedQIdx=mainUsed;else usedDIdx=mainUsed;
   return{pick:pick2,level:null};
+}
+
+// ── Cargar configuración dinámica ──
+async function loadConfig(){
+  try{
+    var rows=await sbGet('tor_config','?select=key,value');
+    if(rows&&rows.length){
+      rows.forEach(function(r){_config[r.key]=r.value;});
+      // Reflejar en la pantalla de pago
+      var precio=_config.precio_xxx||'100';
+      var el=document.getElementById('pago-precio');
+      if(el)el.textContent='$'+precio+' MXN';
+      var banco=document.getElementById('pago-banco');
+      if(banco)banco.textContent=_config.banco||'BBVA';
+      var clabe=document.getElementById('pago-clabe');
+      if(clabe)clabe.textContent=_config.clabe||'';
+      var cuenta=document.getElementById('pago-cuenta');
+      if(cuenta)cuenta.textContent=_config.cuenta||'';
+      var bene=document.getElementById('pago-beneficiario');
+      if(bene)bene.textContent=_config.beneficiario||'Terraza Luna';
+    }
+  }catch(e){}
 }
 
 // ── Registrar stat de engagement ──
@@ -1381,6 +1404,9 @@ function initPush() {
     }, { once: true });
   }
 }
+
+// Cargar config al arrancar (precio, banco, etc.)
+loadConfig().catch(function(){});
 
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', function() {
