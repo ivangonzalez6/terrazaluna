@@ -199,7 +199,6 @@ textarea{resize:none;line-height:1.5;}
 <div class="screen" id="screen-welcome">
   <div class="inner" style="padding:16px 0">
     <div style="text-align:center;padding:8px 0 4px">
-      <div class="section-label">Terraza Luna</div>
       <h1 class="hero-title">Verdad<br>o Reto</h1>
       <div class="hero-ornament"><div class="hero-ornament-inner">El clásico de las noches épicas</div></div>
     </div>
@@ -211,7 +210,7 @@ textarea{resize:none;line-height:1.5;}
     <div class="mode-grid">
       <div class="mode-card" onclick="selectMode('presencial')">
         <div class="mode-card-icon">🍹</div>
-        <div class="mode-card-label">En Terraza<br>Luna</div>
+        <div class="mode-card-label">Presencial</div>
         <div class="mode-card-sub">Retos y preguntas<br>en persona</div>
       </div>
       <div class="mode-card" onclick="selectMode('distancia')">
@@ -221,7 +220,6 @@ textarea{resize:none;line-height:1.5;}
       </div>
     </div>
 
-    <div class="brand-footer"><div class="brand-name">Terraza Luna</div></div>
   </div>
 </div>
 
@@ -245,8 +243,8 @@ textarea{resize:none;line-height:1.5;}
       </button>
     </div>
 
-    <button class="btn btn-gold" onclick="goToLevel()">Siguiente</button>
-    <button class="btn btn-outline" onclick="show('welcome')">Volver</button>
+    <button class="btn btn-gold" id="startGameBtn" onclick="initGame()">Iniciar Juego</button>
+    <button class="btn btn-outline" onclick="show('level')">Volver</button>
   </div>
 </div>
 
@@ -295,8 +293,8 @@ textarea{resize:none;line-height:1.5;}
 
     <div class="level-desc-box hidden" id="levelDesc"></div>
 
-    <button class="btn btn-gold" id="startGameBtn" onclick="initGame()">Iniciar Juego</button>
-    <button class="btn btn-outline" onclick="show('players')">Volver</button>
+    <button class="btn btn-gold" onclick="goToPlayers()">Siguiente</button>
+    <button class="btn btn-outline" onclick="show('welcome')">Volver</button>
   </div>
 </div>
 
@@ -595,11 +593,12 @@ function closeOverlay(id,e){if(e&&e.target!==document.getElementById(id))return;
 function selectMode(mode){
   selectedMode=mode;
   selectedLevel=null;
-  document.getElementById('modeLabelPlayers').textContent=mode==='presencial'?'En Terraza Luna':'A distancia';
-  // Pedir permiso de notificaciones en este momento de interacción del usuario
+  document.getElementById('modeLabelPlayers').textContent=mode==='presencial'?'Presencial':'A distancia';
   document.dispatchEvent(new Event('vorNotifPrompt'));
-  initPlayersGrid();
-  show('players');
+  // Resetear selección de nivel
+  document.querySelectorAll('.level-option').forEach(function(el){el.classList.remove('active');});
+  document.getElementById('levelDesc').classList.add('hidden');
+  show('level');
 }
 
 // ── PANTALLA 2: Jugadores ──
@@ -651,26 +650,11 @@ function removePlayerField(btn){
   });
 }
 
-function goToLevel(){
-  var inputs=document.querySelectorAll('#namesGrid input');
-  var players=[], hasError=false;
-  inputs.forEach(function(inp,i){
-    var name=inp.value.trim();
-    if(!name){inp.classList.add('error');hasError=true;}
-    else{players.push({name:name,color:col(i)});}
-  });
-  if(hasError){toast('Completa todos los nombres');return;}
-  var nameSet=new Set(players.map(function(p){return p.name.toLowerCase();}));
-  if(nameSet.size!==players.length){toast('No puede haber nombres repetidos');return;}
-  _pendingPlayers=players;
-  // Reset level selection
-  document.querySelectorAll('.level-option').forEach(function(el){el.classList.remove('active');});
-  document.getElementById('levelDesc').classList.add('hidden');
-  selectedLevel=null;
-  // Resetear botón de inicio (puede quedar deshabilitado del juego anterior)
-  var sBtn=document.getElementById('startGameBtn');
-  sBtn.disabled=false;sBtn.textContent='Iniciar Juego';
-  show('level');
+// Nivel → Jugadores (nuevo orden: modo → nivel → jugadores)
+function goToPlayers(){
+  if(!selectedLevel){toast('Elige un nivel para continuar');return;}
+  initPlayersGrid();
+  show('players');
 }
 
 // ── PANTALLA 3: Nivel ──
@@ -810,47 +794,68 @@ function confirmXXXDisclaimer(){
   var all=['chk1','chk2','chk3','chk4'].map(function(id){return document.getElementById(id);});
   if(!all.every(function(c){return c.checked;})){toast('Confirma los 4 puntos para continuar');return;}
   document.getElementById('xxxDisclaimerOverlay').classList.add('hidden');
-  // El usuario ya eligió el nivel antes del disclaimer, solo confirmar selección activa
-  if(!selectedLevel||!['hot','extremo','xxx'].includes(selectedLevel)) _setLevel('xxx');
+  _doStartGame();
 }
 function cancelXXXDisclaimer(){
   document.getElementById('xxxDisclaimerOverlay').classList.add('hidden');
 }
 function procederDesdeAprobado(){
   document.getElementById('codeXXXOverlay').classList.add('hidden');
-  abrirDisclaimer();
+  // El disclaimer se muestra al iniciar juego (initGame lo maneja)
+  show('players');
 }
 
 // ── INICIAR JUEGO ──
 async function initGame(){
+  // Validar jugadores (ahora se llama desde pantalla de jugadores)
+  var inputs=document.querySelectorAll('#namesGrid input');
+  var players=[], hasError=false;
+  inputs.forEach(function(inp,i){
+    var name=inp.value.trim();
+    if(!name){inp.classList.add('error');hasError=true;}
+    else players.push({name:name,color:col(i)});
+  });
+  if(hasError){toast('Completa todos los nombres');return;}
+  var nameSet=new Set(players.map(function(p){return p.name.toLowerCase();}));
+  if(nameSet.size!==players.length){toast('No puede haber nombres repetidos');return;}
+  _pendingPlayers=players;
   if(!selectedLevel){toast('Elige un nivel para continuar');return;}
+  // Mostrar disclaimer en CADA inicio de niveles de pago
+  if(LOCKED_LEVELS.indexOf(selectedLevel)>=0){
+    abrirDisclaimer();
+    return; // _doStartGame() se llama desde confirmXXXDisclaimer
+  }
+  await _doStartGame();
+}
+
+async function _doStartGame(){
   var btn=document.getElementById('startGameBtn');
   btn.disabled=true;btn.textContent='Iniciando…';
-  var started=false; // true solo si llegamos a showCard correctamente
+  var started=false;
   try{
-    // Orden aleatorio de jugadores
     var shuffled=shuffle([..._pendingPlayers]);
     var id=uid5();
     resetPools();
     await loadCardPool(selectedLevel,selectedMode);
-    // Primera carta aleatoria
     var firstCard=pickRandomCard();
     if(!firstCard){toast('No hay cartas disponibles para este nivel');return;}
     await sbPost('tor_games',{id:id,players:shuffled,level:selectedLevel,mode:selectedMode,status:'playing',current_player_index:0,round:1,current_card:firstCard});
     game={id:id,players:shuffled,level:selectedLevel,mode:selectedMode,status:'playing',current_player_index:0,round:1,current_card:firstCard};
     startRealtime();
     startPolling();
-    started=true;   // a partir de aquí cambia de pantalla → no re-habilitar botón
+    started=true;
     _cardCount=0;
-    // Mostrar media de marketing antes de la primera carta
-    showMarketingMedia(function(){
+    // Sin fotos/videos en niveles de pago
+    var isPaid=LOCKED_LEVELS.indexOf(selectedLevel)>=0;
+    if(isPaid){
       _cardCount=1;
       showCard(firstCard);
-    });
+    } else {
+      showMarketingMedia(function(){_cardCount=1;showCard(firstCard);});
+    }
   }catch(e){
     toast('Error al crear el juego');
   }finally{
-    // Re-habilitar botón siempre que el juego NO haya arrancado
     if(!started){btn.disabled=false;btn.textContent='Iniciar Juego';}
   }
 }
