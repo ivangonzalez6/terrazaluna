@@ -719,6 +719,8 @@ function showXXXAdquirir(){
   // Reiniciar input file
   var old=document.getElementById('xxxFileInput');
   if(old){var n=old.cloneNode(true);old.parentNode.replaceChild(n,old);n.onchange=function(){xxxFileSelected(this);};}
+  var btn=document.getElementById('btnSubmitPago');
+  if(btn){btn.disabled=false;btn.textContent='Enviar comprobante';}
 }
 
 // ── Validar código ingresado manualmente ──
