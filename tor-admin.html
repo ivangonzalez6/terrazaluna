@@ -2519,14 +2519,15 @@ function renderPagos(){
     var sc = p.status==='aprobado'?'#2d7a2d':p.status==='rechazado'?'#c0392b':'#b7791f';
     var sl = p.status==='aprobado'?'Aprobado':p.status==='rechazado'?'Rechazado':'Pendiente';
     var acciones = '';
+    var rid = esc(p.id), cod = ce?esc(ce.code):'';
     if(p.status==='pendiente'){
-      var rid = esc(p.id), cod = ce?esc(ce.code):'';
       acciones = '<button class="btn-view" onclick="aprobarPago(\''+rid+'\',\''+cod+'\')">✓ Verificado</button> '
                + '<button class="btn-delete" onclick="rechazarPago(\''+rid+'\',\''+cod+'\')">✗ Rechazar</button>';
     } else if(p.status==='aprobado'){
-      acciones = '<span style="font-size:11px;color:#2d7a2d;font-weight:600;">Activo</span>';
+      acciones = '<span style="font-size:11px;color:#2d7a2d;font-weight:600;">✓ Activo</span>'
+               + ' <button class="btn-delete" style="font-size:10px;padding:3px 8px;" onclick="rechazarPago(\''+rid+'\',\''+cod+'\')">✗ Revocar</button>';
     } else {
-      acciones = '<span style="font-size:11px;color:#c0392b;font-weight:600;">Rechazado</span>';
+      acciones = '<span style="font-size:11px;color:#c0392b;font-weight:600;">✗ Bloqueado</span>';
     }
     return '<tr>'
       +'<td class="td-phone"><a href="https://wa.me/52'+esc(p.phone)+'" target="_blank" style="color:inherit;text-decoration:none;">📱 '+esc(p.phone)+'</a></td>'
@@ -2561,6 +2562,83 @@ async function rechazarPago(requestId, code){
     toast('✗ Pago rechazado — código bloqueado');
     loadPagos();
   } else { toast('Error al actualizar'); }
+}
+
+// ── CÓDIGOS ──
+var allCodigos=[], filteredCodigos=[];
+
+async function loadCodigos(){
+  document.getElementById('loading-codigos').style.display='block';
+  document.getElementById('empty-codigos').classList.add('hidden');
+  document.getElementById('tbody-codigos').innerHTML='';
+  try{
+    var rows=await sbGet('tor_unlock_codes','?order=created_at.desc&select=*');
+    allCodigos=rows||[];
+    var activos=allCodigos.filter(function(c){return !c.used;}).length;
+    document.getElementById('cnt-codigos').textContent=activos||allCodigos.length;
+    filterCodigos();
+    renderStatsCodigos();
+    document.getElementById('loading-codigos').style.display='none';
+  }catch(e){
+    document.getElementById('loading-codigos').textContent='Error al cargar códigos';
+  }
+}
+
+function filterCodigos(){
+  var q=(document.getElementById('search-codigos').value||'').toLowerCase();
+  var st=document.getElementById('filter-codigos-status').value;
+  filteredCodigos=allCodigos.filter(function(c){
+    if(q&&!(c.code||'').toLowerCase().includes(q)&&!(c.phone||'').includes(q))return false;
+    if(st==='activo'&&c.used)return false;
+    if(st==='usado'&&!c.used)return false;
+    return true;
+  });
+  renderCodigos();
+}
+
+function renderStatsCodigos(){
+  var total=allCodigos.length;
+  var activos=allCodigos.filter(function(c){return !c.used;}).length;
+  var usados=allCodigos.filter(function(c){return c.used;}).length;
+  var el=document.getElementById('stats-codigos');
+  if(el) el.innerHTML=statCard(total,'Total')+statCard(activos,'Activos')+statCard(usados,'Usados/Bloqueados');
+}
+
+function renderCodigos(){
+  var tb=document.getElementById('tbody-codigos');
+  if(!filteredCodigos.length){
+    tb.innerHTML='';
+    document.getElementById('empty-codigos').classList.remove('hidden');
+    return;
+  }
+  document.getElementById('empty-codigos').classList.add('hidden');
+  tb.innerHTML=filteredCodigos.map(function(c){
+    var estado=c.used
+      ? '<span style="font-size:11px;font-weight:700;color:#c0392b;">✗ Bloqueado</span>'
+      : '<span style="font-size:11px;font-weight:700;color:#2d7a2d;">✓ Activo</span>';
+    var exp=c.expires_at?fmt(c.expires_at):'Sin vencimiento';
+    var phoneLink=c.phone
+      ? '<a href="https://wa.me/52'+esc(c.phone)+'" target="_blank" style="color:inherit;text-decoration:none;">📱 '+esc(c.phone)+'</a>'
+      : '—';
+    var acciones=!c.used
+      ? '<button class="btn-delete" onclick="bloquearCodigo(\''+esc(c.id)+'\')">✗ Bloquear</button>'
+      : '';
+    return '<tr>'
+      +'<td style="font-family:\'Cormorant Garamond\',serif;font-size:16px;font-weight:700;letter-spacing:.15em;color:var(--gold);">'+esc(c.code)+'</td>'
+      +'<td>'+estado+'</td>'
+      +'<td class="td-phone">'+phoneLink+'</td>'
+      +'<td style="font-size:11px;color:var(--dim);">'+exp+'</td>'
+      +'<td style="font-size:11px;color:var(--dim);">'+fmt(c.created_at)+'</td>'
+      +'<td class="td-actions">'+acciones+'</td>'
+      +'</tr>';
+  }).join('');
+}
+
+async function bloquearCodigo(id){
+  if(!confirm('¿Bloquear este código? Ya no podrá ser usado.'))return;
+  var ok=await sbPatch('tor_unlock_codes',id,{used:true});
+  if(ok){toast('Código bloqueado');loadCodigos();}
+  else{toast('Error al bloquear');}
 }
 </script>
 </body>
