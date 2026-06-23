@@ -2065,44 +2065,50 @@ function stopAutoRefresh(){clearInterval(_refreshInterval);_refreshInterval=null
 document.getElementById('pinInput').addEventListener('keydown',e=>{if(e.key==='Enter')checkPin();});
 
 // ── PUSH NOTIFICATIONS ──
-const PUSH_EDGE = SUPA + '/functions/v1/send-push';
+const PUSH_EDGE = SB + '/functions/v1/send-push';
 
 async function loadPushDevices(){
   document.getElementById('loading-push').style.display='block';
   document.getElementById('empty-push').classList.add('hidden');
   document.getElementById('tbody-push-devices').innerHTML='';
 
-  const r = await fetch(SUPA+'/rest/v1/push_subscriptions?select=endpoint,created_at&order=created_at.desc', {
-    headers:{'apikey':KEY,'Authorization':'Bearer '+KEY}
-  });
-  const subs = r.ok ? await r.json() : [];
+  try {
+    const r = await fetch(SB+'/rest/v1/push_subscriptions?select=endpoint,created_at&order=created_at.desc', {
+      headers:{'apikey':SK,'Authorization':'Bearer '+SK}
+    });
+    const subs = r.ok ? await r.json() : [];
 
-  document.getElementById('loading-push').style.display='none';
-  document.getElementById('push-cnt-devices').textContent = subs.length || '0';
-  document.getElementById('cnt-push').textContent = subs.length || '0';
+    document.getElementById('loading-push').style.display='none';
+    document.getElementById('push-cnt-devices').textContent = subs.length || '0';
+    document.getElementById('cnt-push').textContent = subs.length || '0';
 
-  if(!subs.length){ document.getElementById('empty-push').classList.remove('hidden'); return; }
+    if(!subs.length){ document.getElementById('empty-push').classList.remove('hidden'); return; }
 
-  const tbody = document.getElementById('tbody-push-devices');
-  subs.forEach(s=>{
-    const short = s.endpoint.replace('https://','').split('/')[0] + '/…';
-    const fecha = s.created_at ? new Date(s.created_at).toLocaleDateString('es-MX',{day:'2-digit',month:'short',year:'numeric'}) : '—';
-    tbody.insertAdjacentHTML('beforeend',`
-      <tr>
-        <td style="font-size:11px;color:var(--faint);max-width:340px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${short}</td>
-        <td>${fecha}</td>
-        <td><button onclick="deletePushSub('${encodeURIComponent(s.endpoint)}')"
-          style="background:none;border:1px solid rgba(239,68,68,.3);color:#ef4444;border-radius:6px;padding:4px 10px;font-size:10px;cursor:pointer">Eliminar</button></td>
-      </tr>`);
-  });
+    const tbody = document.getElementById('tbody-push-devices');
+    subs.forEach(s=>{
+      const short = s.endpoint.replace('https://','').split('/')[0] + '/…';
+      const fecha = s.created_at ? new Date(s.created_at).toLocaleDateString('es-MX',{day:'2-digit',month:'short',year:'numeric'}) : '—';
+      tbody.insertAdjacentHTML('beforeend',`
+        <tr>
+          <td style="font-size:11px;color:var(--faint);max-width:340px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${short}</td>
+          <td>${fecha}</td>
+          <td><button onclick="deletePushSub('${encodeURIComponent(s.endpoint)}')"
+            style="background:none;border:1px solid rgba(239,68,68,.3);color:#ef4444;border-radius:6px;padding:4px 10px;font-size:10px;cursor:pointer">Eliminar</button></td>
+        </tr>`);
+    });
+  } catch(e) {
+    document.getElementById('loading-push').style.display='none';
+    document.getElementById('empty-push').classList.remove('hidden');
+    console.warn('[Push] Error cargando dispositivos:', e);
+  }
 }
 
 async function deletePushSub(encodedEndpoint){
   const endpoint = decodeURIComponent(encodedEndpoint);
   if(!confirm('¿Eliminar esta suscripción?')) return;
-  await fetch(SUPA+'/rest/v1/push_subscriptions?endpoint=eq.'+encodeURIComponent(endpoint),{
+  await fetch(SB+'/rest/v1/push_subscriptions?endpoint=eq.'+encodeURIComponent(endpoint),{
     method:'DELETE',
-    headers:{'apikey':KEY,'Authorization':'Bearer '+KEY}
+    headers:{'apikey':SK,'Authorization':'Bearer '+SK}
   });
   loadPushDevices();
 }
@@ -2134,7 +2140,6 @@ async function sendPushNotification(){
       res.style.color = '#34d399';
       res.textContent = `✓ Enviada a ${data.sent} dispositivo${data.sent!==1?'s':''}${data.failed?' · '+data.failed+' fallaron':''}${data.expired_removed?' · '+data.expired_removed+' eliminadas (expiradas)':''}`;
       document.getElementById('push-last-sent').textContent = new Date().toLocaleTimeString('es-MX',{hour:'2-digit',minute:'2-digit'});
-      // Limpiar campos
       document.getElementById('push-body').value = '';
       document.getElementById('push-title').value = '';
     } else {
