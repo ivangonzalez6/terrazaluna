@@ -862,6 +862,7 @@ async function _doStartGame(){
     }
   }catch(e){
     toast('Error al crear el juego');
+    btn.disabled=false;btn.textContent='Iniciar Juego';
   }finally{
     if(!started){btn.disabled=false;btn.textContent='Iniciar Juego';}
   }
@@ -1082,6 +1083,25 @@ async function nextTurn(){
   }
 }
 
+// ── Reset completo de estado entre partidas ──
+function resetGameState(){
+  // Variables
+  game=null;
+  selectedLevel=null;
+  _pendingPlayers=[];
+  _cardCount=0;
+  _cardShownAt=null;
+  _trackedCard=null;
+  resetPools();
+  // UI: botón de inicio
+  var btn=document.getElementById('startGameBtn');
+  if(btn){btn.disabled=false;btn.textContent='Iniciar Juego';}
+  // UI: quitar nivel activo del grid
+  document.querySelectorAll('.level-option').forEach(function(el){el.classList.remove('active');});
+  var desc=document.getElementById('levelDesc');
+  if(desc)desc.classList.add('hidden');
+}
+
 // ── Terminar juego ──
 async function endGame(){
   closeOverlay('endConfirmOverlay');
@@ -1089,9 +1109,7 @@ async function endGame(){
     try{await sbPatch('tor_games?id=eq.'+game.id,{status:'closed'});}catch(e){}
   }
   stopRealtime();
-  resetPools();
-  game=null;
-  selectedLevel=null;
+  resetGameState();
   // Mostrar encuesta de satisfacción antes de volver al inicio
   document.getElementById('feedbackText').value='';
   document.getElementById('feedbackOverlay').classList.remove('hidden');
@@ -1218,9 +1236,10 @@ function syncDisplay(){
   if(!game)return;
   if(game.status==='closed'||game.status==='finished'){
     stopRealtime();
-    resetPools();
-    game=null;
-    show('welcome');
+    resetGameState();
+    // Solo redirigir si el usuario sigue en la pantalla de juego (no interrumpir flujo de nuevo juego)
+    var cardScreen=document.getElementById('screen-card');
+    if(cardScreen&&!cardScreen.classList.contains('hidden')){show('welcome');}
     return;
   }
   if(game.status==='playing'){
