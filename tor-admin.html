@@ -2346,7 +2346,46 @@ async function aprobarPago(id){
   try{
     var ok=await sbPatch('tor_unlock_requests',id,{status:'aprobado',reviewed_by:'admin'});
     if(!ok){toast('Error al aprobar');return;}
-    var chars='ABCDEFGHJKLMNPQRSTUVWXYZ2
+    var chars='ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+    var code='';for(var i=0;i<8;i++)code+=chars[Math.floor(Math.random()*chars.length)];
+    var expires=new Date(Date.now()+24*60*60*1000).toISOString();
+    var cr=await fetch(SB+'/rest/v1/tor_unlock_codes',{
+      method:'POST',
+      headers:Object.assign({},h(),{'Prefer':'return=minimal'}),
+      body:JSON.stringify({phone:p.phone,code:code,request_id:id,expires_at:expires,used:false})
+    });
+    if(!cr.ok){toast('Pago aprobado pero error al generar código');return;}
+    toast('✓ Aprobado · Código: '+code);
+    loadPagos();
+  }catch(e){toast('Error: '+(e.message||e));}
+}
+
+async function rechazarPago(id){
+  var p=allPagos.find(function(x){return x.id===id;});
+  if(!p)return;
+  if(!confirm('¿Rechazar este pago de '+p.phone+'?'))return;
+  try{
+    var ok=await sbPatch('tor_unlock_requests',id,{status:'rechazado',reviewed_by:'admin'});
+    if(!ok){toast('Error al rechazar');return;}
+    toast('✗ Pago rechazado');
+    loadPagos();
+  }catch(e){toast('Error: '+(e.message||e));}
+}
+
+async function cancelarCodigoAuto(id,phone){
+  if(!confirm('¿Cancelar el código de '+phone+'? El acceso quedará bloqueado de inmediato.'))return;
+  try{
+    await fetch(SB+'/rest/v1/tor_unlock_codes?request_id=eq.'+encodeURIComponent(id),{
+      method:'PATCH',
+      headers:Object.assign({},h(),{'Prefer':'return=minimal'}),
+      body:JSON.stringify({used:true})
+    });
+    var ok=await sbPatch('tor_unlock_requests',id,{status:'rechazado',reviewed_by:'admin'});
+    if(!ok){toast('Código cancelado (error al actualizar estado)');return;}
+    toast('✗ Código cancelado · Pago marcado como rechazado');
+    loadPagos();
+  }catch(e){toast('Error: '+(e.message||e));}
+}
 
 // ── SECCIÓN CÓDIGOS ──
 var allCodigos=[], filteredCodigos=[];
@@ -2412,7 +2451,7 @@ function renderCodigos(){
     if(activo)actions+='<button class="btn-delete" onclick="revocarCodigo(\''+esc(c.id)+'\')">✗ Revocar</button>';
     actions+='</div>';
     return '<tr>'+
-      '<td style="font-family:'Cormorant Garamond',serif;font-size:20px;font-weight:700;letter-spacing:.15em;color:var(--gold)">'+esc(c.code)+'</td>'+
+      '<td style="font-family:\'Cormorant Garamond\',serif;font-size:20px;font-weight:700;letter-spacing:.15em;color:var(--gold)">'+esc(c.code)+'</td>'+
       '<td>'+etiqueta+'</td>'+
       '<td class="td-phone" style="font-size:12px">'+esc(!c.phone||c.phone.startsWith('promo:')?'—':c.phone)+'</td>'+
       '<td style="font-size:12px;color:'+(activo?'var(--ink)':'var(--faint)')+'">'+expStr+'</td>'+
@@ -2480,7 +2519,6 @@ async function generarCodigosLote(){
     }).join('');
     document.getElementById('gcForm').style.display='none';
     document.getElementById('gcResultado').style.display='block';
-    // Recargar lista
     loadCodigos();
   }catch(e){
     errEl.textContent='Error: '+(e.message||e);errEl.style.display='block';
@@ -2512,3 +2550,6 @@ async function revocarCodigo(id){
     toast('✗ Código revocado');
   }catch(e){toast('Error: '+(e.message||e));}
 }
+</script>
+</body>
+</html>
