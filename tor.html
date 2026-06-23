@@ -736,7 +736,8 @@ async function validateCodigoXXX(){
     if(!rec.multi_use) await sbPatch('tor_unlock_codes?id=eq.'+rec.id,{used:true});
     document.getElementById('codeXXXOverlay').classList.add('hidden');
     unlockPaidLevels();
-    abrirDisclaimer();
+    // No abrir disclaimer aquí — se abrirá desde initGame() después de ingresar jugadores
+    show('players');
   }catch(e){errEl.textContent='Error de conexión. Intenta de nuevo.';errEl.style.display='block';}
 }
 
@@ -1071,8 +1072,9 @@ async function nextTurn(){
   await sbPatch('tor_games?id=eq.'+game.id,{current_player_index:next,round:newRound,current_card:card}).catch(function(){});
   var btnSig=document.getElementById('btnSiguiente');
   _cardCount++;
-  // Mostrar media de marketing cada 7 cartas
-  if(_cardCount%7===0){
+  // Mostrar media de marketing cada 7 cartas, solo en niveles gratuitos
+  var _isPaidLevel=game&&LOCKED_LEVELS.indexOf(game.level)>=0;
+  if(_cardCount%7===0&&!_isPaidLevel){
     showMarketingMedia(function(){showCard(card);btnSig.disabled=false;});
   }else{
     showCard(card);
