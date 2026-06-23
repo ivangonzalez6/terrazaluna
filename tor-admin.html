@@ -2449,22 +2449,7 @@ function exportPartidasCSV(){
 // ── PAGOS XXX ──
 var allPagos=[], filteredPagos=[];
 
-async function loadPagos(){
-  document.getElementById('loading-pagos').style.display='block';
-  document.getElementById('empty-pagos').classList.add('hidden');
-  document.getElementById('tbody-pagos').innerHTML='';
-  try{
-    var rows=await sbGet('tor_unlock_requests','?order=created_at.desc&select=*');
-    allPagos=rows||[];
-    var pendientes=allPagos.filter(function(p){return p.status==='pendiente'||p.ai_verdict==='revision_manual';}).length;
-    document.getElementById('cnt-pagos').textContent=pendientes||allPagos.length;
-    filterPagos();
-    document.getElementById('loading-pagos').style.display='none';
-    renderStatsPagos();
-  }catch(e){
-    document.getElementById('loading-pagos').textContent='Error al cargar pagos';
-  }
-}
+// loadPagos defined below
 
 function filterPagos(){
   var q=(document.getElementById('search-pagos').value||'').toLowerCase();
@@ -2493,22 +2478,21 @@ function renderStatsPagos(){
     statCard(rev,'Revisión manual');
 }
 
-// Mapa request_id → código (se llena al cargar pagos)
-var _pagosCodigos={};
+// Mapa request_id → código
+var _pagosCodigos = {};
 
 async function loadPagos(){
   document.getElementById('loading-pagos').style.display='block';
   document.getElementById('empty-pagos').classList.add('hidden');
   document.getElementById('tbody-pagos').innerHTML='';
   try{
-    var rows=await sbGet('tor_unlock_requests','?order=created_at.desc&select=*');
-    allPagos=rows||[];
-    // Cargar códigos asociados
-    var codes=await sbGet('tor_unlock_codes','?select=request_id,code,used&order=created_at.desc');
-    _pagosCodigos={};
-    (codes||[]).forEach(function(c){if(c.request_id&&!_pagosCodigos[c.request_id])_pagosCodigos[c.request_id]=c;});
-    var pendientes=allPagos.filter(function(p){return p.status==='pendiente';}).length;
-    document.getElementById('cnt-pagos').textContent=pendientes||allPagos.length;
+    var rows = await sbGet('tor_unlock_requests','?order=created_at.desc&select=*');
+    allPagos = rows||[];
+    var codes = await sbGet('tor_unlock_codes','?select=request_id,code,used,id&order=created_at.desc');
+    _pagosCodigos = {};
+    (codes||[]).forEach(function(c){ if(c.request_id && !_pagosCodigos[c.request_id]) _pagosCodigos[c.request_id] = c; });
+    var pendientes = allPagos.filter(function(p){ return p.status==='pendiente'; }).length;
+    document.getElementById('cnt-pagos').textContent = pendientes || allPagos.length;
     filterPagos();
     document.getElementById('loading-pagos').style.display='none';
     renderStatsPagos();
@@ -2518,661 +2502,65 @@ async function loadPagos(){
 }
 
 function renderPagos(){
-  var tb=document.getElementById('tbody-pagos');
+  var tb = document.getElementById('tbody-pagos');
   if(!filteredPagos.length){
     tb.innerHTML='';
     document.getElementById('empty-pagos').classList.remove('hidden');
     return;
   }
   document.getElementById('empty-pagos').classList.add('hidden');
-  tb.innerHTML=filteredPagos.map(function(p){
-    var codeEntry=_pagosCodigos[p.id];
-    var codeStr=codeEntry?('<span style="font-family:\'Cormorant Garamond\',serif;font-size:15px;font-weight:700;letter-spacing:.15em;color:var(--gold);">'+esc(codeEntry.code)+'</span>'):'<span style="color:var(--faint);">—</span>';
-    var verdictColor=p.ai_verdict==='aprobado'?'#2d7a2d':p.ai_verdict==='rechazado'?'#c0392b':'#b7791f';
-    var verdictLabel=p.ai_verdict==='aprobado'?'✓ Aprobado':p.ai_verdict==='rechazado'?'✗ Rechazado':'⚠ Revisión';
-    var statusColor=p.status==='aprobado'?'#2d7a2d':p.status==='rechazado'?'#c0392b':'#b7791f';
-    var statusLabel=p.status==='aprobado'?'Aprobado':p.status==='rechazado'?'Rechazado':'Pendiente';
-    var acciones='';
+  tb.innerHTML = filteredPagos.map(function(p){
+    var ce = _pagosCodigos[p.id];
+    var codeStr = ce
+      ? '<span style="font-family:\'Cormorant Garamond\',serif;font-size:15px;font-weight:700;letter-spacing:.15em;color:var(--gold);">'+esc(ce.code)+'</span>'
+      : '<span style="color:var(--faint);">—</span>';
+    var vc = p.ai_verdict==='aprobado'?'#2d7a2d':p.ai_verdict==='rechazado'?'#c0392b':'#b7791f';
+    var vl = p.ai_verdict==='aprobado'?'✓ Aprobado':p.ai_verdict==='rechazado'?'✗ Rechazado':'⚠ Revisión';
+    var sc = p.status==='aprobado'?'#2d7a2d':p.status==='rechazado'?'#c0392b':'#b7791f';
+    var sl = p.status==='aprobado'?'Aprobado':p.status==='rechazado'?'Rechazado':'Pendiente';
+    var acciones = '';
     if(p.status==='pendiente'){
-      acciones='<button class="btn-view" onclick="aprobarPago(\''+p.id+'\',\''+esc(codeEntry?codeEntry.code:'')+'\')">✓ Verificado</button>'+
-               '<button class="btn-delete" onclick="rechazarPago(\''+p.id+'\',\''+esc(codeEntry?codeEntry.code:'')+'\')">✗ Rechazar</button>';
-    }else if(p.status==='aprobado'){
-      acciones='<span style="font-size:11px;color:#2d7a2d;font-weight:600;">Activo</span>';
-    }else{
-      acciones='<span style="font-size:11px;color:#c0392b;font-weight:600;">Rechazado</span>';
+      var rid = esc(p.id), cod = ce?esc(ce.code):'';
+      acciones = '<button class="btn-view" onclick="aprobarPago(\''+rid+'\',\''+cod+'\')">✓ Verificado</button> '
+               + '<button class="btn-delete" onclick="rechazarPago(\''+rid+'\',\''+cod+'\')">✗ Rechazar</button>';
+    } else if(p.status==='aprobado'){
+      acciones = '<span style="font-size:11px;color:#2d7a2d;font-weight:600;">Activo</span>';
+    } else {
+      acciones = '<span style="font-size:11px;color:#c0392b;font-weight:600;">Rechazado</span>';
     }
-    return '<tr>'+
-      '<td class="td-phone"><a href="https://wa.me/52'+esc(p.phone)+'" target="_blank" style="color:inherit;text-decoration:none;">📱 '+esc(p.phone)+'</a></td>'+
-      '<td>'+codeStr+'</td>'+
-      '<td>'+(p.amount_detected?'$'+p.amount_detected:'—')+'</td>'+
-      '<td>'+(p.date_detected?p.date_detected:'—')+'</td>'+
-      '<td><span style="font-size:12px;font-weight:700;color:'+verdictColor+'">'+verdictLabel+'</span></td>'+
-      '<td><span style="font-size:12px;font-weight:700;color:'+statusColor+'">'+statusLabel+'</span></td>'+
-      '<td style="font-size:11px;color:var(--dim);">'+fmtShort(p.created_at)+'</td>'+
-      '<td class="td-actions">'+acciones+'</td>'+
-    '</tr>';
+    return '<tr>'
+      +'<td class="td-phone"><a href="https://wa.me/52'+esc(p.phone)+'" target="_blank" style="color:inherit;text-decoration:none;">📱 '+esc(p.phone)+'</a></td>'
+      +'<td>'+codeStr+'</td>'
+      +'<td>'+(p.amount_detected?'$'+p.amount_detected:'—')+'</td>'
+      +'<td style="font-size:11px;">'+(p.date_detected||'—')+'</td>'
+      +'<td><span style="font-size:11px;font-weight:700;color:'+vc+'">'+vl+'</span></td>'
+      +'<td><span style="font-size:11px;font-weight:700;color:'+sc+'">'+sl+'</span></td>'
+      +'<td style="font-size:11px;color:var(--dim);">'+fmtShort(p.created_at)+'</td>'
+      +'<td class="td-actions">'+acciones+'</td>'
+      +'</tr>';
   }).join('');
 }
 
 async function aprobarPago(requestId, code){
-  var ok=await sbPatch('tor_unlock_requests',requestId,{status:'aprobado',updated_at:new Date().toISOString()});
-  if(ok){
-    toast('✓ Pago verificado — código '+code+' activado');
-    loadPagos();
-  }else{toast('Error al actualizar','error');}
+  var ok = await sbPatch('tor_unlock_requests', requestId, {status:'aprobado', updated_at: new Date().toISOString()});
+  if(ok){ toast('✓ Pago verificado — código '+code+' activado'); loadPagos(); }
+  else { toast('Error al actualizar'); }
 }
 
 async function rechazarPago(requestId, code){
-  if(!confirm('¿Rechazar este pago? El código '+code+' quedará inactivo.'))return;
-  var ok=await sbPatch('tor_unlock_requests',requestId,{status:'rechazado',updated_at:new Date().toISOString()});
+  if(!confirm('¿Rechazar este pago? El código '+code+' quedará bloqueado.')) return;
+  var ok = await sbPatch('tor_unlock_requests', requestId, {status:'rechazado', updated_at: new Date().toISOString()});
   if(ok){
-    // Marcar el código como usado=true para bloquearlo
     if(code){
-      var r=await fetch(SB+'/rest/v1/tor_unlock_codes?code=eq.'+encodeURIComponent(code),{method:'PATCH',headers:Object.assign({},h(),{'Prefer':'return=minimal'}),body:JSON.stringify({used:true})});
+      await fetch(SB+'/rest/v1/tor_unlock_codes?code=eq.'+encodeURIComponent(code), {
+        method:'PATCH',
+        headers: Object.assign({}, h(), {'Prefer':'return=minimal'}),
+        body: JSON.stringify({used:true})
+      });
     }
     toast('✗ Pago rechazado — código bloqueado');
     loadPagos();
-  }else{toast('Error al actualizar');}
-}
-
-
-function verdictPill(v){
-  if(v==='aprobado')return '<span class="pill pill-aprobado">✓ Aprobado IA</span>';
-  if(v==='rechazado')return '<span class="pill pill-rechazado">✗ Rechazado IA</span>';
-  if(v==='revision_manual')return '<span class="pill pill-revision">⚠ Revisión manual</span>';
-  return '<span class="pill pill-pendiente">—</span>';
-}
-
-function statusPill(s,autoApproved){
-  if(s==='aprobado'&&autoApproved)return '<span class="pill pill-postval">⚡ Auto · Post-val</span>';
-  if(s==='aprobado')return '<span class="pill pill-aprobado">✓ Aprobado</span>';
-  if(s==='rechazado')return '<span class="pill pill-rechazado">✗ Rechazado</span>';
-  return '<span class="pill pill-pendiente">Pendiente</span>';
-}
-
-function renderPagos(){
-  var tb=document.getElementById('tbody-pagos');
-  var empty=document.getElementById('empty-pagos');
-  if(!filteredPagos.length){tb.innerHTML='';empty.classList.remove('hidden');return;}
-  empty.classList.add('hidden');
-  tb.innerHTML=filteredPagos.map(function(p){
-    var thumb=p.receipt_url
-      ?'<img src="'+esc(p.receipt_url)+'" style="width:52px;height:38px;object-fit:cover;border-radius:6px;border:1px solid var(--line);cursor:pointer;display:block" onclick="openRecibo(\''+esc(p.id)+'\')" title="Ver recibo">'
-      :'<span style="color:var(--faint);font-size:12px">—</span>';
-    var monto=p.amount_detected!=null?'$'+Number(p.amount_detected).toLocaleString('es-MX',{minimumFractionDigits:2}):'—';
-    var fecha=p.date_detected||'—';
-    var needsReview=(p.status==='pendiente'&&p.ai_verdict==='revision_manual');
-    var isAutoApproved=(p.status==='aprobado'&&p.auto_approved);
-    var actions='<div class="td-actions">';
-    if(p.receipt_url)actions+='<button class="btn-view" onclick="openRecibo(\''+esc(p.id)+'\')">Ver</button>';
-    if(needsReview||p.status==='pendiente'){
-      actions+='<button class="btn-edit" style="border-color:rgba(134,239,172,.5);color:#14532d" onclick="aprobarPago(\''+esc(p.id)+'\')">✓ Aprobar</button>';
-      actions+='<button class="btn-delete" onclick="rechazarPago(\''+esc(p.id)+'\')">✗ Rechazar</button>';
-    }
-    if(isAutoApproved){
-      actions+='<button class="btn-delete" title="Pago no llegó — revocar código" onclick="cancelarCodigoAuto(\''+esc(p.id)+'\',\''+esc(p.phone||'')+'\')">✗ Cancelar código</button>';
-    }
-    actions+='</div>';
-    return '<tr'+(isAutoApproved?' style="background:rgba(109,40,217,.04)"':'')+'>'+
-      '<td class="td-phone">'+esc(p.phone||'—')+'</td>'+
-      '<td>'+thumb+'</td>'+
-      '<td style="font-family:\'Cormorant Garamond\',serif;font-size:18px;font-weight:700;color:var(--gold)">'+esc(monto)+'</td>'+
-      '<td style="font-size:12px;color:var(--dim)">'+esc(fecha)+'</td>'+
-      '<td>'+verdictPill(p.ai_verdict)+'</td>'+
-      '<td>'+statusPill(p.status,p.auto_approved)+'</td>'+
-      '<td style="font-size:11px;color:var(--faint)">'+fmtShort(p.created_at)+'</td>'+
-      '<td>'+actions+'</td>'+
-    '</tr>';
-  }).join('');
-}
-
-function openRecibo(id){
-  var p=allPagos.find(function(x){return x.id===id;});
-  if(!p)return;
-  document.getElementById('mr-title').textContent='Comprobante · '+esc(p.phone||'');
-  var verdictLabel={aprobado:'✓ Aprobado por IA',rechazado:'✗ Rechazado por IA',revision_manual:'⚠ Requiere revisión manual'}[p.ai_verdict]||'Sin veredicto';
-  document.getElementById('mr-sub').textContent=verdictLabel;
-  var imgEl=document.getElementById('mr-img');
-  var loadEl=document.getElementById('mr-img-loading');
-  imgEl.style.display='none';
-  loadEl.style.display='block';
-  if(p.receipt_url){
-    imgEl.onload=function(){loadEl.style.display='none';imgEl.style.display='inline-block';};
-    imgEl.onerror=function(){loadEl.textContent='No se pudo cargar la imagen';};
-    imgEl.src=p.receipt_url;
-  } else {
-    loadEl.textContent='Sin imagen adjunta';
-  }
-  var det='<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">';
-  det+='<div><div class="modal-label">Teléfono</div><div class="modal-val">'+esc(p.phone||'—')+'</div></div>';
-  det+='<div><div class="modal-label">Monto detectado</div><div class="modal-val" style="font-family:\'Cormorant Garamond\',serif;font-size:22px;color:var(--gold)">'+(p.amount_detected!=null?'$'+Number(p.amount_detected).toLocaleString('es-MX',{minimumFractionDigits:2}):'—')+'</div></div>';
-  det+='<div><div class="modal-label">Fecha detectada</div><div class="modal-val">'+esc(p.date_detected||'—')+'</div></div>';
-  det+='<div><div class="modal-label">Destinatario detectado</div><div class="modal-val" style="font-size:12px">'+esc(p.recipient_detected||'—')+'</div></div>';
-  det+='<div><div class="modal-label">Veredicto IA</div><div class="modal-val">'+verdictPill(p.ai_verdict)+'</div></div>';
-  det+='<div><div class="modal-label">Estado</div><div class="modal-val">'+statusPill(p.status,p.auto_approved)+'</div></div>';
-  if(p.auto_approved){det+='<div style="grid-column:1/-1"><div class="modal-label" style="color:#6b21a8">⚡ Post-validación</div><div class="modal-val" style="font-size:12px;color:var(--dim)">Este pago fue aprobado automáticamente por IA y el código ya fue entregado. Verifica que el depósito haya llegado. Si no, cancela el código.</div></div>';}
-
-  if(p.ai_notes){det+='<div style="grid-column:1/-1"><div class="modal-label">Notas IA</div><div class="modal-val" style="font-size:12px;color:var(--faint)">'+esc(p.ai_notes)+'</div></div>';}
-  det+='</div>';
-  document.getElementById('mr-details').innerHTML=det;
-  var footer=document.getElementById('mr-footer');
-  var needsAction=(p.status==='pendiente');
-  var isAutoApproved=(p.status==='aprobado'&&p.auto_approved);
-  footer.innerHTML='<button class="btn-secondary" onclick="closeModal(\'modal-recibo\')">Cerrar</button>';
-  if(needsAction){
-    footer.innerHTML+='<button class="btn-danger-solid" onclick="rechazarPago(\''+esc(p.id)+'\');closeModal(\'modal-recibo\')">✗ Rechazar</button>';
-    footer.innerHTML+='<button class="btn-primary" style="background:#14532d;border-color:#14532d" onclick="aprobarPago(\''+esc(p.id)+'\');closeModal(\'modal-recibo\')">✓ Aprobar</button>';
-  }
-  if(isAutoApproved){
-    footer.innerHTML+='<button class="btn-danger-solid" onclick="cancelarCodigoAuto(\''+esc(p.id)+'\',\''+esc(p.phone||'')+'\');closeModal(\'modal-recibo\')">✗ Cancelar código — pago no llegó</button>';
-  }
-  openModal('modal-recibo');
-}
-
-async function aprobarPago(id){
-  var p=allPagos.find(function(x){return x.id===id;});
-  if(!p)return;
-  if(!confirm('¿Aprobar manualmente este pago y generar código de acceso para '+p.phone+'?'))return;
-  try{
-    var ok=await sbPatch('tor_unlock_requests',id,{status:'aprobado',reviewed_by:'admin'});
-    if(!ok){toast('Error al aprobar');return;}
-    var chars='ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
-    var code='';for(var i=0;i<8;i++)code+=chars[Math.floor(Math.random()*chars.length)];
-    var expires=new Date(Date.now()+24*60*60*1000).toISOString();
-    var cr=await fetch(SB+'/rest/v1/tor_unlock_codes',{
-      method:'POST',
-      headers:Object.assign({},h(),{'Prefer':'return=minimal'}),
-      body:JSON.stringify({phone:p.phone,code:code,request_id:id,expires_at:expires,used:false})
-    });
-    if(!cr.ok){toast('Pago aprobado pero error al generar código');return;}
-    toast('✓ Aprobado · Código: '+code);
-    loadPagos();
-  }catch(e){toast('Error: '+(e.message||e));}
-}
-
-async function rechazarPago(id){
-  var p=allPagos.find(function(x){return x.id===id;});
-  if(!p)return;
-  if(!confirm('¿Rechazar este pago de '+p.phone+'?'))return;
-  try{
-    var ok=await sbPatch('tor_unlock_requests',id,{status:'rechazado',reviewed_by:'admin'});
-    if(!ok){toast('Error al rechazar');return;}
-    toast('✗ Pago rechazado');
-    loadPagos();
-  }catch(e){toast('Error: '+(e.message||e));}
-}
-
-async function cancelarCodigoAuto(id,phone){
-  if(!confirm('¿Cancelar el código de '+phone+'? El acceso quedará bloqueado de inmediato.'))return;
-  try{
-    await fetch(SB+'/rest/v1/tor_unlock_codes?request_id=eq.'+encodeURIComponent(id),{
-      method:'PATCH',
-      headers:Object.assign({},h(),{'Prefer':'return=minimal'}),
-      body:JSON.stringify({used:true})
-    });
-    var ok=await sbPatch('tor_unlock_requests',id,{status:'rechazado',reviewed_by:'admin'});
-    if(!ok){toast('Código cancelado (error al actualizar estado)');return;}
-    toast('✗ Código cancelado · Pago marcado como rechazado');
-    loadPagos();
-  }catch(e){toast('Error: '+(e.message||e));}
-}
-
-// ── SECCIÓN CÓDIGOS ──
-var allCodigos=[], filteredCodigos=[];
-
-async function loadCodigos(){
-  document.getElementById('loading-codigos').style.display='block';
-  try{
-    var r=await sbGet('tor_unlock_codes','?select=*&order=created_at.desc');
-    allCodigos=Array.isArray(r)?r:[];
-    filteredCodigos=[...allCodigos];
-    renderStatsCodigos();
-    filterCodigos();
-    document.getElementById('cnt-codigos').textContent=allCodigos.length||'—';
-  }catch(e){console.error(e);}
-  document.getElementById('loading-codigos').style.display='none';
-}
-
-function renderStatsCodigos(){
-  var now=new Date();
-  var activos=allCodigos.filter(function(c){return !c.used&&new Date(c.expires_at)>now;}).length;
-  var usados=allCodigos.filter(function(c){return c.used;}).length;
-  var expirados=allCodigos.filter(function(c){return !c.used&&new Date(c.expires_at)<=now;}).length;
-  document.getElementById('stats-codigos').innerHTML=
-    '<div class="stat-card"><div class="stat-value">'+allCodigos.length+'</div><div class="stat-label">Total generados</div></div>'+
-    '<div class="stat-card"><div class="stat-value" style="color:#14532d">'+activos+'</div><div class="stat-label">Activos</div></div>'+
-    '<div class="stat-card"><div class="stat-value" style="color:#9a3412">'+usados+'</div><div class="stat-label">Usados</div></div>'+
-    '<div class="stat-card"><div class="stat-value" style="color:var(--faint)">'+expirados+'</div><div class="stat-label">Expirados</div></div>';
-}
-
-function filterCodigos(){
-  var q=(document.getElementById('search-codigos').value||'').toLowerCase();
-  var st=document.getElementById('filter-codigos-status').value;
-  var now=new Date();
-  filteredCodigos=allCodigos.filter(function(c){
-    var matchQ=!q||c.code.toLowerCase().includes(q)||(c.phone||'').includes(q);
-    var estado=c.used?'usado':(new Date(c.expires_at)<=now?'expirado':'activo');
-    var matchSt=!st||estado===st;
-    return matchQ&&matchSt;
-  });
-  renderCodigos();
-}
-
-function codigoEstado(c){
-  var now=new Date();
-  if(c.used)return '<span class="pill pill-rechazado">Usado</span>';
-  if(new Date(c.expires_at)<=now)return '<span class="pill" style="background:#f1f5f9;color:#64748b;border:1px solid #e2e8f0">Expirado</span>';
-  return '<span class="pill pill-aprobado">Activo</span>';
-}
-
-function renderCodigos(){
-  var tb=document.getElementById('tbody-codigos');
-  var empty=document.getElementById('empty-codigos');
-  if(!filteredCodigos.length){tb.innerHTML='';empty.classList.remove('hidden');return;}
-  empty.classList.add('hidden');
-  var now=new Date();
-  tb.innerHTML=filteredCodigos.map(function(c){
-    var exp=new Date(c.expires_at);
-    var activo=!c.used&&exp>now;
-    var expStr=exp.toLocaleString('es-MX',{day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'});
-    var etiqueta=c.phone&&c.phone.startsWith('promo:')?'<span style="font-size:11px;background:var(--gold-pale);color:var(--gold);border-radius:6px;padding:2px 8px;font-weight:600">'+esc(c.phone.replace('promo:',''))+'</span>':esc(c.phone||'—');
-    var actions='<div class="td-actions">'+
-      '<button class="btn-view" onclick="copiarCodigo(\''+esc(c.code)+'\')">📋</button>';
-    if(activo)actions+='<button class="btn-delete" onclick="revocarCodigo(\''+esc(c.id)+'\')">✗ Revocar</button>';
-    actions+='</div>';
-    return '<tr>'+
-      '<td style="font-family:\'Cormorant Garamond\',serif;font-size:20px;font-weight:700;letter-spacing:.15em;color:var(--gold)">'+esc(c.code)+'</td>'+
-      '<td>'+etiqueta+'</td>'+
-      '<td class="td-phone" style="font-size:12px">'+esc(!c.phone||c.phone.startsWith('promo:')?'—':c.phone)+'</td>'+
-      '<td style="font-size:12px;color:'+(activo?'var(--ink)':'var(--faint)')+'">'+expStr+'</td>'+
-      '<td>'+codigoEstado(c)+'</td>'+
-      '<td style="font-size:11px;color:var(--faint)">'+fmtShort(c.created_at)+'</td>'+
-      '<td>'+actions+'</td>'+
-    '</tr>';
-  }).join('');
-}
-
-function abrirModalGenerarCodigos(){
-  resetModalCodigos();
-  openModal('modal-generar-codigos');
-  setTimeout(function(){document.getElementById('gcCantidad').focus();},150);
-}
-
-function resetModalCodigos(){
-  document.getElementById('gcForm').style.display='block';
-  document.getElementById('gcResultado').style.display='none';
-  document.getElementById('gcError').style.display='none';
-  document.getElementById('gcCantidad').value='1';
-  document.getElementById('gcEtiqueta').value='';
-  document.getElementById('gcDuracion').value='24';
-  var btn=document.getElementById('gcBtn');
-  btn.disabled=false;btn.textContent='Generar códigos';
-}
-
-var _codigosGenerados=[];
-
-async function generarCodigosLote(){
-  var n=parseInt(document.getElementById('gcCantidad').value)||1;
-  var etiqueta=(document.getElementById('gcEtiqueta').value||'').trim();
-  var horas=parseInt(document.getElementById('gcDuracion').value)||24;
-  var errEl=document.getElementById('gcError');
-  errEl.style.display='none';
-  if(n<1||n>100){errEl.textContent='Ingresa entre 1 y 100 códigos.';errEl.style.display='block';return;}
-  var btn=document.getElementById('gcBtn');
-  btn.disabled=true;btn.textContent='Generando…';
-  var chars='ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
-  function mkCode(){var r='';for(var i=0;i<8;i++)r+=chars[Math.floor(Math.random()*chars.length)];return r;}
-  var expires=new Date(Date.now()+horas*60*60*1000).toISOString();
-  var phone='promo:'+(etiqueta||'manual');
-  var lote=[];
-  for(var i=0;i<n;i++)lote.push({code:mkCode(),phone:phone,expires_at:expires,multi_use:true});
-  try{
-    var r=await fetch(SB+'/rest/v1/tor_unlock_codes',{
-      method:'POST',
-      headers:Object.assign({},h(),{'Prefer':'return=representation'}),
-      body:JSON.stringify(lote)
-    });
-    var inserted=await r.json();
-    if(!Array.isArray(inserted)||inserted.length===0){
-      errEl.textContent='Error al insertar códigos. Intenta de nuevo.';errEl.style.display='block';
-      btn.disabled=false;btn.textContent='Generar códigos';return;
-    }
-    _codigosGenerados=inserted.map(function(c){return c.code;});
-    // Mostrar resultado
-    var vigencia=horas<48?horas+'h':(horas<168?(horas/24)+'d':(horas===168?'7 días':(horas===720?'30 días':'1 año')));
-    document.getElementById('gcResultLabel').textContent=_codigosGenerados.length+' código'+(n>1?'s':'')+' generado'+(n>1?'s':'')+' · Vigencia: '+vigencia+(etiqueta?' · '+etiqueta:'');
-    document.getElementById('gcListaCodigos').innerHTML=_codigosGenerados.map(function(code){
-      return '<div style="display:flex;align-items:center;justify-content:space-between;padding:8px 10px;border-bottom:1px solid var(--line);">'+
-        '<span style="font-family:\'Cormorant Garamond\',serif;font-size:22px;font-weight:700;letter-spacing:.2em;color:var(--gold)">'+esc(code)+'</span>'+
-        '<button onclick="copiarCodigo(\''+esc(code)+'\')" style="font-size:11px;background:var(--bg3);border:1px solid var(--line2);border-radius:6px;padding:4px 10px;cursor:pointer;color:var(--dim);">Copiar</button>'+
-      '</div>';
-    }).join('');
-    document.getElementById('gcForm').style.display='none';
-    document.getElementById('gcResultado').style.display='block';
-    loadCodigos();
-  }catch(e){
-    errEl.textContent='Error: '+(e.message||e);errEl.style.display='block';
-    btn.disabled=false;btn.textContent='Generar códigos';
-  }
-}
-
-function copiarCodigo(code){
-  navigator.clipboard.writeText(code).then(function(){toast('📋 Copiado: '+code);}).catch(function(){toast(code);});
-}
-
-function copiarTodosCodigos(){
-  if(!_codigosGenerados.length)return;
-  navigator.clipboard.writeText(_codigosGenerados.join('\n')).then(function(){toast('📋 '+_codigosGenerados.length+' códigos copiados');}).catch(function(){toast(_codigosGenerados.join(', '));});
-}
-
-async function revocarCodigo(id){
-  if(!confirm('¿Revocar este código? Quedará inutilizable de inmediato.'))return;
-  try{
-    await fetch(SB+'/rest/v1/tor_unlock_codes?id=eq.'+encodeURIComponent(id),{
-      method:'PATCH',
-      headers:Object.assign({},h(),{'Prefer':'return=minimal'}),
-      body:JSON.stringify({used:true})
-    });
-    var c=allCodigos.find(function(x){return x.id===id;});
-    if(c)c.used=true;
-    renderStatsCodigos();
-    filterCodigos();
-    toast('✗ Código revocado');
-  }catch(e){toast('Error: '+(e.message||e));}
-}
-
-// ══════════════════════════════════════════
-// CONFIGURACIÓN (precio, banco, CLABE, etc.)
-// ══════════════════════════════════════════
-var _adminConfig={};
-
-async function loadConfigAdmin(){
-  var btn=document.getElementById('cfg-save-btn');
-  var errEl=document.getElementById('cfg-error');
-  var okEl=document.getElementById('cfg-success');
-  errEl.style.display='none';okEl.style.display='none';
-  try{
-    var rows=await sbGet('tor_config','?select=key,value');
-    if(rows&&rows.length){
-      rows.forEach(function(r){_adminConfig[r.key]=r.value;});
-      document.getElementById('cfg-precio').value=_adminConfig.precio_xxx||'100';
-      document.getElementById('cfg-banco').value=_adminConfig.banco||'';
-      document.getElementById('cfg-clabe').value=_adminConfig.clabe||'';
-      document.getElementById('cfg-cuenta').value=_adminConfig.cuenta||'';
-      document.getElementById('cfg-beneficiario').value=_adminConfig.beneficiario||'';
-      updateCfgPreview();
-    }
-  }catch(e){
-    errEl.textContent='Error al cargar configuración: '+(e.message||e);
-    errEl.style.display='block';
-  }
-}
-
-function updateCfgPreview(){
-  var precio=document.getElementById('cfg-precio').value||'—';
-  var banco=document.getElementById('cfg-banco').value||'—';
-  var clabe=document.getElementById('cfg-clabe').value||'—';
-  var cuenta=document.getElementById('cfg-cuenta').value||'—';
-  var bene=document.getElementById('cfg-beneficiario').value||'—';
-  document.getElementById('cfg-prev-precio').textContent='$'+precio+' MXN';
-  document.getElementById('cfg-prev-banco').textContent=banco;
-  document.getElementById('cfg-prev-clabe').textContent=clabe;
-  document.getElementById('cfg-prev-cuenta').textContent=cuenta;
-  document.getElementById('cfg-prev-bene').textContent=bene;
-}
-
-async function saveConfig(){
-  var errEl=document.getElementById('cfg-error');
-  var okEl=document.getElementById('cfg-success');
-  var btn=document.getElementById('cfg-save-btn');
-  errEl.style.display='none';okEl.style.display='none';
-
-  var precio=document.getElementById('cfg-precio').value.trim();
-  var banco=document.getElementById('cfg-banco').value.trim();
-  var clabe=document.getElementById('cfg-clabe').value.trim();
-  var cuenta=document.getElementById('cfg-cuenta').value.trim();
-  var bene=document.getElementById('cfg-beneficiario').value.trim();
-
-  if(!precio||isNaN(parseFloat(precio))||parseFloat(precio)<0){
-    errEl.textContent='El precio debe ser un número válido.';errEl.style.display='block';return;
-  }
-
-  btn.disabled=true;btn.textContent='Guardando…';
-
-  var updates=[
-    {key:'precio_xxx',value:precio},
-    {key:'banco',value:banco},
-    {key:'clabe',value:clabe},
-    {key:'cuenta',value:cuenta},
-    {key:'beneficiario',value:bene}
-  ];
-
-  try{
-    // UPSERT uno por uno (PostgREST no soporta bulk upsert por PK fácilmente en anon)
-    var ok=true;
-    for(var i=0;i<updates.length;i++){
-      var u=updates[i];
-      var r=await fetch(SB+'/rest/v1/tor_config?key=eq.'+encodeURIComponent(u.key),{
-        method:'PATCH',
-        headers:Object.assign({},h(),{'Prefer':'return=minimal'}),
-        body:JSON.stringify({value:u.value,updated_at:new Date().toISOString()})
-      });
-      if(!r.ok){ok=false;var txt=await r.text();errEl.textContent='Error guardando '+u.key+': '+txt;errEl.style.display='block';break;}
-    }
-    if(ok){
-      okEl.style.display='block';
-      setTimeout(function(){okEl.style.display='none';},3500);
-      toast('✓ Configuración guardada');
-      // Actualizar caché local
-      updates.forEach(function(u){_adminConfig[u.key]=u.value;});
-    }
-  }catch(e){
-    errEl.textContent='Error: '+(e.message||e);errEl.style.display='block';
-  }finally{
-    btn.disabled=false;btn.textContent='Guardar cambios';
-  }
-}
-
-// ══════════════════════════════════════════
-// ENGAGEMENT
-// ══════════════════════════════════════════
-var _engData=[], _engFiltered=[];
-
-async function loadEngagement(){
-  var tbody=document.getElementById('eng-tbody');
-  tbody.innerHTML='<tr><td colspan="8" style="text-align:center;padding:40px;color:var(--faint)">Cargando datos…</td></tr>';
-  document.getElementById('eng-empty').classList.add('hidden');
-  try{
-    var rows=await sbGet('tor_card_engagement','?order=avg_duration.desc&limit=500');
-    _engData=rows||[];
-    renderEngStats();
-    filterEngagement();
-  }catch(e){
-    tbody.innerHTML='<tr><td colspan="8" style="text-align:center;padding:40px;color:#f87171">Error al cargar: '+(e.message||e)+'</td></tr>';
-  }
-}
-
-function renderEngStats(){
-  var total=_engData.length;
-  var avgAll=total?(_engData.reduce(function(s,r){return s+parseFloat(r.avg_duration||0);},0)/total).toFixed(1):0;
-  var popular=_engData.filter(function(r){return parseFloat(r.avg_duration||0)>=30;}).length;
-  var discarded=_engData.filter(function(r){return parseFloat(r.avg_duration||0)<8;}).length;
-  var statsEl=document.getElementById('eng-stats');
-  statsEl.innerHTML=
-    '<div style="background:var(--bg3);border:1px solid var(--line);border-radius:12px;padding:14px;text-align:center"><div style="font-size:22px;font-weight:700;color:var(--gold)">'+total+'</div><div style="font-size:10px;letter-spacing:.15em;text-transform:uppercase;color:var(--faint);margin-top:2px">Cartas con datos</div></div>'+
-    '<div style="background:var(--bg3);border:1px solid var(--line);border-radius:12px;padding:14px;text-align:center"><div style="font-size:22px;font-weight:700;color:#27ae60">'+popular+'</div><div style="font-size:10px;letter-spacing:.15em;text-transform:uppercase;color:var(--faint);margin-top:2px">Populares (≥30s)</div></div>'+
-    '<div style="background:var(--bg3);border:1px solid var(--line);border-radius:12px;padding:14px;text-align:center"><div style="font-size:22px;font-weight:700;color:#e74c3c">'+discarded+'</div><div style="font-size:10px;letter-spacing:.15em;text-transform:uppercase;color:var(--faint);margin-top:2px">Descartadas (<8s)</div></div>';
-}
-
-function filterEngagement(){
-  var lvl=document.getElementById('eng-filter-level').value;
-  var mode=document.getElementById('eng-filter-mode').value;
-  var type=document.getElementById('eng-filter-type').value;
-  var sort=document.getElementById('eng-filter-sort').value;
-  _engFiltered=_engData.filter(function(r){
-    if(lvl&&r.level!==lvl)return false;
-    if(mode&&r.mode!==mode)return false;
-    if(type&&r.card_type!==type)return false;
-    return true;
-  });
-  _engFiltered.sort(function(a,b){
-    var da=parseFloat(a.avg_duration||0),db=parseFloat(b.avg_duration||0);
-    return sort==='asc'?da-db:db-da;
-  });
-  renderEngTable();
-}
-
-function renderEngTable(){
-  var tbody=document.getElementById('eng-tbody');
-  var emptyEl=document.getElementById('eng-empty');
-  if(!_engFiltered.length){
-    tbody.innerHTML='';
-    emptyEl.classList.remove('hidden');
-    return;
-  }
-  emptyEl.classList.add('hidden');
-  var html='';
-  _engFiltered.forEach(function(r){
-    var avg=parseFloat(r.avg_duration||0);
-    var pct=parseFloat(r.pct_descartada||0);
-    // Color coding: verde=popular, amarillo=medio, rojo=descartada
-    var color=avg>=30?'#27ae60':avg>=15?'#e0bc74':'#e74c3c';
-    var durLabel=avg>=60?(Math.floor(avg/60)+'m '+(Math.round(avg%60))+'s'):avg.toFixed(0)+'s';
-    var txt=esc(r.text||'');
-    var shortTxt=txt.length>70?txt.substring(0,70)+'…':txt;
-    var typeLabel=r.card_type==='pregunta'?'<span class="pill pill-truth">Verdad</span>':'<span class="pill pill-dare">Reto</span>';
-    var lvlLabel=levelPill(r.level);
-    var modeLabel=r.mode==='distancia'?'📱 Distancia':'👥 Presencial';
-    html+='<tr>'+
-      '<td style="max-width:0;width:40%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis" title="'+txt+'">'+shortTxt+'</td>'+
-      '<td>'+typeLabel+'</td>'+
-      '<td>'+lvlLabel+'</td>'+
-      '<td style="font-size:12px;color:var(--dim)">'+modeLabel+'</td>'+
-      '<td style="text-align:center;font-weight:700">'+r.veces_mostrada+'</td>'+
-      '<td style="text-align:center;font-weight:700;color:'+color+'">'+durLabel+'</td>'+
-      '<td style="text-align:center;color:'+(pct>50?'#e74c3c':pct>25?'#e0bc74':'var(--faint)')+'">'+pct+'%</td>'+
-      '<td><button onclick="openGenerateAI(\''+esc(r.card_type)+'\',\''+esc(r.level)+'\',\''+esc(r.mode)+'\',['+JSON.stringify(r.text).replace(/'/g,"\\'")+'])" style="background:transparent;border:1px solid var(--gold);border-radius:6px;color:var(--gold);font-size:10px;font-weight:700;padding:4px 8px;cursor:pointer;white-space:nowrap">✨ Generar</button></td>'+
-      '</tr>';
-  });
-  tbody.innerHTML=html;
-}
-
-// ── IA: Generar similares ──
-var _genAISamples=[];
-
-function openGenerateAI(type,level,mode,sampleTexts){
-  // Buscar las top 5 más populares del mismo tipo+nivel+modo para usar como ejemplos
-  var topSamples=_engData
-    .filter(function(r){return r.card_type===type&&r.level===level&&r.mode===mode&&r.text;})
-    .sort(function(a,b){return parseFloat(b.avg_duration||0)-parseFloat(a.avg_duration||0);})
-    .slice(0,6).map(function(r){return r.text;});
-  // Agregar la seleccionada si no está
-  if(sampleTexts&&sampleTexts[0]&&topSamples.indexOf(sampleTexts[0])<0)topSamples.unshift(sampleTexts[0]);
-  _genAISamples=topSamples.slice(0,6);
-  document.getElementById('gen-ai-type').value=type;
-  document.getElementById('gen-ai-level').value=level;
-  document.getElementById('gen-ai-mode').value=mode;
-  document.getElementById('gen-ai-sub').textContent='Similar a las más populares de nivel '+level+' / '+mode;
-  var samplesEl=document.getElementById('gen-ai-samples');
-  samplesEl.innerHTML=_genAISamples.map(function(s){return '<div style="margin-bottom:4px;padding:6px 8px;background:var(--bg2);border-radius:6px;font-size:12px">'+esc(s)+'</div>';}).join('');
-  document.getElementById('gen-ai-form').style.display='block';
-  document.getElementById('gen-ai-results').style.display='none';
-  document.getElementById('gen-ai-error').style.display='none';
-  var btn=document.getElementById('gen-ai-btn');
-  btn.disabled=false;btn.textContent='✨ Generar con Claude';
-  openModal('modal-generate-ai');
-}
-
-function resetGenerateAI(){
-  document.getElementById('gen-ai-form').style.display='block';
-  document.getElementById('gen-ai-results').style.display='none';
-  document.getElementById('gen-ai-error').style.display='none';
-  var btn=document.getElementById('gen-ai-btn');
-  btn.disabled=false;btn.textContent='✨ Generar con Claude';
-}
-
-async function runGenerateAI(){
-  var type=document.getElementById('gen-ai-type').value;
-  var level=document.getElementById('gen-ai-level').value;
-  var mode=document.getElementById('gen-ai-mode').value;
-  var count=parseInt(document.getElementById('gen-ai-count').value)||20;
-  var errEl=document.getElementById('gen-ai-error');
-  errEl.style.display='none';
-  var btn=document.getElementById('gen-ai-btn');
-  btn.disabled=true;btn.textContent='Generando… (puede tardar ~10s)';
-  try{
-    var res=await fetch(SB+'/functions/v1/generate-similar',{
-      method:'POST',
-      headers:{'Content-Type':'application/json','Authorization':'Bearer '+SK,'apikey':SK},
-      body:JSON.stringify({card_type:type,level:level,mode:mode,samples:_genAISamples,count:count})
-    });
-    var data=await res.json();
-    if(data.error){errEl.textContent='Error: '+data.error;errEl.style.display='block';btn.disabled=false;btn.textContent='✨ Generar con Claude';return;}
-    if(!data.generated||!data.generated.length){errEl.textContent='No se generó contenido. Verifica la configuración de ANTHROPIC_API_KEY.';errEl.style.display='block';btn.disabled=false;btn.textContent='✨ Generar con Claude';return;}
-    renderGeneratedList(data.generated);
-    document.getElementById('gen-ai-form').style.display='none';
-    document.getElementById('gen-ai-results').style.display='block';
-  }catch(e){
-    errEl.textContent='Error de red: '+(e.message||e);errEl.style.display='block';
-    btn.disabled=false;btn.textContent='✨ Generar con Claude';
-  }
-}
-
-var _generatedItems=[];
-
-function renderGeneratedList(items){
-  _generatedItems=items;
-  var list=document.getElementById('gen-ai-list');
-  list.innerHTML=items.map(function(txt,i){
-    return '<div style="display:flex;align-items:flex-start;gap:8px;background:var(--bg3);border:1px solid var(--line);border-radius:8px;padding:10px 12px;">'+
-      '<input type="checkbox" id="gen-item-'+i+'" checked style="margin-top:2px;accent-color:var(--gold);cursor:pointer;flex-shrink:0;">'+
-      '<label for="gen-item-'+i+'" style="font-size:13px;color:var(--ink);line-height:1.5;cursor:pointer">'+esc(txt)+'</label>'+
-      '</div>';
-  }).join('');
-}
-
-function selectAllGenerated(val){
-  _generatedItems.forEach(function(_,i){
-    var cb=document.getElementById('gen-item-'+i);
-    if(cb)cb.checked=val;
-  });
-}
-
-async function insertGenerated(){
-  var type=document.getElementById('gen-ai-type').value;
-  var level=document.getElementById('gen-ai-level').value;
-  var mode=document.getElementById('gen-ai-mode').value;
-  var errEl=document.getElementById('gen-ai-insert-error');
-  errEl.style.display='none';
-  var selected=_generatedItems.filter(function(_,i){
-    var cb=document.getElementById('gen-item-'+i);
-    return cb&&cb.checked;
-  });
-  if(!selected.length){errEl.textContent='Selecciona al menos un elemento.';errEl.style.display='block';return;}
-  var btn=document.getElementById('gen-ai-insert-btn');
-  btn.disabled=true;btn.textContent='Insertando…';
-  try{
-    var table=type==='pregunta'?'tor_questions':'tor_dares';
-    var rows=selected.map(function(txt){
-      var row={text:txt,level:level,source:'oficial'};
-      if(type==='reto')row.mode=mode;
-      return row;
-    });
-    var r=await fetch(SB+'/rest/v1/'+table,{
-      method:'POST',
-      headers:Object.assign({},h(),{'Prefer':'return=minimal'}),
-      body:JSON.stringify(rows)
-    });
-    if(!r.ok){var err=await r.text();errEl.textContent='Error BD: '+err;errEl.style.display='block';btn.disabled=false;btn.textContent='💾 Insertar seleccionados en BD';return;}
-    toast('✅ '+selected.length+' cartas insertadas en la BD');
-    closeModal('modal-generate-ai');
-    // Recargar datos de preguntas/retos en background
-    if(type==='pregunta')loadPreguntas().catch(function(){});
-    else loadRetos().catch(function(){});
-  }catch(e){
-    errEl.textContent='Error: '+(e.message||e);errEl.style.display='block';
-    btn.disabled=false;btn.textContent='💾 Insertar seleccionados en BD';
-  }
+  } else { toast('Error al actualizar'); }
 }
 </script>
 </body>
