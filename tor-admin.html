@@ -225,6 +225,12 @@ tr:hover td{background:var(--bg3);}
 .wa-link:hover{text-decoration:underline;}
 .pill-inclub{background:#f0fdf4;color:#14532d;border:1px solid rgba(134,239,172,.4);}
 .pill-noclub{background:#fff7ed;color:#9a3412;border:1px solid rgba(253,186,116,.4);}
+.pill-xxx{background:#1a0a1a;color:#d97bff;border:1px solid rgba(180,80,255,.35);}
+.pill-pendiente{background:#fff7ed;color:#9a3412;border:1px solid rgba(253,186,116,.4);}
+.pill-aprobado{background:#f0fdf4;color:#14532d;border:1px solid rgba(134,239,172,.4);}
+.pill-rechazado{background:#fff1f2;color:#7c2d12;border:1px solid rgba(252,165,165,.4);}
+.pill-revision{background:#eff6ff;color:#1e3a5f;border:1px solid rgba(147,197,253,.4);}
+.pill-postval{background:#fdf4ff;color:#6b21a8;border:1px solid rgba(192,132,252,.4);}
 
 @media(max-width:900px){
   .sidebar{width:220px;}
@@ -326,6 +332,17 @@ tr:hover td{background:var(--bg3);}
         <div class="nav-item-label">Notificaciones</div>
         <div class="nav-item-count" id="cnt-push">—</div>
       </div>
+      <div class="nav-section">XXX</div>
+      <div class="nav-item" id="nav-pagos" onclick="showSection('pagos')">
+        <div class="nav-item-icon">💳</div>
+        <div class="nav-item-label">Pagos XXX</div>
+        <div class="nav-item-count" id="cnt-pagos">—</div>
+      </div>
+      <div class="nav-item" id="nav-codigos" onclick="showSection('codigos')">
+        <div class="nav-item-icon">🎟️</div>
+        <div class="nav-item-label">Códigos</div>
+        <div class="nav-item-count" id="cnt-codigos">—</div>
+      </div>
     </div>
     <div class="sidebar-footer">
       <div class="sidebar-footer-text">Terraza Luna © 2025</div>
@@ -385,6 +402,7 @@ tr:hover td{background:var(--bg3);}
           <option value="light">Light</option>
           <option value="hot">Hot</option>
           <option value="extremo">Extremo</option>
+          <option value="xxx">XXX 🔞</option>
         </select>
         <select class="filter-select" id="filter-preguntas-source" onchange="filterPreguntas()">
           <option value="">Toda fuente</option>
@@ -429,6 +447,7 @@ tr:hover td{background:var(--bg3);}
           <option value="light">Light</option>
           <option value="hot">Hot</option>
           <option value="extremo">Extremo</option>
+          <option value="xxx">XXX 🔞</option>
         </select>
         <select class="filter-select" id="filter-retos-mode" onchange="filterRetos()">
           <option value="">Toda modalidad</option>
@@ -734,10 +753,144 @@ tr:hover td{background:var(--bg3);}
       </div>
     </div>
 
+    <!-- ── PAGOS XXX ── -->
+    <div class="section" id="section-pagos">
+      <div class="page-header">
+        <div class="page-label">Acceso XXX</div>
+        <div class="page-title">Pagos & Validaciones</div>
+        <div class="page-sub">Comprobantes de transferencia para desbloquear el nivel XXX · Validados por IA</div>
+      </div>
+      <div class="stats-grid" id="stats-pagos"></div>
+      <div class="toolbar">
+        <input class="search-box" id="search-pagos" placeholder="Buscar por teléfono…" oninput="filterPagos()">
+        <select class="filter-select" id="filter-pagos-status" onchange="filterPagos()">
+          <option value="">Todos los estados</option>
+          <option value="pendiente">Pendiente</option>
+          <option value="aprobado">Aprobado</option>
+          <option value="rechazado">Rechazado</option>
+        </select>
+        <select class="filter-select" id="filter-pagos-verdict" onchange="filterPagos()">
+          <option value="">Todo veredicto IA</option>
+          <option value="aprobado">✓ Aprobado IA</option>
+          <option value="revision_manual">⚠ Revisión manual</option>
+          <option value="rechazado">✗ Rechazado IA</option>
+        </select>
+        <button class="btn-add" onclick="loadPagos()" style="background:var(--dim)">↺ Actualizar</button>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Teléfono</th>
+              <th>Recibo</th>
+              <th>Monto detectado</th>
+              <th>Fecha detectada</th>
+              <th>Veredicto IA</th>
+              <th>Estado</th>
+              <th>Enviado</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody id="tbody-pagos"></tbody>
+        </table>
+        <div id="loading-pagos" class="loading">Cargando pagos…</div>
+        <div id="empty-pagos" class="empty hidden">
+          <div class="empty-icon">💳</div>
+          <div class="empty-text">Sin solicitudes de pago aún</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══ SECCIÓN: CÓDIGOS ══ -->
+    <div class="section" id="section-codigos">
+      <div class="page-header">
+        <div class="page-label">Acceso XXX</div>
+        <div class="page-title">Códigos de acceso</div>
+        <div class="page-sub">Genera códigos para pruebas, regalos y promociones · Cada código es de un solo uso y tiene vigencia configurable</div>
+      </div>
+      <div class="stats-grid" id="stats-codigos"></div>
+      <div class="toolbar">
+        <input class="search-box" id="search-codigos" placeholder="Buscar código o etiqueta…" oninput="filterCodigos()">
+        <select class="filter-select" id="filter-codigos-status" onchange="filterCodigos()">
+          <option value="">Todos</option>
+          <option value="activo">Activos</option>
+          <option value="usado">Usados</option>
+          <option value="expirado">Expirados</option>
+        </select>
+        <button class="btn-primary" onclick="abrirModalGenerarCodigos()" style="white-space:nowrap;">＋ Generar códigos</button>
+      </div>
+      <table class="data-table">
+        <thead><tr>
+          <th>Código</th>
+          <th>Etiqueta</th>
+          <th>Teléfono</th>
+          <th>Expira</th>
+          <th>Estado</th>
+          <th>Creado</th>
+          <th>Acciones</th>
+        </tr></thead>
+        <tbody id="tbody-codigos"></tbody>
+      </table>
+      <div id="loading-codigos" class="loading">Cargando códigos…</div>
+      <div id="empty-codigos" class="empty hidden">
+        <div class="empty-icon">🎟️</div>
+        <div class="empty-text">No hay códigos generados aún</div>
+      </div>
+    </div>
   </div><!-- /main -->
 </div><!-- /app -->
 
 <!-- ── MODAL: USER DETAIL ── -->
+<!-- Modal: Generar códigos -->
+<div class="modal-overlay hidden" id="modal-generar-codigos">
+  <div class="modal" style="max-width:480px">
+    <div class="modal-header">
+      <div class="modal-title">🎟️ Generar códigos de acceso</div>
+      <button class="modal-close" onclick="closeModal('modal-generar-codigos')">✕</button>
+    </div>
+    <div class="modal-body">
+      <!-- Configuración -->
+      <div id="gcForm">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px;">
+          <div>
+            <div class="modal-label">Cantidad de códigos</div>
+            <input id="gcCantidad" type="number" min="1" max="100" value="1"
+              style="width:100%;box-sizing:border-box;border:1px solid var(--line2);border-radius:10px;padding:10px 12px;font-size:18px;font-family:'Cormorant Garamond',serif;font-weight:600;text-align:center;color:var(--ink);background:var(--bg3);">
+          </div>
+          <div>
+            <div class="modal-label">Vigencia</div>
+            <select id="gcDuracion" style="width:100%;box-sizing:border-box;border:1px solid var(--line2);border-radius:10px;padding:10px 12px;font-size:13px;font-family:'Inter Tight',sans-serif;color:var(--ink);background:var(--bg3);height:42px;">
+              <option value="24">24 horas</option>
+              <option value="48">48 horas</option>
+              <option value="168">7 días</option>
+              <option value="720">30 días</option>
+              <option value="8760">1 año</option>
+            </select>
+          </div>
+        </div>
+        <div style="margin-bottom:16px;">
+          <div class="modal-label">Etiqueta / concepto <span style="font-weight:400;color:var(--faint)">(para identificarlos)</span></div>
+          <input id="gcEtiqueta" type="text" placeholder="Ej: Promo Nov 2026, Testing, Evento…" maxlength="60"
+            style="width:100%;box-sizing:border-box;border:1px solid var(--line2);border-radius:10px;padding:10px 12px;font-size:13px;font-family:'Inter Tight',sans-serif;color:var(--ink);background:var(--bg3);">
+        </div>
+        <div id="gcError" style="color:#c0392b;font-size:12px;margin-bottom:10px;display:none;"></div>
+        <button class="btn-primary" id="gcBtn" onclick="generarCodigosLote()" style="width:100%;padding:14px;font-size:14px;">Generar códigos</button>
+      </div>
+
+      <!-- Resultado -->
+      <div id="gcResultado" style="display:none;">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
+          <div style="font-size:13px;font-weight:600;color:var(--ink);" id="gcResultLabel">Códigos generados:</div>
+          <button onclick="copiarTodosCodigos()" style="font-size:11px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;background:var(--bg3);border:1px solid var(--line2);border-radius:8px;padding:6px 12px;cursor:pointer;color:var(--dim);">📋 Copiar todos</button>
+        </div>
+        <div id="gcListaCodigos" style="background:var(--bg3);border:1px solid var(--line);border-radius:12px;padding:8px;max-height:320px;overflow-y:auto;"></div>
+        <div style="margin-top:12px;font-size:12px;color:var(--faint);line-height:1.5;">⏱ Vigencia configurada según selección · 🔂 Un solo uso por código</div>
+        <button onclick="resetModalCodigos()" style="margin-top:14px;width:100%;background:transparent;border:1px solid var(--line);border-radius:10px;padding:11px;font-size:12px;font-weight:600;cursor:pointer;color:var(--dim);font-family:'Inter Tight',sans-serif;letter-spacing:.06em;text-transform:uppercase;">Generar más códigos</button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <div class="modal-overlay hidden" id="modal-user">
   <div class="modal">
     <div class="modal-header">
@@ -770,6 +923,7 @@ tr:hover td{background:var(--bg3);}
           <option value="light">Light</option>
           <option value="hot">Hot</option>
           <option value="extremo">Extremo</option>
+          <option value="xxx">XXX 🔞</option>
         </select>
       </div>
       <div class="form-group" id="me-mode-group" style="display:none">
@@ -813,6 +967,7 @@ tr:hover td{background:var(--bg3);}
           <option value="light">Light</option>
           <option value="hot">Hot</option>
           <option value="extremo">Extremo</option>
+          <option value="xxx">XXX 🔞</option>
         </select>
       </div>
       <div class="form-group" id="ma-mode-group" style="display:none">
@@ -868,6 +1023,26 @@ tr:hover td{background:var(--bg3);}
   </div>
 </div>
 
+<!-- ── MODAL: RECIBO PAGO ── -->
+<div class="modal-overlay hidden" id="modal-recibo">
+  <div class="modal" style="max-width:560px">
+    <div class="modal-header">
+      <div class="modal-title" id="mr-title">Comprobante de pago</div>
+      <div class="modal-sub" id="mr-sub"></div>
+    </div>
+    <div class="modal-body">
+      <div id="mr-img-wrap" style="text-align:center;margin-bottom:16px">
+        <img id="mr-img" src="" alt="Comprobante" style="max-width:100%;max-height:380px;border-radius:12px;border:1px solid var(--line);object-fit:contain">
+        <div id="mr-img-loading" style="padding:40px;color:var(--faint);font-size:13px">Cargando imagen…</div>
+      </div>
+      <div id="mr-details"></div>
+    </div>
+    <div class="modal-footer" id="mr-footer">
+      <button class="btn-secondary" onclick="closeModal('modal-recibo')">Cerrar</button>
+    </div>
+  </div>
+</div>
+
 <div class="toast" id="toast"></div>
 
 <script>
@@ -876,8 +1051,8 @@ const SK='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6I
 const ADMIN_PIN='7777'; // Cambiar por el PIN deseado
 
 const COLORS=['#c0392b','#2980b9','#27ae60','#d35400','#8e44ad','#16a085','#7f6b4a','#2c3e50','#1a7a4a','#8a6420'];
-const LEVEL_LABELS={familiar:'Familiar',light:'Light',hot:'Hot',extremo:'Extremo',mixto:'Mixto',comunidad:'Comunidad'};
-const LEVEL_CLASS={familiar:'pill-familiar',light:'pill-light',hot:'pill-hot',extremo:'pill-extremo',mixto:'pill-comunidad',comunidad:'pill-comunidad'};
+const LEVEL_LABELS={familiar:'Familiar',light:'Light',hot:'Hot',extremo:'Extremo',mixto:'Mixto',comunidad:'Comunidad',xxx:'XXX 🔞'};
+const LEVEL_CLASS={familiar:'pill-familiar',light:'pill-light',hot:'pill-hot',extremo:'pill-extremo',mixto:'pill-comunidad',comunidad:'pill-comunidad',xxx:'pill-xxx'};
 
 // State
 var allUsuarios=[], filteredUsuarios=[];
@@ -959,11 +1134,13 @@ function showSection(name){
   if(name==='analytics') renderAnalytics();
   if(name==='lealtad') renderLealtad();
   if(name==='push') loadPushDevices();
+  if(name==='pagos') loadPagos();
+  if(name==='codigos') loadCodigos();
 }
 
 // ── LOAD ALL DATA ──
 async function loadAll(){
-  await Promise.all([loadPreguntas(),loadRetos(),loadPartidas(),loadMarketing(),loadPhotoDuration(),loadFeedback(),loadLoyaltyClients()]);
+  await Promise.all([loadPreguntas(),loadRetos(),loadPartidas(),loadMarketing(),loadPhotoDuration(),loadFeedback(),loadLoyaltyClients(),loadPagos(),loadCodigos()]);
   await Promise.all([loadParticipants(),loadSeen()]);
   await loadUsuarios();
   renderStats();
@@ -1241,9 +1418,7 @@ function openUserDetail(phone){
       html+='<div style="display:flex;gap:5px;flex-shrink:0;flex-wrap:wrap;justify-content:flex-end;margin-top:2px">';
       html+=levelPill(d.level);
       html+='<span class="pill '+(d.mode==='distancia'?'pill-light':'pill-familiar')+'">'+esc(d.mode==='distancia'?'Dist.':'Pres.')+'</span>';
-      html+='<button class="btn-edit" onclick="closeModal(\'modal-user\');openEdit(\''+d.id+'\',\'reto\')">Editar</button>';
-      html+='<button class="btn-delete" onclick="closeModal(\'modal-user\');openDelete(\''+d.id+'\',\'reto\',\''+esc(d.text.substring(0,60))+'...\')">Eliminar</button>';
-      html+='</div>';
+         html+='</div>';
       html+='</div>';
     });
     html+='</div>';
@@ -1500,7 +1675,7 @@ function openDeleteUser(phone){
   var u=allUsuarios.find(x=>x.phone===phone);
   if(!u)return;
   deleteUserPhone=phone;
-  deleteTarget=null; // aseguramos que no hay conflicto con el delete de contenido
+  deleteTarget=null;
   document.getElementById('md-sub').textContent='¿Eliminar usuario? Esta acción no se puede deshacer.';
   document.getElementById('md-text').textContent=u.name+' · '+u.phone+' — Se eliminarán también su historial de cartas y registro de partidas.';
   openModal('modal-delete');
@@ -1513,7 +1688,6 @@ async function confirmDelete(){
     var u=allUsuarios.find(x=>x.phone===phone);
     if(!u){closeModal('modal-delete');return;}
     try{
-      // Borrar registros relacionados primero
       await fetch(SB+'/rest/v1/tor_user_seen?phone=eq.'+encodeURIComponent(phone),{method:'DELETE',headers:h()});
       await fetch(SB+'/rest/v1/tor_game_participants?phone=eq.'+encodeURIComponent(phone),{method:'DELETE',headers:h()});
       var ok=await sbDelete('tor_users',u.id);
@@ -1612,7 +1786,6 @@ async function savePhotoDuration(){
     });
     if(!r.ok){var err=await r.text();throw new Error(err);}
     var updated=await r.json();
-    // Si no actualizó ninguna fila, insertar
     if(!updated||!updated.length){
       var r2=await fetch(SB+'/rest/v1/tor_settings',{
         method:'POST',
@@ -1683,7 +1856,6 @@ async function uploadMedia(input){
     var type=isPhoto?'photo':'video';
     var ext=file.name.split('.').pop().toLowerCase();
     var filename=Date.now()+'_'+Math.random().toString(36).slice(2)+'.'+ext;
-    // Upload to Supabase Storage
     var upRes=await fetch(SB+'/storage/v1/object/tor-marketing/'+filename,{
       method:'POST',
       headers:{'apikey':SK,'Authorization':'Bearer '+SK,'Content-Type':file.type,'x-upsert':'true'},
@@ -1691,7 +1863,6 @@ async function uploadMedia(input){
     });
     if(!upRes.ok){var err=await upRes.text();throw new Error(err);}
     var publicUrl=SB+'/storage/v1/object/public/tor-marketing/'+filename;
-    // Save record
     var res=await sbPost('tor_media',{type:type,url:publicUrl,filename:filename});
     if(res&&res[0]){
       allMarketing.unshift(res[0]);
@@ -1896,7 +2067,6 @@ function renderLealtad(){
     statCard(noclub.length,'VoR sin club')+
     statCard(novor.length,'Club sin VoR');
 
-  // VoR sin club
   var tb1=document.getElementById('tbody-noclub');
   var e1=document.getElementById('empty-noclub');
   document.getElementById('loading-noclub').style.display='none';
@@ -1920,7 +2090,6 @@ function renderLealtad(){
     }).join('');
   }
 
-  // Club sin VoR
   var tb2=document.getElementById('tbody-novor');
   var e2=document.getElementById('empty-novor');
   document.getElementById('loading-novor').style.display='none';
@@ -1984,7 +2153,6 @@ function openPartidaDetail(gameId){
   var players=g.players||[];
   var html='';
 
-  // Meta grid
   html+='<div class="detail-section"><div class="detail-section-title">Información</div>';
   html+='<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">';
   html+='<div><div style="font-size:10px;color:var(--faint);letter-spacing:.12em;text-transform:uppercase;margin-bottom:4px">Nivel</div>'+levelPill(g.level)+'</div>';
@@ -1993,7 +2161,6 @@ function openPartidaDetail(gameId){
   html+='<div><div style="font-size:10px;color:var(--faint);letter-spacing:.12em;text-transform:uppercase;margin-bottom:4px">Ronda</div><div style="font-family:\'Cormorant Garamond\',serif;font-size:28px;font-weight:700;color:var(--gold)">'+(g.round||1)+'</div></div>';
   html+='</div></div>';
 
-  // Players
   html+='<div class="detail-section"><div class="detail-section-title">Jugadores ('+players.length+')</div><div class="co-player-grid">';
   if(players.length){
     players.forEach(function(p,pi){
@@ -2007,7 +2174,6 @@ function openPartidaDetail(gameId){
   } else {html+='<div style="color:var(--faint);font-size:13px">Sin jugadores registrados</div>';}
   html+='</div></div>';
 
-  // Seen cards in this game (if game_id linkage exists)
   var gameSeen=allSeen.filter(function(s){return s.game_id===g.id;});
   if(gameSeen.length){
     var seenQ=gameSeen.filter(function(s){return s.card_type==='q';}).length;
@@ -2033,120 +2199,320 @@ function exportPartidasCSV(){
   a.click();
 }
 
-// ── Close modal on backdrop click ──
-document.querySelectorAll('.modal-overlay').forEach(ov=>{
-  ov.addEventListener('click',e=>{if(e.target===ov)ov.classList.add('hidden');});
-});
+// ── PAGOS XXX ──
+var allPagos=[], filteredPagos=[];
 
-// ── Auto-refresh cada 30s (solo cuando el panel está abierto) ──
-var _refreshInterval=null;
-function startAutoRefresh(){
-  if(_refreshInterval)return;
-  _refreshInterval=setInterval(async function(){
-    if(document.getElementById('app').classList.contains('hidden'))return;
-    // Guard: evitar que dos ciclos corran en paralelo si la red es lenta
-    if(_isRefreshing)return;
-    _isRefreshing=true;
-    try{
-      await Promise.all([loadPartidas(),loadParticipants(),loadSeen()]);
-      await loadUsuarios(); // Cargar después de participants y seen
-      renderStats();
-      // Re-renderizar la sección activa si es usuarios o partidas
-      var active=document.querySelector('.section.active');
-      if(active&&active.id==='section-partidas')filterPartidas();
-    }finally{
-      _isRefreshing=false;
-    }
-  },30000);
-}
-function stopAutoRefresh(){clearInterval(_refreshInterval);_refreshInterval=null;_isRefreshing=false;}
-
-// Enter on PIN
-document.getElementById('pinInput').addEventListener('keydown',e=>{if(e.key==='Enter')checkPin();});
-
-// ── PUSH NOTIFICATIONS ──
-const PUSH_EDGE = SB + '/functions/v1/send-push';
-
-async function loadPushDevices(){
-  document.getElementById('loading-push').style.display='block';
-  document.getElementById('empty-push').classList.add('hidden');
-  document.getElementById('tbody-push-devices').innerHTML='';
-
-  try {
-    const r = await fetch(SB+'/rest/v1/push_subscriptions?select=endpoint,created_at&order=created_at.desc', {
-      headers:{'apikey':SK,'Authorization':'Bearer '+SK}
-    });
-    const subs = r.ok ? await r.json() : [];
-
-    document.getElementById('loading-push').style.display='none';
-    document.getElementById('push-cnt-devices').textContent = subs.length || '0';
-    document.getElementById('cnt-push').textContent = subs.length || '0';
-
-    if(!subs.length){ document.getElementById('empty-push').classList.remove('hidden'); return; }
-
-    const tbody = document.getElementById('tbody-push-devices');
-    subs.forEach(s=>{
-      const short = s.endpoint.replace('https://','').split('/')[0] + '/…';
-      const fecha = s.created_at ? new Date(s.created_at).toLocaleDateString('es-MX',{day:'2-digit',month:'short',year:'numeric'}) : '—';
-      tbody.insertAdjacentHTML('beforeend',`
-        <tr>
-          <td style="font-size:11px;color:var(--faint);max-width:340px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${short}</td>
-          <td>${fecha}</td>
-          <td><button onclick="deletePushSub('${encodeURIComponent(s.endpoint)}')"
-            style="background:none;border:1px solid rgba(239,68,68,.3);color:#ef4444;border-radius:6px;padding:4px 10px;font-size:10px;cursor:pointer">Eliminar</button></td>
-        </tr>`);
-    });
-  } catch(e) {
-    document.getElementById('loading-push').style.display='none';
-    document.getElementById('empty-push').classList.remove('hidden');
-    console.warn('[Push] Error cargando dispositivos:', e);
+async function loadPagos(){
+  document.getElementById('loading-pagos').style.display='block';
+  document.getElementById('empty-pagos').classList.add('hidden');
+  document.getElementById('tbody-pagos').innerHTML='';
+  try{
+    var rows=await sbGet('tor_unlock_requests','?order=created_at.desc&select=*');
+    allPagos=rows||[];
+    var pendientes=allPagos.filter(function(p){return p.status==='pendiente'||p.ai_verdict==='revision_manual';}).length;
+    document.getElementById('cnt-pagos').textContent=pendientes||allPagos.length;
+    filterPagos();
+    document.getElementById('loading-pagos').style.display='none';
+    renderStatsPagos();
+  }catch(e){
+    document.getElementById('loading-pagos').textContent='Error al cargar pagos';
   }
 }
 
-async function deletePushSub(encodedEndpoint){
-  const endpoint = decodeURIComponent(encodedEndpoint);
-  if(!confirm('¿Eliminar esta suscripción?')) return;
-  await fetch(SB+'/rest/v1/push_subscriptions?endpoint=eq.'+encodeURIComponent(endpoint),{
-    method:'DELETE',
-    headers:{'apikey':SK,'Authorization':'Bearer '+SK}
+function filterPagos(){
+  var q=(document.getElementById('search-pagos').value||'').toLowerCase();
+  var st=document.getElementById('filter-pagos-status').value;
+  var vd=document.getElementById('filter-pagos-verdict').value;
+  filteredPagos=allPagos.filter(function(p){
+    if(q&&!(p.phone||'').includes(q))return false;
+    if(st&&p.status!==st)return false;
+    if(vd&&p.ai_verdict!==vd)return false;
+    return true;
   });
-  loadPushDevices();
+  renderPagos();
 }
 
-async function sendPushNotification(){
-  const title = document.getElementById('push-title').value.trim() || 'Terraza Luna';
-  const body  = document.getElementById('push-body').value.trim();
-  const url   = document.getElementById('push-url').value.trim() || '/tor';
+function renderStatsPagos(){
+  var total=allPagos.length;
+  var pend=allPagos.filter(function(p){return p.status==='pendiente';}).length;
+  var apro=allPagos.filter(function(p){return p.status==='aprobado';}).length;
+  var rech=allPagos.filter(function(p){return p.status==='rechazado';}).length;
+  var rev=allPagos.filter(function(p){return p.ai_verdict==='revision_manual';}).length;
+  document.getElementById('stats-pagos').innerHTML=
+    statCard(total,'Total solicitudes')+
+    statCard(pend,'Pendientes')+
+    statCard(apro,'Aprobados')+
+    statCard(rech,'Rechazados')+
+    statCard(rev,'Revisión manual');
+}
 
-  if(!body){ alert('Escribe un mensaje antes de enviar'); return; }
+function verdictPill(v){
+  if(v==='aprobado')return '<span class="pill pill-aprobado">✓ Aprobado IA</span>';
+  if(v==='rechazado')return '<span class="pill pill-rechazado">✗ Rechazado IA</span>';
+  if(v==='revision_manual')return '<span class="pill pill-revision">⚠ Revisión manual</span>';
+  return '<span class="pill pill-pendiente">—</span>';
+}
 
-  const btn = document.getElementById('push-send-btn');
-  const res = document.getElementById('push-result');
-  btn.disabled = true;
-  btn.textContent = 'Enviando…';
-  res.style.display = 'none';
+function statusPill(s,autoApproved){
+  if(s==='aprobado'&&autoApproved)return '<span class="pill pill-postval">⚡ Auto · Post-val</span>';
+  if(s==='aprobado')return '<span class="pill pill-aprobado">✓ Aprobado</span>';
+  if(s==='rechazado')return '<span class="pill pill-rechazado">✗ Rechazado</span>';
+  return '<span class="pill pill-pendiente">Pendiente</span>';
+}
 
-  try {
-    const r = await fetch(PUSH_EDGE, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ title, body, url }),
+function renderPagos(){
+  var tb=document.getElementById('tbody-pagos');
+  var empty=document.getElementById('empty-pagos');
+  if(!filteredPagos.length){tb.innerHTML='';empty.classList.remove('hidden');return;}
+  empty.classList.add('hidden');
+  tb.innerHTML=filteredPagos.map(function(p){
+    var thumb=p.receipt_url
+      ?'<img src="'+esc(p.receipt_url)+'" style="width:52px;height:38px;object-fit:cover;border-radius:6px;border:1px solid var(--line);cursor:pointer;display:block" onclick="openRecibo(\''+esc(p.id)+'\')" title="Ver recibo">'
+      :'<span style="color:var(--faint);font-size:12px">—</span>';
+    var monto=p.amount_detected!=null?'$'+Number(p.amount_detected).toLocaleString('es-MX',{minimumFractionDigits:2}):'—';
+    var fecha=p.date_detected||'—';
+    var needsReview=(p.status==='pendiente'&&p.ai_verdict==='revision_manual');
+    var isAutoApproved=(p.status==='aprobado'&&p.auto_approved);
+    var actions='<div class="td-actions">';
+    if(p.receipt_url)actions+='<button class="btn-view" onclick="openRecibo(\''+esc(p.id)+'\')">Ver</button>';
+    if(needsReview||p.status==='pendiente'){
+      actions+='<button class="btn-edit" style="border-color:rgba(134,239,172,.5);color:#14532d" onclick="aprobarPago(\''+esc(p.id)+'\')">✓ Aprobar</button>';
+      actions+='<button class="btn-delete" onclick="rechazarPago(\''+esc(p.id)+'\')">✗ Rechazar</button>';
+    }
+    if(isAutoApproved){
+      actions+='<button class="btn-delete" title="Pago no llegó — revocar código" onclick="cancelarCodigoAuto(\''+esc(p.id)+'\',\''+esc(p.phone||'')+'\')">✗ Cancelar código</button>';
+    }
+    actions+='</div>';
+    return '<tr'+(isAutoApproved?' style="background:rgba(109,40,217,.04)"':'')+'>'+
+      '<td class="td-phone">'+esc(p.phone||'—')+'</td>'+
+      '<td>'+thumb+'</td>'+
+      '<td style="font-family:\'Cormorant Garamond\',serif;font-size:18px;font-weight:700;color:var(--gold)">'+esc(monto)+'</td>'+
+      '<td style="font-size:12px;color:var(--dim)">'+esc(fecha)+'</td>'+
+      '<td>'+verdictPill(p.ai_verdict)+'</td>'+
+      '<td>'+statusPill(p.status,p.auto_approved)+'</td>'+
+      '<td style="font-size:11px;color:var(--faint)">'+fmtShort(p.created_at)+'</td>'+
+      '<td>'+actions+'</td>'+
+    '</tr>';
+  }).join('');
+}
+
+function openRecibo(id){
+  var p=allPagos.find(function(x){return x.id===id;});
+  if(!p)return;
+  document.getElementById('mr-title').textContent='Comprobante · '+esc(p.phone||'');
+  var verdictLabel={aprobado:'✓ Aprobado por IA',rechazado:'✗ Rechazado por IA',revision_manual:'⚠ Requiere revisión manual'}[p.ai_verdict]||'Sin veredicto';
+  document.getElementById('mr-sub').textContent=verdictLabel;
+  var imgEl=document.getElementById('mr-img');
+  var loadEl=document.getElementById('mr-img-loading');
+  imgEl.style.display='none';
+  loadEl.style.display='block';
+  if(p.receipt_url){
+    imgEl.onload=function(){loadEl.style.display='none';imgEl.style.display='inline-block';};
+    imgEl.onerror=function(){loadEl.textContent='No se pudo cargar la imagen';};
+    imgEl.src=p.receipt_url;
+  } else {
+    loadEl.textContent='Sin imagen adjunta';
+  }
+  var det='<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">';
+  det+='<div><div class="modal-label">Teléfono</div><div class="modal-val">'+esc(p.phone||'—')+'</div></div>';
+  det+='<div><div class="modal-label">Monto detectado</div><div class="modal-val" style="font-family:\'Cormorant Garamond\',serif;font-size:22px;color:var(--gold)">'+(p.amount_detected!=null?'$'+Number(p.amount_detected).toLocaleString('es-MX',{minimumFractionDigits:2}):'—')+'</div></div>';
+  det+='<div><div class="modal-label">Fecha detectada</div><div class="modal-val">'+esc(p.date_detected||'—')+'</div></div>';
+  det+='<div><div class="modal-label">Destinatario detectado</div><div class="modal-val" style="font-size:12px">'+esc(p.recipient_detected||'—')+'</div></div>';
+  det+='<div><div class="modal-label">Veredicto IA</div><div class="modal-val">'+verdictPill(p.ai_verdict)+'</div></div>';
+  det+='<div><div class="modal-label">Estado</div><div class="modal-val">'+statusPill(p.status,p.auto_approved)+'</div></div>';
+  if(p.auto_approved){det+='<div style="grid-column:1/-1"><div class="modal-label" style="color:#6b21a8">⚡ Post-validación</div><div class="modal-val" style="font-size:12px;color:var(--dim)">Este pago fue aprobado automáticamente por IA y el código ya fue entregado. Verifica que el depósito haya llegado. Si no, cancela el código.</div></div>';}
+
+  if(p.ai_notes){det+='<div style="grid-column:1/-1"><div class="modal-label">Notas IA</div><div class="modal-val" style="font-size:12px;color:var(--faint)">'+esc(p.ai_notes)+'</div></div>';}
+  det+='</div>';
+  document.getElementById('mr-details').innerHTML=det;
+  var footer=document.getElementById('mr-footer');
+  var needsAction=(p.status==='pendiente');
+  var isAutoApproved=(p.status==='aprobado'&&p.auto_approved);
+  footer.innerHTML='<button class="btn-secondary" onclick="closeModal(\'modal-recibo\')">Cerrar</button>';
+  if(needsAction){
+    footer.innerHTML+='<button class="btn-danger-solid" onclick="rechazarPago(\''+esc(p.id)+'\');closeModal(\'modal-recibo\')">✗ Rechazar</button>';
+    footer.innerHTML+='<button class="btn-primary" style="background:#14532d;border-color:#14532d" onclick="aprobarPago(\''+esc(p.id)+'\');closeModal(\'modal-recibo\')">✓ Aprobar</button>';
+  }
+  if(isAutoApproved){
+    footer.innerHTML+='<button class="btn-danger-solid" onclick="cancelarCodigoAuto(\''+esc(p.id)+'\',\''+esc(p.phone||'')+'\');closeModal(\'modal-recibo\')">✗ Cancelar código — pago no llegó</button>';
+  }
+  openModal('modal-recibo');
+}
+
+async function aprobarPago(id){
+  var p=allPagos.find(function(x){return x.id===id;});
+  if(!p)return;
+  if(!confirm('¿Aprobar manualmente este pago y generar código de acceso para '+p.phone+'?'))return;
+  try{
+    var ok=await sbPatch('tor_unlock_requests',id,{status:'aprobado',reviewed_by:'admin'});
+    if(!ok){toast('Error al aprobar');return;}
+    var chars='ABCDEFGHJKLMNPQRSTUVWXYZ2
+
+// ── SECCIÓN CÓDIGOS ──
+var allCodigos=[], filteredCodigos=[];
+
+async function loadCodigos(){
+  document.getElementById('loading-codigos').style.display='block';
+  try{
+    var r=await sbGet('tor_unlock_codes','?select=*&order=created_at.desc');
+    allCodigos=Array.isArray(r)?r:[];
+    filteredCodigos=[...allCodigos];
+    renderStatsCodigos();
+    filterCodigos();
+    document.getElementById('cnt-codigos').textContent=allCodigos.length||'—';
+  }catch(e){console.error(e);}
+  document.getElementById('loading-codigos').style.display='none';
+}
+
+function renderStatsCodigos(){
+  var now=new Date();
+  var activos=allCodigos.filter(function(c){return !c.used&&new Date(c.expires_at)>now;}).length;
+  var usados=allCodigos.filter(function(c){return c.used;}).length;
+  var expirados=allCodigos.filter(function(c){return !c.used&&new Date(c.expires_at)<=now;}).length;
+  document.getElementById('stats-codigos').innerHTML=
+    '<div class="stat-card"><div class="stat-value">'+allCodigos.length+'</div><div class="stat-label">Total generados</div></div>'+
+    '<div class="stat-card"><div class="stat-value" style="color:#14532d">'+activos+'</div><div class="stat-label">Activos</div></div>'+
+    '<div class="stat-card"><div class="stat-value" style="color:#9a3412">'+usados+'</div><div class="stat-label">Usados</div></div>'+
+    '<div class="stat-card"><div class="stat-value" style="color:var(--faint)">'+expirados+'</div><div class="stat-label">Expirados</div></div>';
+}
+
+function filterCodigos(){
+  var q=(document.getElementById('search-codigos').value||'').toLowerCase();
+  var st=document.getElementById('filter-codigos-status').value;
+  var now=new Date();
+  filteredCodigos=allCodigos.filter(function(c){
+    var matchQ=!q||c.code.toLowerCase().includes(q)||(c.phone||'').includes(q);
+    var estado=c.used?'usado':(new Date(c.expires_at)<=now?'expirado':'activo');
+    var matchSt=!st||estado===st;
+    return matchQ&&matchSt;
+  });
+  renderCodigos();
+}
+
+function codigoEstado(c){
+  var now=new Date();
+  if(c.used)return '<span class="pill pill-rechazado">Usado</span>';
+  if(new Date(c.expires_at)<=now)return '<span class="pill" style="background:#f1f5f9;color:#64748b;border:1px solid #e2e8f0">Expirado</span>';
+  return '<span class="pill pill-aprobado">Activo</span>';
+}
+
+function renderCodigos(){
+  var tb=document.getElementById('tbody-codigos');
+  var empty=document.getElementById('empty-codigos');
+  if(!filteredCodigos.length){tb.innerHTML='';empty.classList.remove('hidden');return;}
+  empty.classList.add('hidden');
+  var now=new Date();
+  tb.innerHTML=filteredCodigos.map(function(c){
+    var exp=new Date(c.expires_at);
+    var activo=!c.used&&exp>now;
+    var expStr=exp.toLocaleString('es-MX',{day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'});
+    var etiqueta=c.phone&&c.phone.startsWith('promo:')?'<span style="font-size:11px;background:var(--gold-pale);color:var(--gold);border-radius:6px;padding:2px 8px;font-weight:600">'+esc(c.phone.replace('promo:',''))+'</span>':esc(c.phone||'—');
+    var actions='<div class="td-actions">'+
+      '<button class="btn-view" onclick="copiarCodigo(''+esc(c.code)+'')">📋</button>';
+    if(activo)actions+='<button class="btn-delete" onclick="revocarCodigo(''+esc(c.id)+'')">✗ Revocar</button>';
+    actions+='</div>';
+    return '<tr>'+
+      '<td style="font-family:'Cormorant Garamond',serif;font-size:20px;font-weight:700;letter-spacing:.15em;color:var(--gold)">'+esc(c.code)+'</td>'+
+      '<td>'+etiqueta+'</td>'+
+      '<td class="td-phone" style="font-size:12px">'+esc(!c.phone||c.phone.startsWith('promo:')?'—':c.phone)+'</td>'+
+      '<td style="font-size:12px;color:'+(activo?'var(--ink)':'var(--faint)')+'">'+expStr+'</td>'+
+      '<td>'+codigoEstado(c)+'</td>'+
+      '<td style="font-size:11px;color:var(--faint)">'+fmtShort(c.created_at)+'</td>'+
+      '<td>'+actions+'</td>'+
+    '</tr>';
+  }).join('');
+}
+
+function abrirModalGenerarCodigos(){
+  resetModalCodigos();
+  openModal('modal-generar-codigos');
+  setTimeout(function(){document.getElementById('gcCantidad').focus();},150);
+}
+
+function resetModalCodigos(){
+  document.getElementById('gcForm').style.display='block';
+  document.getElementById('gcResultado').style.display='none';
+  document.getElementById('gcError').style.display='none';
+  document.getElementById('gcCantidad').value='1';
+  document.getElementById('gcEtiqueta').value='';
+  document.getElementById('gcDuracion').value='24';
+  var btn=document.getElementById('gcBtn');
+  btn.disabled=false;btn.textContent='Generar códigos';
+}
+
+var _codigosGenerados=[];
+
+async function generarCodigosLote(){
+  var n=parseInt(document.getElementById('gcCantidad').value)||1;
+  var etiqueta=(document.getElementById('gcEtiqueta').value||'').trim();
+  var horas=parseInt(document.getElementById('gcDuracion').value)||24;
+  var errEl=document.getElementById('gcError');
+  errEl.style.display='none';
+  if(n<1||n>100){errEl.textContent='Ingresa entre 1 y 100 códigos.';errEl.style.display='block';return;}
+  var btn=document.getElementById('gcBtn');
+  btn.disabled=true;btn.textContent='Generando…';
+  var chars='ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+  function mkCode(){var r='';for(var i=0;i<8;i++)r+=chars[Math.floor(Math.random()*chars.length)];return r;}
+  var expires=new Date(Date.now()+horas*60*60*1000).toISOString();
+  var phone='promo:'+(etiqueta||'manual');
+  var lote=[];
+  for(var i=0;i<n;i++)lote.push({code:mkCode(),phone:phone,expires_at:expires});
+  try{
+    var r=await fetch(SB+'/rest/v1/tor_unlock_codes',{
+      method:'POST',
+      headers:Object.assign({},h(),{'Prefer':'return=representation'}),
+      body:JSON.stringify(lote)
     });
-    const data = await r.json();
-    res.style.display = 'block';
-    if(r.ok){
-      res.style.background = 'rgba(52,211,153,.1)';
-      res.style.border = '1px solid rgba(52,211,153,.3)';
-      res.style.color = '#34d399';
-      res.textContent = `✓ Enviada a ${data.sent} dispositivo${data.sent!==1?'s':''}${data.failed?' · '+data.failed+' fallaron':''}${data.expired_removed?' · '+data.expired_removed+' eliminadas (expiradas)':''}`;
-      document.getElementById('push-last-sent').textContent = new Date().toLocaleTimeString('es-MX',{hour:'2-digit',minute:'2-digit'});
-      document.getElementById('push-body').value = '';
-      document.getElementById('push-title').value = '';
-    } else {
-      res.style.background = 'rgba(239,68,68,.1)';
-      res.style.border = '1px solid rgba(239,68,68,.3)';
-      res.style.color = '#ef4444';
-      res.textContent = '✗ Error: ' + (data.error || 'Respuesta inesperada del servidor');
+    var inserted=await r.json();
+    if(!Array.isArray(inserted)||inserted.length===0){
+      errEl.textContent='Error al insertar códigos. Intenta de nuevo.';errEl.style.display='block';
+      btn.disabled=false;btn.textContent='Generar códigos';return;
+    }
+    _codigosGenerados=inserted.map(function(c){return c.code;});
+    // Mostrar resultado
+    var vigencia=horas<48?horas+'h':(horas<168?(horas/24)+'d':(horas===168?'7 días':(horas===720?'30 días':'1 año')));
+    document.getElementById('gcResultLabel').textContent=_codigosGenerados.length+' código'+(n>1?'s':'')+' generado'+(n>1?'s':'')+' · Vigencia: '+vigencia+(etiqueta?' · '+etiqueta:'');
+    document.getElementById('gcListaCodigos').innerHTML=_codigosGenerados.map(function(code){
+      return '<div style="display:flex;align-items:center;justify-content:space-between;padding:8px 10px;border-bottom:1px solid var(--line);">'+
+        '<span style="font-family:'Cormorant Garamond',serif;font-size:22px;font-weight:700;letter-spacing:.2em;color:var(--gold)">'+esc(code)+'</span>'+
+        '<button onclick="copiarCodigo(''+esc(code)+'')" style="font-size:11px;background:var(--bg3);border:1px solid var(--line2);border-radius:6px;padding:4px 10px;cursor:pointer;color:var(--dim);">Copiar</button>'+
+      '</div>';
+    }).join('');
+    document.getElementById('gcForm').style.display='none';
+    document.getElementById('gcResultado').style.display='block';
+    // Recargar lista
+    loadCodigos();
+  }catch(e){
+    errEl.textContent='Error: '+(e.message||e);errEl.style.display='block';
+    btn.disabled=false;btn.textContent='Generar códigos';
+  }
+}
+
+function copiarCodigo(code){
+  navigator.clipboard.writeText(code).then(function(){toast('📋 Copiado: '+code);}).catch(function(){toast(code);});
+}
+
+function copiarTodosCodigos(){
+  if(!_codigosGenerados.length)return;
+  navigator.clipboard.writeText(_codigosGenerados.join('\n')).then(function(){toast('📋 '+_codigosGenerados.length+' códigos copiados');}).catch(function(){toast(_codigosGenerados.join(', '));});
+}
+
+async function revocarCodigo(id){
+  if(!confirm('¿Revocar este código? Quedará inutilizable de inmediato.'))return;
+  try{
+    await fetch(SB+'/rest/v1/tor_unlock_codes?id=eq.'+encodeURIComponent(id),{
+      method:'PATCH',
+      headers:Object.assign({},h(),{'Prefer':'return=minimal'}),
+      body:JSON.stringify({used:true})
+    });
+    var c=allCodigos.find(function(x){return x.id===id;});
+    if(c)c.used=true;
+    renderStatsCodigos();
+    filterCodigos();
+    toast('✗ Código revocado');
+  }catch(e){toast('Error: '+(e.message||e));}
+}
+r: ' + (data.error || 'Respuesta inesperada del servidor');
     }
   } catch(e) {
     res.style.display = 'block';

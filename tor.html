@@ -271,21 +271,25 @@ textarea{resize:none;line-height:1.5;}
         <div class="level-option-icon">✨</div>
         <div class="level-option-label">Light</div>
       </div>
-      <div class="level-option" data-level="hot" onclick="selectLevel('hot')">
+      <div class="level-option" id="lvl-hot" data-level="hot" onclick="handleLockedLevel('hot')" style="position:relative;">
         <div class="level-option-icon">🔥</div>
         <div class="level-option-label">Hot</div>
+        <div id="lock-hot" style="position:absolute;top:6px;right:8px;font-size:10px;opacity:.6;">🔒</div>
       </div>
-      <div class="level-option" data-level="extremo" onclick="selectLevel('extremo')">
+      <div class="level-option" id="lvl-extremo" data-level="extremo" onclick="handleLockedLevel('extremo')" style="position:relative;">
         <div class="level-option-icon">💀</div>
         <div class="level-option-label">Extremo</div>
+        <div id="lock-extremo" style="position:absolute;top:6px;right:8px;font-size:10px;opacity:.6;">🔒</div>
       </div>
-      <div class="level-option" data-level="mixto" onclick="selectLevel('mixto')">
+      <div class="level-option" id="lvl-mixto" data-level="mixto" onclick="handleLockedLevel('mixto')" style="position:relative;">
         <div class="level-option-icon">🎲</div>
         <div class="level-option-label">Mixto</div>
+        <div id="lock-mixto" style="position:absolute;top:6px;right:8px;font-size:10px;opacity:.6;">🔒</div>
       </div>
-      <div class="level-option" data-level="comunidad" onclick="selectLevel('comunidad')">
-        <div class="level-option-icon">🌙</div>
-        <div class="level-option-label">Comunidad</div>
+      <div class="level-option" id="lvl-xxx" data-level="xxx" onclick="handleLockedLevel('xxx')" style="border-color:rgba(180,0,0,.3);background:rgba(60,0,0,.06);position:relative;">
+        <div class="level-option-icon">🔞</div>
+        <div class="level-option-label" style="color:#9b1a1a;">XXX</div>
+        <div id="lock-xxx" style="position:absolute;top:6px;right:8px;font-size:10px;opacity:.6;">🔒</div>
       </div>
     </div>
 
@@ -368,6 +372,116 @@ textarea{resize:none;line-height:1.5;}
   </div>
 </div>
 
+<!-- Modal: Acceso XXX (código / adquirir) -->
+<div class="overlay hidden" id="codeXXXOverlay">
+  <div class="overlay-sheet">
+
+    <!-- Vista A: Ingresar código -->
+    <div id="xxxViewCodigo">
+      <div class="overlay-title">🔞 Nivel XXX</div>
+      <div class="overlay-sub">Este nivel requiere un código de acceso. Ingrésalo abajo o adquiere uno.</div>
+      <div class="row-input" style="margin-bottom:8px;">
+        <input id="inputCodigoXXX" placeholder="Código de acceso…" maxlength="8" style="text-transform:uppercase;letter-spacing:.18em;font-size:17px;font-family:'Cormorant Garamond',serif;" onkeydown="if(event.key==='Enter')validateCodigoXXX()">
+        <button class="btn-confirm-sm" onclick="validateCodigoXXX()">Entrar</button>
+      </div>
+      <div id="codeXXXError" style="color:#c0392b;font-size:12px;margin-bottom:10px;display:none;"></div>
+      <div class="overlay-divider"></div>
+      <button class="btn btn-gold" onclick="showXXXAdquirir()" style="width:100%;margin-bottom:10px;">🛒 Adquirir código de acceso</button>
+      <button class="overlay-close" onclick="closeOverlay('codeXXXOverlay')">Cancelar</button>
+    </div>
+
+    <!-- Vista B: Adquirir código -->
+    <div id="xxxViewAdquirir" style="display:none;">
+      <div class="overlay-title">🛒 Adquirir acceso XXX</div>
+      <div class="overlay-sub">Sigue los pasos, sube tu comprobante y recibirás tu código al instante.</div>
+
+      <div style="background:var(--bg3);border:1px solid var(--line2);border-radius:12px;padding:14px 16px;margin-bottom:14px;font-size:13px;line-height:1.8;color:var(--ink);">
+        <div style="font-weight:600;margin-bottom:6px;font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--dim);">Instrucciones de pago</div>
+        <div>💳 <strong>Transfiere $100 MXN</strong> a:</div>
+        <div style="margin:6px 0 4px;padding:10px 12px;background:var(--gold-pale);border-radius:8px;font-family:'Cormorant Garamond',serif;font-size:15px;letter-spacing:.04em;">
+          Banco: BBVA &nbsp;·&nbsp; CLABE: 012 650 01503672852 7<br>
+          Cuenta: 150 367 2852<br>
+          <span style="font-size:12px;font-family:'Inter Tight',sans-serif;color:var(--dim);">Beneficiario: Terraza Luna</span>
+        </div>
+        <div style="font-size:12px;color:var(--dim);">📌 Concepto: <strong>Acceso + tu nombre</strong></div>
+      </div>
+
+      <div style="font-size:12px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--dim);margin-bottom:8px;">Tu número de WhatsApp</div>
+      <input id="xxxPhone" type="tel" placeholder="10 dígitos" maxlength="15" style="width:100%;box-sizing:border-box;border:1px solid var(--line2);border-radius:10px;padding:11px 14px;font-size:15px;margin-bottom:12px;font-family:'Inter Tight',sans-serif;background:var(--bg3);color:var(--ink);">
+
+      <div style="font-size:12px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--dim);margin-bottom:8px;">Comprobante de pago</div>
+      <label id="xxxFileLabel" style="display:flex;align-items:center;justify-content:center;gap:8px;border:2px dashed var(--line2);border-radius:10px;padding:18px;cursor:pointer;color:var(--dim);font-size:13px;margin-bottom:12px;background:var(--bg3);">
+        📎 Toca para subir foto del comprobante
+        <input type="file" id="xxxFileInput" accept="image/*" style="display:none;" onchange="xxxFileSelected(this)">
+      </label>
+      <div id="xxxFileInfo" style="font-size:12px;color:var(--gold);margin-bottom:12px;display:none;"></div>
+      <div id="xxxSubmitError" style="color:#c0392b;font-size:12px;margin-bottom:8px;display:none;"></div>
+
+      <button class="btn btn-gold" id="btnSubmitPago" onclick="submitPagoXXX()" style="width:100%;margin-bottom:10px;">Enviar comprobante</button>
+      <button class="overlay-close" onclick="showXXXCodigo()">← Volver / Ya tengo código</button>
+    </div>
+
+    <!-- Vista C: Revisión manual (sin auto-aprobación) -->
+    <div id="xxxViewConfirm" style="display:none;text-align:center;padding:8px 0;">
+      <div style="font-size:40px;margin-bottom:12px;">🕐</div>
+      <div class="overlay-title" style="font-size:20px;">En revisión</div>
+      <div style="font-size:14px;color:var(--dim);line-height:1.6;margin:12px 0 20px;">Tu comprobante requiere verificación manual. Te enviamos el código por WhatsApp en cuanto sea aprobado.</div>
+      <button class="overlay-close" onclick="closeOverlay('codeXXXOverlay')">Cerrar</button>
+    </div>
+
+    <!-- Vista D: Aprobado — mostrar código -->
+    <div id="xxxViewAprobado" style="display:none;text-align:center;padding:8px 0;">
+      <div style="font-size:36px;margin-bottom:10px;">🎉</div>
+      <div class="overlay-title" style="font-size:20px;color:#2d7a2d;">¡Pago validado!</div>
+      <div style="font-size:13px;color:var(--dim);margin:8px 0 6px;">Tu código de acceso — guárdalo, lo necesitarás en la próxima sesión:</div>
+      <div style="display:inline-flex;align-items:center;gap:6px;background:#fef3c7;border:1px solid #f59e0b;border-radius:8px;padding:5px 12px;font-size:12px;font-weight:600;color:#92400e;margin-bottom:10px;">⏱ Válido por 24 horas</div>
+      <div style="background:var(--gold-pale);border:2px dashed var(--gold);border-radius:12px;padding:18px;margin-bottom:16px;">
+        <div id="xxxCodigoGenerado" style="font-family:'Cormorant Garamond',serif;font-size:36px;font-weight:600;letter-spacing:.25em;color:var(--gold);line-height:1;"></div>
+      </div>
+      <button class="btn btn-gold" onclick="procederDesdeAprobado()" style="width:100%;margin-bottom:10px;">Continuar al juego →</button>
+      <button class="overlay-close" onclick="closeOverlay('codeXXXOverlay')">Cerrar (usar después)</button>
+    </div>
+
+    <!-- Vista E: Rechazado -->
+    <div id="xxxViewRechazado" style="display:none;text-align:center;padding:8px 0;">
+      <div style="font-size:36px;margin-bottom:10px;">❌</div>
+      <div class="overlay-title" style="font-size:18px;color:#c0392b;">No pudimos validar</div>
+      <div id="xxxRechazadoMsg" style="font-size:13px;color:var(--dim);line-height:1.6;margin:10px 0 16px;"></div>
+      <button class="btn btn-gold" onclick="showXXXAdquirir()" style="width:100%;margin-bottom:10px;">Intentar de nuevo</button>
+      <button class="overlay-close" onclick="closeOverlay('codeXXXOverlay')">Cancelar</button>
+    </div>
+
+  </div>
+</div>
+
+<!-- Modal: Disclaimer XXX (aviso de consentimiento) -->
+<div class="overlay hidden" id="xxxDisclaimerOverlay">
+  <div class="overlay-sheet">
+    <div class="overlay-title" style="color:#9b1a1a;">⚠️ Contenido para adultos</div>
+    <div class="overlay-sub">Antes de continuar con el nivel XXX, todos los participantes deben confirmar lo siguiente:</div>
+    <div style="background:rgba(155,26,26,.06);border:1px solid rgba(155,26,26,.2);border-radius:12px;padding:14px 16px;margin-bottom:14px;font-size:13px;line-height:1.7;color:var(--ink);">
+      <label style="display:flex;align-items:flex-start;gap:10px;cursor:pointer;margin-bottom:10px;">
+        <input type="checkbox" id="chk1" style="margin-top:3px;accent-color:#9b1a1a;width:16px;height:16px;flex-shrink:0;">
+        <span>Todos los participantes tienen <strong>18 años o más</strong>.</span>
+      </label>
+      <label style="display:flex;align-items:flex-start;gap:10px;cursor:pointer;margin-bottom:10px;">
+        <input type="checkbox" id="chk2" style="margin-top:3px;accent-color:#9b1a1a;width:16px;height:16px;flex-shrink:0;">
+        <span>Todos han dado su <strong>consentimiento voluntario</strong> para participar en contenido adulto.</span>
+      </label>
+      <label style="display:flex;align-items:flex-start;gap:10px;cursor:pointer;margin-bottom:10px;">
+        <input type="checkbox" id="chk3" style="margin-top:3px;accent-color:#9b1a1a;width:16px;height:16px;flex-shrink:0;">
+        <span>No se tomarán <strong>fotos, videos ni grabaciones</strong> de ningún tipo.</span>
+      </label>
+      <label style="display:flex;align-items:flex-start;gap:10px;cursor:pointer;">
+        <input type="checkbox" id="chk4" style="margin-top:3px;accent-color:#9b1a1a;width:16px;height:16px;flex-shrink:0;">
+        <span>Cualquier participante puede <strong>rechazar un reto en cualquier momento</strong> sin presión.</span>
+      </label>
+    </div>
+    <button class="btn btn-gold" id="btnConfirmXXX" onclick="confirmXXXDisclaimer()" style="background:#9b1a1a;border-color:#9b1a1a;width:100%;padding:14px;border-radius:12px;font-size:13px;letter-spacing:.08em;text-transform:uppercase;cursor:pointer;font-family:'Inter Tight',sans-serif;font-weight:600;color:#fff;border:none;display:block;">Acepto — continuar con nivel XXX</button>
+    <button class="overlay-close" onclick="cancelXXXDisclaimer()">Cancelar</button>
+  </div>
+</div>
+
 <!-- Agregar jugador -->
 <div class="overlay hidden" id="addPlayerOverlay" onclick="closeOverlay('addPlayerOverlay',event)">
   <div class="overlay-sheet">
@@ -433,7 +547,8 @@ const LEVELS={
   hot:     {label:'Hot',     chip:'chip-hot'},
   extremo: {label:'Extremo', chip:'chip-extremo'},
   mixto:   {label:'Mixto',   chip:'chip-mixto'},
-  comunidad:{label:'Comunidad',chip:'chip-comunidad'}
+  comunidad:{label:'Comunidad',chip:'chip-comunidad'},
+  xxx:     {label:'XXX 🔞',  chip:'chip-extremo'}
 };
 const LEVEL_INFO={
   familiar: {icon:'🌿',desc:'Ideal para todas las edades. Preguntas y retos divertidos sin contenido adulto. Perfecto para arrancar la noche.'},
@@ -441,11 +556,13 @@ const LEVEL_INFO={
   hot:      {icon:'🔥',desc:'Solo para adultos. Preguntas y retos subidos de tono. Requiere confianza y buen humor entre los jugadores.'},
   extremo:  {icon:'💀',desc:'Sin filtros, sin límites. El nivel más intenso de Verdad o Reto. Solo para los que de verdad se atreven.'},
   mixto:    {icon:'🎲',desc:'Una mezcla de todos los niveles. Garantiza variedad y sorpresas para cualquier tipo de grupo.'},
-  comunidad:{icon:'🌙',desc:'Cartas creadas por la comunidad de Terraza Luna. Auténticas, locales y siempre únicas.'}
+  comunidad:{icon:'🌙',desc:'Cartas creadas por la comunidad de Terraza Luna. Auténticas, locales y siempre únicas.'},
+  xxx:      {icon:'🔞',desc:'Nivel adulto desbloqueado. Solo para mayores de 18 años con consentimiento de todos los participantes. Contenido muy explícito.'}
 };
 
 // ── Estado ──
 var selectedMode='presencial', selectedLevel=null, selectedCardType='truth';
+var _xxxUnlocked=false; // true cuando el usuario validó código de acceso
 var game=null, _pendingPlayers=[];
 // Pools de cartas
 var allQ=[], allD=[], allQComm=[], allDComm=[];
@@ -558,6 +675,9 @@ function goToLevel(){
 
 // ── PANTALLA 3: Nivel ──
 function selectLevel(level){
+  _setLevel(level);
+}
+function _setLevel(level){
   selectedLevel=level;
   document.querySelectorAll('.level-option').forEach(function(el){
     el.classList.toggle('active',el.dataset.level===level);
@@ -566,6 +686,139 @@ function selectLevel(level){
   var desc=document.getElementById('levelDesc');
   desc.innerHTML='<strong style="color:var(--gold)">'+(LEVELS[level]?LEVELS[level].label:level)+'</strong> — '+esc(info.desc||'');
   desc.classList.remove('hidden');
+}
+
+// Maneja clic en nivel de pago (hot, extremo, xxx)
+function handleLockedLevel(level){
+  if(_xxxUnlocked){_setLevel(level);return;}
+  openXXXModal();
+}
+
+// Desbloquear hot + extremo + mixto + xxx (ambas modalidades)
+var LOCKED_LEVELS=['hot','extremo','mixto','xxx'];
+function unlockPaidLevels(){
+  _xxxUnlocked=true;
+  LOCKED_LEVELS.forEach(function(l){
+    var lock=document.getElementById('lock-'+l);
+    if(lock)lock.style.display='none';
+  });
+}
+
+// ── Acceso XXX: Modal principal ──
+function openXXXModal(){
+  document.getElementById('inputCodigoXXX').value='';
+  document.getElementById('codeXXXError').style.display='none';
+  showXXXCodigo();
+  document.getElementById('codeXXXOverlay').classList.remove('hidden');
+  setTimeout(function(){document.getElementById('inputCodigoXXX').focus();},200);
+}
+function showXXXCodigo(){
+  document.getElementById('xxxViewCodigo').style.display='block';
+  document.getElementById('xxxViewAdquirir').style.display='none';
+  document.getElementById('xxxViewConfirm').style.display='none';
+  document.getElementById('xxxViewAprobado').style.display='none';
+  document.getElementById('xxxViewRechazado').style.display='none';
+}
+function showXXXAdquirir(){
+  document.getElementById('xxxViewCodigo').style.display='none';
+  document.getElementById('xxxViewAdquirir').style.display='block';
+  document.getElementById('xxxViewConfirm').style.display='none';
+  document.getElementById('xxxViewAprobado').style.display='none';
+  document.getElementById('xxxViewRechazado').style.display='none';
+  document.getElementById('xxxSubmitError').style.display='none';
+  document.getElementById('xxxFileInfo').style.display='none';
+  document.getElementById('xxxPhone').value='';
+  // Reiniciar input file
+  var old=document.getElementById('xxxFileInput');
+  if(old){var n=old.cloneNode(true);old.parentNode.replaceChild(n,old);n.onchange=function(){xxxFileSelected(this);};}
+}
+
+// ── Validar código ingresado manualmente ──
+async function validateCodigoXXX(){
+  var code=document.getElementById('inputCodigoXXX').value.trim().toUpperCase();
+  var errEl=document.getElementById('codeXXXError');
+  if(code.length<4){errEl.textContent='Ingresa el código completo.';errEl.style.display='block';return;}
+  errEl.style.display='none';
+  try{
+    var r=await sbGet('tor_unlock_codes','?code=eq.'+code+'&used=eq.false&select=id,expires_at');
+    if(!Array.isArray(r)||r.length===0){errEl.textContent='Código inválido, ya usado o expirado.';errEl.style.display='block';return;}
+    if(new Date(r[0].expires_at)<new Date()){errEl.textContent='Este código ya expiró.';errEl.style.display='block';return;}
+    await sbPatch('tor_unlock_codes?id=eq.'+r[0].id,{used:true});
+    document.getElementById('codeXXXOverlay').classList.add('hidden');
+    unlockPaidLevels();
+    abrirDisclaimer();
+  }catch(e){errEl.textContent='Error de conexión. Intenta de nuevo.';errEl.style.display='block';}
+}
+
+// ── Subir comprobante y verificar con IA ──
+function xxxFileSelected(input){
+  var fi=document.getElementById('xxxFileInfo');
+  if(input.files&&input.files[0]){fi.textContent='✅ '+input.files[0].name;fi.style.display='block';}
+}
+async function submitPagoXXX(){
+  var phone=document.getElementById('xxxPhone').value.trim().replace(/\D/g,'');
+  var fileInput=document.getElementById('xxxFileInput');
+  var errEl=document.getElementById('xxxSubmitError');
+  var btn=document.getElementById('btnSubmitPago');
+  errEl.style.display='none';
+  if(phone.length<10){errEl.textContent='Ingresa tu número de WhatsApp (10 dígitos).';errEl.style.display='block';return;}
+  if(!fileInput||!fileInput.files||!fileInput.files[0]){errEl.textContent='Sube una foto del comprobante.';errEl.style.display='block';return;}
+  btn.disabled=true;btn.textContent='Verificando…';
+  try{
+    var file=fileInput.files[0];
+    var ext=(file.name.split('.').pop()||'jpg').toLowerCase();
+    var filename=Date.now()+'_'+phone+'.'+ext;
+    // 1. Subir imagen al Storage
+    var upR=await fetch(SB+'/storage/v1/object/payment-receipts/'+filename,{
+      method:'POST',
+      headers:{'apikey':SK,'Authorization':'Bearer '+SK,'Content-Type':file.type||'image/jpeg'},
+      body:file
+    });
+    if(!upR.ok){throw new Error('Error subiendo imagen');}
+    // 2. Llamar Edge Function para verificar con IA
+    var verR=await fetch(SB+'/functions/v1/validate-receipt',{
+      method:'POST',
+      headers:{'apikey':SK,'Authorization':'Bearer '+SK,'Content-Type':'application/json'},
+      body:JSON.stringify({phone:phone,receipt_path:filename,auto_approved:true})
+    });
+    var result=await verR.json();
+    document.getElementById('xxxViewAdquirir').style.display='none';
+    if(result.verdict==='aprobado'&&result.code){
+      // Mostrar código en pantalla
+      document.getElementById('xxxCodigoGenerado').textContent=result.code;
+      document.getElementById('xxxViewAprobado').style.display='block';
+      unlockPaidLevels();
+    } else if(result.verdict==='rechazado'){
+      document.getElementById('xxxRechazadoMsg').textContent=result.message||'No pudimos validar el comprobante.';
+      document.getElementById('xxxViewRechazado').style.display='block';
+    } else {
+      // revision_manual
+      document.getElementById('xxxViewConfirm').style.display='block';
+    }
+  }catch(e){
+    errEl.textContent='Error al procesar. Intenta de nuevo.';errEl.style.display='block';
+    btn.disabled=false;btn.textContent='Enviar comprobante';
+  }
+}
+
+// ── Disclaimer de consentimiento ──
+function abrirDisclaimer(){
+  ['chk1','chk2','chk3','chk4'].forEach(function(id){document.getElementById(id).checked=false;});
+  document.getElementById('xxxDisclaimerOverlay').classList.remove('hidden');
+}
+function confirmXXXDisclaimer(){
+  var all=['chk1','chk2','chk3','chk4'].map(function(id){return document.getElementById(id);});
+  if(!all.every(function(c){return c.checked;})){toast('Confirma los 4 puntos para continuar');return;}
+  document.getElementById('xxxDisclaimerOverlay').classList.add('hidden');
+  // El usuario ya eligió el nivel antes del disclaimer, solo confirmar selección activa
+  if(!selectedLevel||!['hot','extremo','xxx'].includes(selectedLevel)) _setLevel('xxx');
+}
+function cancelXXXDisclaimer(){
+  document.getElementById('xxxDisclaimerOverlay').classList.add('hidden');
+}
+function procederDesdeAprobado(){
+  document.getElementById('codeXXXOverlay').classList.add('hidden');
+  abrirDisclaimer();
 }
 
 // ── INICIAR JUEGO ──
@@ -647,12 +900,14 @@ async function loadCardPool(lvl,mode){
     var res2=await Promise.all([sbGet('tor_questions',qf),sbGet('tor_dares',df)]);
     allQ=shuffle(res2[0]||[]);
     var dMain=res2[1]||[];
-    if(mode==='distancia'){
+    // Solo inyectar marketing en niveles gratuitos (familiar, light), ambas modalidades
+    var isPaidLevel=LOCKED_LEVELS.indexOf(lvl)>=0;
+    if(!isPaidLevel){
       var mktf=lvl==='mixto'
-        ?'?mode=eq.distancia&category=eq.marketing&order=id.asc'
-        :'?level=eq.'+lvl+'&mode=eq.distancia&category=eq.marketing&order=id.asc';
+        ?'?mode=eq.'+mode+'&category=eq.marketing&order=id.asc'
+        :'?level=eq.'+lvl+'&mode=eq.'+mode+'&category=eq.marketing&order=id.asc';
       var mkt3=await sbGet('tor_dares',mktf);
-      dMain=injectMarketing(dMain,mkt3||[]);
+      if(mkt3&&mkt3.length)dMain=injectMarketing(dMain,mkt3);
     }
     allD=shuffle(dMain);
     commQDone=true;commDDone=true;
