@@ -869,13 +869,13 @@ tr:hover td{background:var(--bg3);}
           <thead>
             <tr>
               <th>Teléfono</th>
-              <th>Recibo</th>
-              <th>Monto detectado</th>
-              <th>Fecha detectada</th>
+              <th>Código</th>
+              <th>Monto</th>
+              <th>Fecha</th>
               <th>Veredicto IA</th>
               <th>Estado</th>
               <th>Enviado</th>
-              <th></th>
+              <th>Acciones</th>
             </tr>
           </thead>
           <tbody id="tbody-pagos"></tbody>
@@ -2492,6 +2492,89 @@ function renderStatsPagos(){
     statCard(rech,'Rechazados')+
     statCard(rev,'Revisión manual');
 }
+
+// Mapa request_id → código (se llena al cargar pagos)
+var _pagosCodigos={};
+
+async function loadPagos(){
+  document.getElementById('loading-pagos').style.display='block';
+  document.getElementById('empty-pagos').classList.add('hidden');
+  document.getElementById('tbody-pagos').innerHTML='';
+  try{
+    var rows=await sbGet('tor_unlock_requests','?order=created_at.desc&select=*');
+    allPagos=rows||[];
+    // Cargar códigos asociados
+    var codes=await sbGet('tor_unlock_codes','?select=request_id,code,used&order=created_at.desc');
+    _pagosCodigos={};
+    (codes||[]).forEach(function(c){if(c.request_id&&!_pagosCodigos[c.request_id])_pagosCodigos[c.request_id]=c;});
+    var pendientes=allPagos.filter(function(p){return p.status==='pendiente';}).length;
+    document.getElementById('cnt-pagos').textContent=pendientes||allPagos.length;
+    filterPagos();
+    document.getElementById('loading-pagos').style.display='none';
+    renderStatsPagos();
+  }catch(e){
+    document.getElementById('loading-pagos').textContent='Error al cargar pagos';
+  }
+}
+
+function renderPagos(){
+  var tb=document.getElementById('tbody-pagos');
+  if(!filteredPagos.length){
+    tb.innerHTML='';
+    document.getElementById('empty-pagos').classList.remove('hidden');
+    return;
+  }
+  document.getElementById('empty-pagos').classList.add('hidden');
+  tb.innerHTML=filteredPagos.map(function(p){
+    var codeEntry=_pagosCodigos[p.id];
+    var codeStr=codeEntry?('<span style="font-family:\'Cormorant Garamond\',serif;font-size:15px;font-weight:700;letter-spacing:.15em;color:var(--gold);">'+esc(codeEntry.code)+'</span>'):'<span style="color:var(--faint);">—</span>';
+    var verdictColor=p.ai_verdict==='aprobado'?'#2d7a2d':p.ai_verdict==='rechazado'?'#c0392b':'#b7791f';
+    var verdictLabel=p.ai_verdict==='aprobado'?'✓ Aprobado':p.ai_verdict==='rechazado'?'✗ Rechazado':'⚠ Revisión';
+    var statusColor=p.status==='aprobado'?'#2d7a2d':p.status==='rechazado'?'#c0392b':'#b7791f';
+    var statusLabel=p.status==='aprobado'?'Aprobado':p.status==='rechazado'?'Rechazado':'Pendiente';
+    var acciones='';
+    if(p.status==='pendiente'){
+      acciones='<button class="btn-view" onclick="aprobarPago(\''+p.id+'\',\''+esc(codeEntry?codeEntry.code:'')+'\')">✓ Verificado</button>'+
+               '<button class="btn-delete" onclick="rechazarPago(\''+p.id+'\',\''+esc(codeEntry?codeEntry.code:'')+'\')">✗ Rechazar</button>';
+    }else if(p.status==='aprobado'){
+      acciones='<span style="font-size:11px;color:#2d7a2d;font-weight:600;">Activo</span>';
+    }else{
+      acciones='<span style="font-size:11px;color:#c0392b;font-weight:600;">Rechazado</span>';
+    }
+    return '<tr>'+
+      '<td class="td-phone"><a href="https://wa.me/52'+esc(p.phone)+'" target="_blank" style="color:inherit;text-decoration:none;">📱 '+esc(p.phone)+'</a></td>'+
+      '<td>'+codeStr+'</td>'+
+      '<td>'+(p.amount_detected?'$'+p.amount_detected:'—')+'</td>'+
+      '<td>'+(p.date_detected?p.date_detected:'—')+'</td>'+
+      '<td><span style="font-size:12px;font-weight:700;color:'+verdictColor+'">'+verdictLabel+'</span></td>'+
+      '<td><span style="font-size:12px;font-weight:700;color:'+statusColor+'">'+statusLabel+'</span></td>'+
+      '<td style="font-size:11px;color:var(--dim);">'+fmtShort(p.created_at)+'</td>'+
+      '<td class="td-actions">'+acciones+'</td>'+
+    '</tr>';
+  }).join('');
+}
+
+async function aprobarPago(requestId, code){
+  var ok=await sbPatch('tor_unlock_requests',requestId,{status:'aprobado',updated_at:new Date().toISOString()});
+  if(ok){
+    toast('✓ Pago verificado — código '+code+' activado');
+    loadPagos();
+  }else{toast('Error al actualizar','error');}
+}
+
+async function rechazarPago(requestId, code){
+  if(!confirm('¿Rechazar este pago? El código '+code+' quedará inactivo.'))return;
+  var ok=await sbPatch('tor_unlock_requests',requestId,{status:'rechazado',updated_at:new Date().toISOString()});
+  if(ok){
+    // Marcar el código como usado=true para bloquearlo
+    if(code){
+      var r=await fetch(SB+'/rest/v1/tor_unlock_codes?code=eq.'+encodeURIComponent(code),{method:'PATCH',headers:Object.assign({},h(),{'Prefer':'return=minimal'}),body:JSON.stringify({used:true})});
+    }
+    toast('✗ Pago rechazado — código bloqueado');
+    loadPagos();
+  }else{toast('Error al actualizar');}
+}
+
 
 function verdictPill(v){
   if(v==='aprobado')return '<span class="pill pill-aprobado">✓ Aprobado IA</span>';

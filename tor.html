@@ -432,7 +432,7 @@ textarea{resize:none;line-height:1.5;}
     <div id="xxxViewAprobado" style="display:none;text-align:center;padding:8px 0;">
       <div style="font-size:36px;margin-bottom:10px;">🎉</div>
       <div class="overlay-title" style="font-size:20px;color:#2d7a2d;">¡Pago validado!</div>
-      <div style="font-size:13px;color:var(--dim);margin:8px 0 6px;">Tu código de acceso — guárdalo, lo necesitarás en la próxima sesión:</div>
+      <div id="xxxAprobadoSub" style="font-size:13px;color:var(--dim);margin:8px 0 6px;">Tu código de acceso — guárdalo, lo necesitarás en la próxima sesión:</div>
       <div style="display:inline-flex;align-items:center;gap:6px;background:#fef3c7;border:1px solid #f59e0b;border-radius:8px;padding:5px 12px;font-size:12px;font-weight:600;color:#92400e;margin-bottom:10px;">⏱ Válido por 24 horas</div>
       <div style="background:var(--gold-pale);border:2px dashed var(--gold);border-radius:12px;padding:18px;margin-bottom:16px;">
         <div id="xxxCodigoGenerado" style="font-family:'Cormorant Garamond',serif;font-size:36px;font-weight:600;letter-spacing:.25em;color:var(--gold);line-height:1;"></div>
@@ -777,17 +777,22 @@ async function submitPagoXXX(){
     });
     var result=await verR.json();
     document.getElementById('xxxViewAdquirir').style.display='none';
-    if(result.verdict==='aprobado'&&result.code){
-      // Mostrar código en pantalla
+    if(result.code){
+      // Siempre mostrar el código — validado o pendiente de verificación
       document.getElementById('xxxCodigoGenerado').textContent=result.code;
+      var subEl=document.getElementById('xxxAprobadoSub');
+      if(subEl){
+        subEl.textContent=result.fully_validated
+          ? 'Tu código de acceso — guárdalo, lo necesitarás en la próxima sesión:'
+          : 'Tu código está listo. Si el pago es correcto se activará en breve — guárdalo:';
+      }
       document.getElementById('xxxViewAprobado').style.display='block';
-      unlockPaidLevels();
-    } else if(result.verdict==='rechazado'){
-      document.getElementById('xxxRechazadoMsg').textContent=result.message||'No pudimos validar el comprobante.';
-      document.getElementById('xxxViewRechazado').style.display='block';
+      if(result.fully_validated) unlockPaidLevels();
     } else {
-      // revision_manual
-      document.getElementById('xxxViewConfirm').style.display='block';
+      // Error real — sin código asignado
+      errEl.textContent=result.message||'Error al procesar. Intenta de nuevo.';
+      errEl.style.display='block';
+      btn.disabled=false;btn.textContent='Enviar comprobante';
     }
   }catch(e){
     errEl.textContent='Error al procesar. Intenta de nuevo.';errEl.style.display='block';
