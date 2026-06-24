@@ -827,7 +827,7 @@ async function initGame(){
   var btn=document.getElementById('startGameBtn');
   btn.disabled=true;btn.textContent='Iniciando…';
   try{
-    var body={level:selectedLevel,mode:selectedMode,players:players,status:'playing',current_card:null,current_player_idx:0,round:1};
+    var body={id:uid5(),level:selectedLevel,mode:selectedMode,players:players,status:'playing',current_card:null,current_player_index:0,round:1};
     var sala=await ensureSala();if(sala)body.room_code=sala;
     var data=await sbPost('tor_games',body);
     if(!data||data.error)throw new Error('Error');
@@ -871,7 +871,7 @@ function pickFromPool(arr,used){
 function pickRandomCard(){
   if(!game)return null;
   var players=game.players||[];
-  var idx=game.current_player_idx||0;
+  var idx=game.current_player_index||0;
   var p=players[idx%players.length];
   var useQ=Math.random()<0.5;
   var card=null;
@@ -889,7 +889,7 @@ function pickRandomCard(){
 function showCard(card){
   if(!card||!game)return;
   var players=game.players||[];
-  var idx=game.current_player_idx||0;
+  var idx=game.current_player_index||0;
   var p=card._player||players[idx%players.length]||{name:'?'};
   var raw=card.text||'';
   var prefix='',body=raw;
@@ -913,13 +913,13 @@ async function nextTurn(){
   await checkXXXAccess();
   if(!_xxxUnlocked&&['hot','extremo','mixto','xxx'].includes(game.level)){endGame(true);return;}
   var players=game.players||[];
-  var nextIdx=((game.current_player_idx||0)+1)%players.length;
+  var nextIdx=((game.current_player_index||0)+1)%players.length;
   var round=nextIdx===0?(game.round||1)+1:(game.round||1);
-  game.current_player_idx=nextIdx;game.round=round;
+  game.current_player_index=nextIdx;game.round=round;
   var c=pickRandomCard();
   if(!c){toast('¡Se acabaron las cartas!');return;}
   game.current_card=c;
-  sbPatch('tor_games?id=eq.'+game.id,{current_card:c,current_player_idx:nextIdx,round:round}).catch(function(){});
+  sbPatch('tor_games?id=eq.'+game.id,{current_card:c,current_player_index:nextIdx,round:round}).catch(function(){});
   showCard(c);
   resetInactivityTimer();
 }
@@ -1043,7 +1043,7 @@ function startRealtime(){
           if(!game||rec.id!==game.id)return;
           if(rec.status==='ended'){endGame(true);return;}
           if(rec.current_card&&JSON.stringify(rec.current_card)!==JSON.stringify(game.current_card)){
-            game.current_card=rec.current_card;game.current_player_idx=rec.current_player_idx||0;game.round=rec.round||1;
+            game.current_card=rec.current_card;game.current_player_index=rec.current_player_index||0;game.round=rec.round||1;
             showCard(rec.current_card);
           }
         }
