@@ -1232,9 +1232,10 @@ function openInviteOverlay(){
 function copyLink(){navigator.clipboard.writeText(getSalaUrl()).then(function(){toast('¡Link de sala copiado!');});}
 function shareGame(){
   var url=getSalaUrl();
-  var msg='¿Te atreverías a jugar Verdad o Reto conmigo? 🙈😈 '+url;
+  var msg='¿Te atreverías a jugar Verdad o Reto conmigo? 🙈😈';
+  var fullMsg=msg+' '+url;
   if(navigator.share)navigator.share({title:'Verdad o Reto',text:msg,url:url}).catch(function(){});
-  else window.open('https://wa.me/?text='+encodeURIComponent(msg),'_blank');
+  else window.open('https://wa.me/?text='+encodeURIComponent(fullMsg),'_blank');
 }
 
 function startRealtime(){
