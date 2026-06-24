@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0, user-scalable=no">
-<title>Verdad o Reto · Terraza Luna</title>
+<title>Verdad o Reto</title>
 
 <!-- PWA -->
 <link rel="manifest" href="/manifest-vor.json">
@@ -203,23 +203,81 @@ textarea{resize:none;line-height:1.5;}
       <div class="hero-ornament"><div class="hero-ornament-inner">El clásico de las noches épicas</div></div>
     </div>
 
-    <div style="text-align:center;margin:4px 0 6px">
-      <div style="font-family:'Cormorant Garamond',serif;font-size:22px;font-weight:500;color:var(--dim);letter-spacing:.04em">¿Quieres jugar?</div>
-    </div>
-
     <div class="mode-grid">
-      <div class="mode-card" onclick="selectMode('presencial')">
-        <div class="mode-card-icon">🍹</div>
-        <div class="mode-card-label">Presencial</div>
-        <div class="mode-card-sub">Retos y preguntas<br>en persona</div>
+      <div class="mode-card" onclick="crearSala()" style="border-color:rgba(212,175,55,.35);">
+        <div class="mode-card-icon">✨</div>
+        <div class="mode-card-label">Crear sala</div>
+        <div class="mode-card-sub">Invita a tus amigos<br>con un código</div>
       </div>
-      <div class="mode-card" onclick="selectMode('distancia')">
-        <div class="mode-card-icon">📱</div>
-        <div class="mode-card-label">A<br>distancia</div>
-        <div class="mode-card-sub">Por videollamada<br>o chat</div>
+      <div class="mode-card" onclick="show('screen-join')">
+        <div class="mode-card-icon">🔗</div>
+        <div class="mode-card-label">Unirse</div>
+        <div class="mode-card-sub">Ingresa el código<br>de sala</div>
       </div>
     </div>
 
+    <div style="text-align:center;margin-top:4px;">
+      <button onclick="jugarSoloSinSala()" style="background:none;border:none;font-size:12px;color:var(--faint);cursor:pointer;font-family:'Inter Tight',sans-serif;letter-spacing:.04em;padding:8px;">Jugar sin sala →</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════
+     PANTALLA: UNIRSE A SALA
+══════════════════════════════════════════ -->
+<div class="screen hidden" id="screen-join">
+  <div class="inner">
+    <div>
+      <div class="section-label">Unirse a sala</div>
+      <div class="section-title" style="margin-top:4px;">Ingresa el código</div>
+    </div>
+    <input id="inputJoinCode" placeholder="Código de sala (ej: LUNA42)" maxlength="10"
+      style="text-transform:uppercase;letter-spacing:.15em;font-size:20px;font-family:'Cormorant Garamond',serif;text-align:center;"
+      onkeydown="if(event.key==='Enter')confirmarUnirse()">
+    <div id="joinError" style="color:#c0392b;font-size:12px;display:none;text-align:center;"></div>
+    <button class="btn btn-gold" onclick="confirmarUnirse()">Unirse a la sala</button>
+    <button class="btn" onclick="show('screen-welcome')" style="background:transparent;border-color:var(--line2);color:var(--dim);">Volver</button>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════
+     PANTALLA: SALA (host y guests)
+══════════════════════════════════════════ -->
+<div class="screen hidden" id="screen-room">
+  <div class="inner">
+    <!-- Header sala -->
+    <div style="text-align:center;">
+      <div class="section-label" id="roomRoleLabel">Sala creada</div>
+      <div style="margin:8px 0 4px;display:flex;align-items:center;justify-content:center;gap:12px;">
+        <div style="font-family:'Cormorant Garamond',serif;font-size:48px;font-weight:600;letter-spacing:.25em;color:var(--gold);" id="roomCodeDisplay">—</div>
+      </div>
+      <div id="roomHostInfo" style="font-size:12px;color:var(--dim);margin-bottom:4px;"></div>
+    </div>
+
+    <!-- Compartir (solo host) -->
+    <div id="roomShareBox" style="display:none;background:var(--bg3);border:1px solid var(--line2);border-radius:12px;padding:14px 16px;">
+      <div style="font-size:11px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--dim);margin-bottom:8px;">Comparte con tus amigos</div>
+      <div style="display:flex;gap:8px;">
+        <input id="roomShareUrl" readonly style="flex:1;font-size:12px;color:var(--faint);background:var(--bg2);border-color:var(--line);">
+        <button onclick="copiarLinkSala()" style="padding:10px 14px;border-radius:8px;border:1px solid rgba(212,175,55,.4);background:rgba(212,175,55,.1);color:var(--gold);font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap;">📋 Copiar</button>
+      </div>
+    </div>
+
+    <!-- Estado sala -->
+    <div style="background:var(--bg3);border:1px solid var(--line);border-radius:12px;padding:14px 16px;">
+      <div style="font-size:11px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--dim);margin-bottom:10px;">Estado de la sala</div>
+      <div id="roomStatus" style="font-size:14px;color:var(--dim);line-height:1.6;">⏳ Esperando jugadores…</div>
+    </div>
+
+    <!-- Acciones -->
+    <div id="roomHostActions" style="display:none;">
+      <button class="btn btn-gold" onclick="iniciarDesdeRoom()">Configurar y jugar →</button>
+    </div>
+    <div id="roomGuestWait" style="display:none;text-align:center;">
+      <div style="font-size:13px;color:var(--dim);line-height:1.6;">El host iniciará el juego en breve.<br>Esta pantalla se actualizará sola. 🎮</div>
+    </div>
+
+    <button onclick="salirDeSala()" style="background:none;border:none;font-size:12px;color:var(--faint);cursor:pointer;font-family:'Inter Tight',sans-serif;letter-spacing:.04em;padding:8px;text-align:center;">Salir de la sala</button>
   </div>
 </div>
 
@@ -230,7 +288,7 @@ textarea{resize:none;line-height:1.5;}
 <div class="screen hidden" id="screen-players">
   <div class="inner">
     <div>
-      <div class="section-label">Nuevo juego · <span id="modeLabelPlayers">En Terraza Luna</span></div>
+      <div class="section-label">Nuevo juego · <span id="modeLabelPlayers">En esta sala</span></div>
       <h2 class="section-title">¿Quién se<br>atreve a jugar?</h2>
       <div class="section-line"><div class="section-line-dot"></div></div>
     </div>
@@ -244,7 +302,7 @@ textarea{resize:none;line-height:1.5;}
     </div>
 
     <button class="btn btn-gold" id="startGameBtn" onclick="initGame()">Iniciar Juego</button>
-    <button class="btn btn-outline" onclick="show('level')">Volver</button>
+    <button class="btn btn-outline" onclick="show('screen-level')">Volver</button>
   </div>
 </div>
 
@@ -294,7 +352,7 @@ textarea{resize:none;line-height:1.5;}
     <div class="level-desc-box hidden" id="levelDesc"></div>
 
     <button class="btn btn-gold" onclick="goToPlayers()">Siguiente</button>
-    <button class="btn btn-outline" onclick="show('welcome')">Volver</button>
+    <button class="btn btn-outline" onclick="show('screen-welcome')">Volver</button>
   </div>
 </div>
 
@@ -550,7 +608,7 @@ const LEVEL_INFO={
   hot:      {icon:'🔥',desc:'La temperatura sube. Preguntas atrevidas y retos subidos de tono para adultos con confianza. Un nivel más arriba que Light, pero aún con límites.'},
   extremo:  {icon:'💀',desc:'Casi sin filtros. Preguntas y retos muy directos y explícitos. Solo para grupos con mucha confianza. Un escalón debajo del XXX.'},
   mixto:    {icon:'🎲',desc:'Una mezcla de todos los niveles. Garantiza variedad y sorpresas para cualquier tipo de grupo.'},
-  comunidad:{icon:'🌙',desc:'Cartas creadas por la comunidad de Terraza Luna. Auténticas, locales y siempre únicas.'},
+  comunidad:{icon:'🌙',desc:'Cartas creadas por la comunidad. Auténticas, locales y siempre únicas.'},
   xxx:      {icon:'🔞',desc:'El nivel más alto. Contenido completamente explícito y sin censura. Solo para mayores de 18 con consentimiento de todos. Requiere código de acceso.'}
 };
 
@@ -573,7 +631,7 @@ function resetInactivityTimer(){
       sbPatch('tor_games?id=eq.'+game.id,{status:'ended'}).catch(function(){});
       game=null;
     }
-    show('welcome');
+    show('screen-welcome');
     toast('Sesión cerrada por inactividad. Ingresa tu número para continuar.',4000);
   },INACTIVITY_MS);
 }
@@ -585,11 +643,136 @@ var usedQIdx=[], usedDIdx=[], usedQCommIdx=[], usedDCommIdx=[];
 var commQDone=false, commDDone=false;
 // Realtime
 var _ws=null, _wsRef=0, _wsHb=null, _pollInterval=null;
+// Salas
+var _roomCode=null;
+var _roomPollInterval=null;
+var _roomLastGameId=null;
 // Marketing media
 var _cardCount=0; // cartas mostradas en el juego actual (para cadencia de marketing)
 var _cardShownAt=null; // timestamp cuando se mostró la carta actual
 var _trackedCard=null; // carta actual siendo trackeada
 var _config={}; // configuración dinámica desde tor_config
+
+// ── SALAS VIRTUALES ──
+var _roomData=null;   // objeto sala actual {id, code, status, host_name}
+var _isHost=false;
+
+function genRoomCode(){
+  var chars='ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+  return Array.from({length:6},function(){return chars[Math.floor(Math.random()*chars.length)];}).join('');
+}
+
+async function crearSala(){
+  var code=genRoomCode();
+  try{
+    var r=await fetch(SB+'/rest/v1/tor_rooms',{
+      method:'POST',
+      headers:Object.assign({},h(),{'Prefer':'return=representation'}),
+      body:JSON.stringify({code:code,status:'waiting'})
+    });
+    var data=await r.json();
+    if(!r.ok)throw new Error('Error creando sala');
+    _roomData=Array.isArray(data)?data[0]:data;
+    _roomCode=code;
+    _roomLastGameId=null;
+    _isHost=true;
+    try{localStorage.setItem('tor_room',code);localStorage.setItem('tor_room_host','1');}catch(e){}
+    renderRoomScreen();
+    show('screen-room');
+  }catch(e){toast('Error al crear la sala. Intenta de nuevo.');}
+}
+
+async function confirmarUnirse(){
+  var code=(document.getElementById('inputJoinCode').value||'').trim().toUpperCase();
+  var errEl=document.getElementById('joinError');
+  errEl.style.display='none';
+  if(!code||code.length<4){errEl.textContent='Ingresa el código de sala.';errEl.style.display='block';return;}
+  try{
+    var rows=await sbGet('tor_rooms','?code=eq.'+code+'&limit=1&select=*');
+    if(!Array.isArray(rows)||!rows.length){errEl.textContent='Sala no encontrada. Verifica el código.';errEl.style.display='block';return;}
+    _roomData=rows[0];
+    _roomCode=code;
+    _roomLastGameId=null;
+    _isHost=false;
+    try{localStorage.setItem('tor_room',code);localStorage.removeItem('tor_room_host');}catch(e){}
+    renderRoomScreen();
+    show('screen-room');
+    startRoomPolling();
+  }catch(e){errEl.textContent='Error de conexión. Intenta de nuevo.';errEl.style.display='block';}
+}
+
+function renderRoomScreen(){
+  document.getElementById('roomCodeDisplay').textContent=_roomCode;
+  document.getElementById('roomRoleLabel').textContent=_isHost?'Tu sala':'Sala unida';
+  document.getElementById('roomHostInfo').textContent=_isHost?'Comparte el código con tus amigos':'Esperando que el host inicie el juego…';
+  document.getElementById('roomHostActions').style.display=_isHost?'block':'none';
+  document.getElementById('roomGuestWait').style.display=_isHost?'none':'block';
+  document.getElementById('roomShareBox').style.display=_isHost?'block':'none';
+  var shareUrl=window.location.origin+window.location.pathname+'?room='+_roomCode;
+  var el=document.getElementById('roomShareUrl');
+  if(el)el.value=shareUrl;
+}
+
+function copiarLinkSala(){
+  var url=window.location.origin+window.location.pathname+'?room='+_roomCode;
+  navigator.clipboard.writeText(url).then(function(){toast('¡Link copiado! Compártelo con tus amigos 🎉');});
+}
+
+function iniciarDesdeRoom(){
+  // Host va a seleccionar modo → nivel → jugadores → inicia juego etiquetado con sala
+  show('screen-level');
+}
+
+function jugarSoloSinSala(){
+  _roomCode=null;_roomData=null;_isHost=false;
+  try{localStorage.removeItem('tor_room');localStorage.removeItem('tor_room_host');}catch(e){}
+  show('screen-level');
+}
+
+function salirDeSala(){
+  stopRoomPolling();
+  _roomCode=null;_roomData=null;_isHost=false;_roomLastGameId=null;
+  try{localStorage.removeItem('tor_room');localStorage.removeItem('tor_room_host');}catch(e){}
+  show('screen-welcome');
+}
+
+function startRoomPolling(){
+  stopRoomPolling();
+  if(!_roomCode||_isHost)return;
+  _roomPollInterval=setInterval(async function(){
+    if(game){stopRoomPolling();return;}
+    try{
+      var rows=await sbGet('tor_games','?room_code=eq.'+encodeURIComponent(_roomCode)+'&status=eq.playing&order=created_at.desc&limit=1&select=*');
+      if(!rows||!rows.length)return;
+      var found=rows[0];
+      if(found.id===_roomLastGameId)return;
+      _roomLastGameId=found.id;
+      stopRoomPolling();
+      game=found;
+      resetPools();
+      await loadCardPool(game.level,game.mode);
+      startRealtime();startPolling();
+      if(game.current_card)showCard(game.current_card);
+      else{var c=pickRandomCard();if(c){game.current_card=c;showCard(c);}}
+      toast('🎮 ¡El juego comenzó!');
+    }catch(e){}
+  },3000);
+}
+
+function stopRoomPolling(){
+  if(_roomPollInterval){clearInterval(_roomPollInterval);_roomPollInterval=null;}
+}
+
+function initRoom(){
+  var p=new URLSearchParams(window.location.search);
+  var roomFromUrl=p.get('room');
+  if(roomFromUrl){
+    // Llegó por link de invitación
+    document.getElementById('inputJoinCode').value=roomFromUrl.toUpperCase();
+    show('screen-join');
+    setTimeout(confirmarUnirse,300);
+  }
+}
 
 // ── API ──
 function h(){return{'apikey':SK,'Authorization':'Bearer '+SK,'Content-Type':'application/json'};}
@@ -618,7 +801,7 @@ function selectMode(mode){
   // Resetear selección de nivel
   document.querySelectorAll('.level-option').forEach(function(el){el.classList.remove('active');});
   document.getElementById('levelDesc').classList.add('hidden');
-  show('level');
+  show('screen-level');
 }
 
 // ── PANTALLA 2: Jugadores ──
@@ -678,7 +861,7 @@ function removePlayerField(btn){
 function goToPlayers(){
   if(!selectedLevel){toast('Elige un nivel para continuar');return;}
   initPlayersGrid();
-  show('players');
+  show('screen-players');
 }
 
 // ── PANTALLA 3: Nivel ──
@@ -692,857 +875,438 @@ function _setLevel(level){
   });
   var info=LEVEL_INFO[level]||{};
   var desc=document.getElementById('levelDesc');
-  desc.innerHTML='<strong style="color:var(--gold)">'+(LEVELS[level]?LEVELS[level].label:level)+'</strong> — '+esc(info.desc||'');
+  desc.innerHTML='<strong style="color:var(--gold)">'+(LEVELS[level]?LEVELS[level].label:level:level)+'</strong> — '+esc(info.desc||'');
   desc.classList.remove('hidden');
-}
-
-// Maneja clic en nivel de pago (hot, extremo, xxx)
-function handleLockedLevel(level){
-  _setLevel(level); // Guardar nivel siempre, con o sin desbloqueo
-  if(!_xxxUnlocked){openXXXModal();}
-}
-
-// Desbloquear hot + extremo + mixto + xxx (ambas modalidades)
-var LOCKED_LEVELS=['hot','extremo','mixto','xxx'];
-function unlockPaidLevels(){
-  _xxxUnlocked=true;
-  resetInactivityTimer();
-  LOCKED_LEVELS.forEach(function(l){
-    var lock=document.getElementById('lock-'+l);
-    if(lock)lock.style.display='none';
-  });
-}
-
-// ── Acceso XXX: Modal principal ──
-function openXXXModal(){
-  document.getElementById('inputCodigoXXX').value='';
-  document.getElementById('codeXXXError').style.display='none';
-  showXXXCodigo();
-  document.getElementById('codeXXXOverlay').classList.remove('hidden');
-  setTimeout(function(){document.getElementById('inputCodigoXXX').focus();},200);
-}
-function showXXXCodigo(){
-  document.getElementById('xxxViewCodigo').style.display='block';
-  document.getElementById('xxxViewAdquirir').style.display='none';
-  document.getElementById('xxxViewConfirm').style.display='none';
-  document.getElementById('xxxViewAprobado').style.display='none';
-  document.getElementById('xxxViewRechazado').style.display='none';
-}
-function showXXXAdquirir(){
-  document.getElementById('xxxViewCodigo').style.display='none';
-  document.getElementById('xxxViewAdquirir').style.display='block';
-  document.getElementById('xxxViewConfirm').style.display='none';
-  document.getElementById('xxxViewAprobado').style.display='none';
-  document.getElementById('xxxViewRechazado').style.display='none';
-  document.getElementById('xxxSubmitError').style.display='none';
-  document.getElementById('xxxFileInfo').style.display='none';
-  document.getElementById('xxxPhone').value='';
-  // Reiniciar input file
-  var old=document.getElementById('xxxFileInput');
-  if(old){var n=old.cloneNode(true);old.parentNode.replaceChild(n,old);n.onchange=function(){xxxFileSelected(this);};}
-  var btn=document.getElementById('btnSubmitPago');
-  if(btn){btn.disabled=false;btn.textContent='Enviar comprobante';}
-}
-
-// ── Validar acceso por teléfono o código ──
-async function validateCodigoXXX(){
-  var raw=document.getElementById('inputCodigoXXX').value.trim();
-  var errEl=document.getElementById('codeXXXError');
-  errEl.style.display='none';
-  if(!raw){errEl.textContent='Ingresa tu teléfono o código.';errEl.style.display='block';return;}
-
-  var onlyDigits=raw.replace(/\D/g,'');
-  var isPhone=onlyDigits.length>=10;
-  var isCode=raw.replace(/\s/g,'').length>=6;
-
-  if(!isPhone&&!isCode){errEl.textContent='Ingresa tu número (10 dígitos) o un código de acceso.';errEl.style.display='block';return;}
-
-  try{
-    // 1. Intentar como teléfono
-    if(isPhone){
-      var rPhone=await sbGet('tor_unlock_requests','?phone=eq.'+onlyDigits+'&status=eq.aprobado&select=id&limit=1');
-      if(Array.isArray(rPhone)&&rPhone.length>0){
-        _xxxPhone=onlyDigits;
-        document.getElementById('codeXXXOverlay').classList.add('hidden');
-        unlockPaidLevels();
-        show('players');
-        return;
-      }
-    }
-    // 2. Intentar como código
-    var code=raw.toUpperCase().replace(/\s/g,'');
-    var rCode=await sbGet('tor_unlock_codes','?code=eq.'+code+'&select=id,used,multi_use,expires_at&limit=1');
-    if(Array.isArray(rCode)&&rCode.length>0){
-      var rec=rCode[0];
-      if(rec.expires_at&&new Date(rec.expires_at)<new Date()){errEl.textContent='Este código ya expiró.';errEl.style.display='block';return;}
-      if(rec.used&&!rec.multi_use){errEl.textContent='Este código ya fue utilizado.';errEl.style.display='block';return;}
-      if(!rec.multi_use) await sbPatch('tor_unlock_codes',rec.id,{used:true});
-      _xxxPhone=null; // acceso por código, sin teléfono
-      _xxxCodeId=rec.id;
-      document.getElementById('codeXXXOverlay').classList.add('hidden');
-      unlockPaidLevels();
-      show('players');
-      return;
-    }
-    errEl.textContent='No encontrado. Verifica tu teléfono o código.';errEl.style.display='block';
-  }catch(e){errEl.textContent='Error de conexión. Intenta de nuevo.';errEl.style.display='block';}
-}
-
-// ── Subir comprobante y verificar con IA ──
-function xxxFileSelected(input){
-  var fi=document.getElementById('xxxFileInfo');
-  if(input.files&&input.files[0]){fi.textContent='✅ '+input.files[0].name;fi.style.display='block';}
-}
-async function submitPagoXXX(){
-  var phone=document.getElementById('xxxPhone').value.trim().replace(/\D/g,'');
-  var fileInput=document.getElementById('xxxFileInput');
-  var errEl=document.getElementById('xxxSubmitError');
-  var btn=document.getElementById('btnSubmitPago');
-  errEl.style.display='none';
-  if(phone.length<10){errEl.textContent='Ingresa tu número de WhatsApp (10 dígitos).';errEl.style.display='block';return;}
-  if(!fileInput||!fileInput.files||!fileInput.files[0]){errEl.textContent='Sube una foto del comprobante.';errEl.style.display='block';return;}
-  btn.disabled=true;btn.textContent='Verificando…';
-  try{
-    var file=fileInput.files[0];
-    var ext=(file.name.split('.').pop()||'jpg').toLowerCase();
-    var filename=Date.now()+'_'+phone+'.'+ext;
-    // 1. Subir imagen al Storage
-    var upR=await fetch(SB+'/storage/v1/object/payment-receipts/'+filename,{
-      method:'POST',
-      headers:{'apikey':SK,'Authorization':'Bearer '+SK,'Content-Type':file.type||'image/jpeg'},
-      body:file
-    });
-    if(!upR.ok){throw new Error('Error subiendo imagen');}
-    // 2. Llamar Edge Function para verificar con IA
-    var verR=await fetch(SB+'/functions/v1/validate-receipt',{
-      method:'POST',
-      headers:{'apikey':SK,'Authorization':'Bearer '+SK,'Content-Type':'application/json'},
-      body:JSON.stringify({phone:phone,receipt_path:filename,auto_approved:true})
-    });
-    var result=await verR.json();
-    document.getElementById('xxxViewAdquirir').style.display='none';
-    if(result.request_id||result.code||result.fully_validated){
-      // Acceso inmediato para esta sesión — admin revisa después
-      _xxxPhone=phone;
-      document.getElementById('xxxViewAprobado').style.display='block';
-      unlockPaidLevels();
-    } else {
-      errEl.textContent=result.message||'Error al procesar. Intenta de nuevo.';
-      errEl.style.display='block';
-      btn.disabled=false;btn.textContent='Enviar comprobante';
-    }
-  }catch(e){
-    errEl.textContent='Error al procesar. Intenta de nuevo.';errEl.style.display='block';
-    btn.disabled=false;btn.textContent='Enviar comprobante';
+  if(!['hot','extremo','mixto','xxx'].includes(level)||_xxxUnlocked){
+    setTimeout(function(){goToPlayers();},600);
   }
 }
 
-// ── Disclaimer de consentimiento ──
-function abrirDisclaimer(){
-  ['chk1','chk2','chk3','chk4'].forEach(function(id){document.getElementById(id).checked=false;});
-  document.getElementById('xxxDisclaimerOverlay').classList.remove('hidden');
-}
-function confirmXXXDisclaimer(){
-  var all=['chk1','chk2','chk3','chk4'].map(function(id){return document.getElementById(id);});
-  if(!all.every(function(c){return c.checked;})){toast('Confirma los 4 puntos para continuar');return;}
-  document.getElementById('xxxDisclaimerOverlay').classList.add('hidden');
-  _doStartGame();
-}
-function cancelXXXDisclaimer(){
-  document.getElementById('xxxDisclaimerOverlay').classList.add('hidden');
-}
-function procederDesdeAprobado(){
-  document.getElementById('codeXXXOverlay').classList.add('hidden');
-  // El disclaimer se muestra al iniciar juego (initGame lo maneja)
-  show('players');
-}
-
-// ── INICIAR JUEGO ──
+// ── PANTALLA 4: Juego ──
 async function initGame(){
-  // Validar jugadores (ahora se llama desde pantalla de jugadores)
   var inputs=document.querySelectorAll('#namesGrid input');
-  var players=[], hasError=false;
+  var players=[],hasError=false;
   inputs.forEach(function(inp,i){
     var name=inp.value.trim();
     if(!name){inp.classList.add('error');hasError=true;}
     else players.push({name:name,color:col(i)});
   });
-  if(hasError){toast('Completa todos los nombres');return;}
-  var nameSet=new Set(players.map(function(p){return p.name.toLowerCase();}));
-  if(nameSet.size!==players.length){toast('No puede haber nombres repetidos');return;}
+  if(hasError){toast('Completa los nombres');return;}
+  if(players.length<2){toast('Mínimo 2 jugadores');return;}
   try{localStorage.setItem('tor_players',JSON.stringify(players.map(function(p){return p.name;})));}catch(e){}
-  _pendingPlayers=players;
-  if(!selectedLevel){toast('Elige un nivel para continuar');return;}
-  // Mostrar disclaimer en CADA inicio de niveles de pago
-  if(LOCKED_LEVELS.indexOf(selectedLevel)>=0){
-    abrirDisclaimer();
-    return; // _doStartGame() se llama desde confirmXXXDisclaimer
-  }
-  await _doStartGame();
-}
-
-async function _doStartGame(){
   var btn=document.getElementById('startGameBtn');
   btn.disabled=true;btn.textContent='Iniciando…';
-  var started=false;
   try{
-    var shuffled=shuffle([..._pendingPlayers]);
-    var id=uid5();
+    var body={level:selectedLevel,mode:selectedMode,players:players,status:'playing',current_card:null,current_player_idx:0,round:1};
+    if(_roomCode)body.room_code=_roomCode;
+    var data=await sbPost('tor_games',body);
+    if(!data||data.error)throw new Error('Error');
+    game=Array.isArray(data)?data[0]:data;
     resetPools();
-    await loadCardPool(selectedLevel,selectedMode);
-    var firstCard=pickRandomCard();
-    if(!firstCard){toast('No hay cartas disponibles para este nivel');return;}
-    await sbPost('tor_games',{id:id,players:shuffled,level:selectedLevel,mode:selectedMode,status:'playing',current_player_index:0,round:1,current_card:firstCard});
-    game={id:id,players:shuffled,level:selectedLevel,mode:selectedMode,status:'playing',current_player_index:0,round:1,current_card:firstCard};
-    startRealtime();
-    startPolling();
-    started=true;
-    _cardCount=0;
-    // Sin fotos/videos en niveles de pago
-    var isPaid=LOCKED_LEVELS.indexOf(selectedLevel)>=0;
-    if(isPaid){
-      _cardCount=1;
-      showCard(firstCard);
-    } else {
-      showMarketingMedia(function(){_cardCount=1;showCard(firstCard);});
+    await loadCardPool(game.level,game.mode);
+    startRealtime();startPolling();
+    var c=pickRandomCard();
+    if(c){game.current_card=c;sbPatch('tor_games?id=eq.'+game.id,{current_card:c}).catch(function(){});showCard(c);}
+    if(_roomCode&&_roomData){
+      fetch(SB+'/rest/v1/tor_rooms?code=eq.'+_roomCode,{method:'PATCH',headers:Object.assign({},h(),{'Prefer':'return=minimal'}),body:JSON.stringify({status:'playing',current_game_id:game.id})}).catch(function(){});
     }
-  }catch(e){
-    toast('Error al crear el juego');
-    btn.disabled=false;btn.textContent='Iniciar Juego';
-  }finally{
-    if(!started){btn.disabled=false;btn.textContent='Iniciar Juego';}
-  }
+  }catch(err){toast('Error al iniciar. Intenta de nuevo.');console.error(err);}
+  finally{btn.disabled=false;btn.textContent='Iniciar Juego';}
 }
 
-// ── Cargar pool de cartas ──
-async function loadCardPool(lvl,mode){
-  if(allQ.length||allQComm.length)return; // Ya cargadas
-  lvl=lvl||'mixto';mode=mode||'presencial';
-
-  // Helper: mezcla hasta 5 retos de marketing aleatorios dentro del pool de dares
-  function injectMarketing(daresArr,marketingArr){
-    var picked=shuffle(marketingArr).slice(0,5);
-    return shuffle(daresArr.concat(picked));
+async function loadCardPool(level,mode){
+  resetPools();
+  var lvls=(level==='mixto')?['familiar','light','hot','extremo']:[level];
+  for(var i=0;i<lvls.length;i++){
+    var l=lvls[i];
+    var qr=await sbGet('tor_cards','?level=eq.'+l+'&type=eq.truth&select=id,text,type');
+    var dr=await sbGet('tor_cards','?level=eq.'+l+'&type=eq.dare&select=id,text,type');
+    allQ=allQ.concat(Array.isArray(qr)?qr:[]);
+    allD=allD.concat(Array.isArray(dr)?dr:[]);
   }
-
-  if(lvl==='comunidad'){
-    var res=await Promise.all([
-      sbGet('tor_questions','?source=eq.comunidad&order=id.asc'),
-      sbGet('tor_dares','?source=eq.comunidad&mode=eq.'+mode+'&order=id.asc'),
-      sbGet('tor_questions','?source=eq.oficial&order=id.asc'),
-      sbGet('tor_dares','?source=eq.oficial&mode=eq.'+mode+'&category=is.null&order=id.asc')
-    ]);
-    allQComm=shuffle(res[0]||[]);allDComm=shuffle(res[1]||[]);
-    allQ=shuffle(res[2]||[]);
-    var dOficial=res[3]||[];
-    if(mode==='distancia'){
-      var mkt=await sbGet('tor_dares','?source=eq.oficial&mode=eq.distancia&category=eq.marketing&order=id.asc');
-      dOficial=injectMarketing(dOficial,mkt||[]);
-    }
-    allD=shuffle(dOficial);
-    if(!allQComm.length)commQDone=true;
-    if(!allDComm.length)commDDone=true;
-    if(!allQ.length){
-      var r2=await Promise.all([sbGet('tor_questions','?order=id.asc'),sbGet('tor_dares','?mode=eq.'+mode+'&category=is.null&order=id.asc')]);
-      var d2=r2[1]||[];
-      if(mode==='distancia'){
-        var mkt2=await sbGet('tor_dares','?mode=eq.distancia&category=eq.marketing&order=id.asc');
-        d2=injectMarketing(d2,mkt2||[]);
-      }
-      allQ=shuffle(r2[0]||[]);allD=shuffle(d2);
-    }
-  }else{
-    var qf=lvl==='mixto'?'?order=id.asc':'?level=eq.'+lvl+'&order=id.asc';
-    var df=lvl==='mixto'
-      ?'?mode=eq.'+mode+'&category=is.null&order=id.asc'
-      :'?level=eq.'+lvl+'&mode=eq.'+mode+'&category=is.null&order=id.asc';
-    var res2=await Promise.all([sbGet('tor_questions',qf),sbGet('tor_dares',df)]);
-    allQ=shuffle(res2[0]||[]);
-    var dMain=res2[1]||[];
-    // Solo inyectar marketing en niveles gratuitos (familiar, light), ambas modalidades
-    var isPaidLevel=LOCKED_LEVELS.indexOf(lvl)>=0;
-    if(!isPaidLevel){
-      var mktf=lvl==='mixto'
-        ?'?mode=eq.'+mode+'&category=eq.marketing&order=id.asc'
-        :'?level=eq.'+lvl+'&mode=eq.'+mode+'&category=eq.marketing&order=id.asc';
-      var mkt3=await sbGet('tor_dares',mktf);
-      if(mkt3&&mkt3.length)dMain=injectMarketing(dMain,mkt3);
-    }
-    allD=shuffle(dMain);
-    commQDone=true;commDDone=true;
-  }
+  var cq=await sbGet('tor_cards_community','?approved=eq.true&type=eq.truth&select=id,text,type');
+  var cd=await sbGet('tor_cards_community','?approved=eq.true&type=eq.dare&select=id,text,type');
+  allQComm=Array.isArray(cq)?cq:[];allDComm=Array.isArray(cd)?cd:[];
+  shuffle(allQ);shuffle(allD);shuffle(allQComm);shuffle(allDComm);
 }
 
-// ── Sacar carta aleatoria ──
+function pickFromPool(arr,used){
+  if(!arr.length)return null;
+  var avail=arr.map(function(_,i){return i;}).filter(function(i){return!used.includes(i);});
+  if(!avail.length)return null;
+  var i=avail[Math.floor(Math.random()*avail.length)];
+  used.push(i);return arr[i];
+}
+
 function pickRandomCard(){
-  // 50/50 verdad o reto; si un pool está vacío intenta el otro
-  var types=Math.random()<0.5?['truth','dare']:['dare','truth'];
-  for(var ti=0;ti<types.length;ti++){
-    var result=drawCard(types[ti]);
-    if(result&&result.pick){
-      return {type:types[ti],text:result.pick.text,level:result.level||result.pick.level||'familiar'};
-    }
+  if(!game)return null;
+  var players=game.players||[];
+  var idx=game.current_player_idx||0;
+  var p=players[idx%players.length];
+  var useQ=Math.random()<0.5;
+  var card=null;
+  if(useQ){card=pickFromPool(allQ,usedQIdx)||pickFromPool(allD,usedDIdx);}
+  else{card=pickFromPool(allD,usedDIdx)||pickFromPool(allQ,usedQIdx);}
+  if(!card){
+    if(!commQDone){card=pickFromPool(allQComm,usedQCommIdx);if(usedQCommIdx.length>=allQComm.length)commQDone=true;}
+    if(!card&&!commDDone){card=pickFromPool(allDComm,usedDCommIdx);if(usedDCommIdx.length>=allDComm.length)commDDone=true;}
   }
-  return null;
+  if(!card){usedQIdx=[];usedDIdx=[];usedQCommIdx=[];usedDCommIdx=[];commQDone=false;commDDone=false;return pickRandomCard();}
+  if(p)card._player=p;
+  return card;
 }
 
-// ── Sacar del pool ──
-function drawCard(type){
-  var isQ=type==='truth';
-  var commPool=isQ?allQComm:allDComm;
-  var commUsed=isQ?usedQCommIdx:usedDCommIdx;
-  var commDone=isQ?commQDone:commDDone;
-  var mainPool=isQ?allQ:allD;
-  var mainUsed=isQ?usedQIdx:usedDIdx;
-
-  if(!commDone&&commPool.length>0){
-    if(commUsed.length<commPool.length){
-      var avail=commPool.filter(function(_,i){return commUsed.indexOf(i)<0;});
-      if(avail.length){
-        var pick=avail[Math.floor(Math.random()*avail.length)];
-        commUsed.push(commPool.indexOf(pick));
-        if(isQ)usedQCommIdx=commUsed;else usedDCommIdx=commUsed;
-        return{pick:pick,level:'comunidad'};
-      }
-    }
-    if(isQ)commQDone=true;else commDDone=true;
-  }
-
-  if(!mainPool.length)return null;
-  // Sin repetición: si ya se usaron todas, no reciclar
-  if(mainUsed.length>=mainPool.length)return null;
-  var avail2=mainPool.filter(function(_,i){return mainUsed.indexOf(i)<0;});
-  if(!avail2.length)return null;
-  var pick2=avail2[Math.floor(Math.random()*avail2.length)];
-  mainUsed.push(mainPool.indexOf(pick2));
-  if(isQ)usedQIdx=mainUsed;else usedDIdx=mainUsed;
-  return{pick:pick2,level:null};
-}
-
-// ── Cargar configuración dinámica ──
-async function loadConfig(){
-  try{
-    var rows=await sbGet('tor_config','?select=key,value');
-    if(rows&&rows.length){
-      rows.forEach(function(r){_config[r.key]=r.value;});
-      // Reflejar en la pantalla de pago
-      var precio=_config.precio_xxx||'100';
-      var el=document.getElementById('pago-precio');
-      if(el)el.textContent='$'+precio+' MXN';
-      var banco=document.getElementById('pago-banco');
-      if(banco)banco.textContent=_config.banco||'BBVA';
-      var clabe=document.getElementById('pago-clabe');
-      if(clabe)clabe.textContent=_config.clabe||'';
-      var cuenta=document.getElementById('pago-cuenta');
-      if(cuenta)cuenta.textContent=_config.cuenta||'';
-      var bene=document.getElementById('pago-beneficiario');
-      if(bene)bene.textContent=_config.beneficiario||'Terraza Luna';
-    }
-  }catch(e){}
-}
-
-// ── Registrar stat de engagement ──
-async function recordCardStat(card,durSecs){
-  if(!card||!card.id||!game)return;
-  try{
-    var ctype=card.type==='truth'?'pregunta':'reto';
-    await sbPost('tor_card_stats',{
-      card_type:ctype,
-      card_id:card.id,
-      game_id:game.id,
-      level:card.level||game.level,
-      mode:game.mode||'presencial',
-      duration_seconds:Math.round(durSecs*10)/10
-    });
-  }catch(e){}
-}
-
-// ── Mostrar carta ──
 function showCard(card){
-  if(!game||!card)return;
-  _cardShownAt=Date.now();
-  _trackedCard=card;
-  show('card');
-  var idx=Math.min(game.current_player_index||0,game.players.length-1);
-  var p=game.players[idx];
-
-  // Formato: "Luis, tómate un shot de tequila"
+  if(!card||!game)return;
+  var players=game.players||[];
+  var idx=game.current_player_idx||0;
+  var p=card._player||players[idx%players.length]||{name:'?'};
   var raw=card.text||'';
   var prefix='',body=raw;
   if(raw.charAt(0)==='¿'||raw.charAt(0)==='¡'){prefix=raw.charAt(0);body=raw.slice(1);}
   var formatted=p.name+', '+prefix+body.charAt(0).toLowerCase()+body.slice(1);
   document.getElementById('cardText').textContent=formatted;
-
-  // Badge verdad/reto
-  var isT=card.type==='truth';
-  document.getElementById('cardBadge').innerHTML=
-    '<div class="card-type-badge '+(isT?'badge-truth':'badge-dare')+'">'+(isT?'Verdad':'Reto')+'</div>';
-
-  // Chip de nivel
-  var lv=card.level||'familiar';
-  var lvInfo=LEVELS[lv]||LEVELS.familiar;
-  document.getElementById('cardLevel').innerHTML=
-    '<div class="level-chip '+lvInfo.chip+'">'+lvInfo.label+'</div>';
-
-  // Badges de ronda y nivel (fijos)
+  var isQ=card.type==='truth';
+  var badge=document.getElementById('cardBadge');
+  badge.textContent=isQ?'🔮 Verdad':'🎯 Reto';
+  badge.className='card-badge '+(isQ?'badge-truth':'badge-dare');
   document.getElementById('roundBadge').textContent='Ronda '+(game.round||1);
-  document.getElementById('levelBadge').textContent=LEVELS[game.level]?LEVELS[game.level].label:game.level;
+  var lvlBadge=document.getElementById('levelBadge');
+  lvlBadge.textContent=(LEVELS[game.level]||{label:game.level}).label;
+  lvlBadge.className='level-badge chip-'+(game.level||'familiar');
+  show('screen-card');
+  resetInactivityTimer();
 }
 
-// ── Verificar que acceso XXX sigue activo ──
-async function checkXXXAccess(){
-  if(!_xxxUnlocked)return true;
-  try{
-    // Verificar revocación por teléfono
-    if(_xxxPhone){
-      var r=await sbGet('tor_unlock_requests','?phone=eq.'+_xxxPhone+'&status=eq.rechazado&select=id&limit=1');
-      if(Array.isArray(r)&&r.length>0){
-        _xxxUnlocked=false;
-        if(game){
-          await sbPatch('tor_games?id=eq.'+game.id,{status:'ended'}).catch(function(){});
-          game=null;
-        }
-        show('welcome');
-        setTimeout(function(){
-          var el=document.createElement('div');
-          el.style.cssText='position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,.92);display:flex;flex-direction:column;align-items:center;justify-content:center;padding:32px;text-align:center;';
-          el.innerHTML='<div style="font-size:40px;margin-bottom:16px;">🚫</div>'
-            +'<div style="font-family:\'Cormorant Garamond\',serif;font-size:28px;color:#f0e4c4;font-weight:700;margin-bottom:12px;">Acceso revocado</div>'
-            +'<div style="font-size:15px;color:#aaa;line-height:1.6;max-width:300px;">Tu pago fue rechazado y el acceso a este número fue revocado. Contacta a Terraza Luna para más información.</div>'
-            +'<button id="btnCerrarRevocacion" style="margin-top:28px;padding:12px 28px;border-radius:10px;border:1px solid rgba(212,175,55,.4);background:rgba(212,175,55,.1);color:#c9a35b;font-size:13px;font-weight:600;cursor:pointer;font-family:\'Inter Tight\',sans-serif;letter-spacing:.06em;text-transform:uppercase;">Cerrar</button>';
-          document.body.appendChild(el);
-          document.getElementById('btnCerrarRevocacion').addEventListener('click',function(){
-            el.remove();
-            show('welcome');
-          });
-        },100);
-        return false;
-      }
-    }
-    // Verificar revocación por código (si used=true y no multi_use → bloqueado externamente)
-    if(_xxxCodeId){
-      var rc=await sbGet('tor_unlock_codes','?id=eq.'+_xxxCodeId+'&select=used,multi_use&limit=1');
-      if(Array.isArray(rc)&&rc.length>0&&rc[0].used&&!rc[0].multi_use){
-        _xxxUnlocked=false;
-        if(game){await sbPatch('tor_games?id=eq.'+game.id,{status:'ended'}).catch(function(){});game=null;}
-        show('welcome');
-        toast('Tu código de acceso fue revocado.',4000);
-        return false;
-      }
-    }
-  }catch(e){}
-  return true;
-}
-
-// ── Siguiente turno ──
 async function nextTurn(){
   if(!game)return;
-  // Verificar acceso XXX en niveles de pago
-  if(LOCKED_LEVELS.indexOf(game.level)>=0){
-    var ok=await checkXXXAccess();
-    if(!ok)return;
-    resetInactivityTimer();
-  }
-  // Registrar tiempo en carta actual antes de avanzar
-  if(_cardShownAt&&_trackedCard){
-    var dur=(Date.now()-_cardShownAt)/1000;
-    recordCardStat(_trackedCard,dur).catch(function(){});
-    _cardShownAt=null;_trackedCard=null;
-  }
-  document.getElementById('btnSiguiente').disabled=true;
-  var n=game.players.length;
-  var next=(game.current_player_index+1)%n;
-  var newRound=game.round+(next===0?1:0);
-  game.current_player_index=next;
-  game.round=newRound;
-
-  var card=pickRandomCard();
-  if(!card){
-    toast('No hay más cartas disponibles');
-    document.getElementById('btnSiguiente').disabled=false;
-    return;
-  }
-  game.current_card=card;
-
-  // Await patch para que el próximo poll ya encuentre el estado nuevo → evita flash
-  await sbPatch('tor_games?id=eq.'+game.id,{current_player_index:next,round:newRound,current_card:card}).catch(function(){});
-  var btnSig=document.getElementById('btnSiguiente');
-  _cardCount++;
-  // Mostrar media de marketing cada 7 cartas, solo en niveles gratuitos
-  var _isPaidLevel=game&&LOCKED_LEVELS.indexOf(game.level)>=0;
-  if(_cardCount%7===0&&!_isPaidLevel){
-    showMarketingMedia(function(){showCard(card);btnSig.disabled=false;});
-  }else{
-    showCard(card);
-    btnSig.disabled=false;
-  }
+  await checkXXXAccess();
+  if(!_xxxUnlocked&&['hot','extremo','mixto','xxx'].includes(game.level)){endGame(true);return;}
+  var players=game.players||[];
+  var nextIdx=((game.current_player_idx||0)+1)%players.length;
+  var round=nextIdx===0?(game.round||1)+1:(game.round||1);
+  game.current_player_idx=nextIdx;game.round=round;
+  var c=pickRandomCard();
+  if(!c){toast('¡Se acabaron las cartas!');return;}
+  game.current_card=c;
+  sbPatch('tor_games?id=eq.'+game.id,{current_card:c,current_player_idx:nextIdx,round:round}).catch(function(){});
+  showCard(c);
+  resetInactivityTimer();
 }
 
-// ── Reset completo de estado entre partidas ──
-function resetGameState(){
-  // Variables
-  game=null;
-  selectedLevel=null;
-  _pendingPlayers=[];
-  _cardCount=0;
-  _cardShownAt=null;
-  _trackedCard=null;
-  resetPools();
-  // UI: botón de inicio
-  var btn=document.getElementById('startGameBtn');
-  if(btn){btn.disabled=false;btn.textContent='Iniciar Juego';}
-  // UI: quitar nivel activo del grid
-  document.querySelectorAll('.level-option').forEach(function(el){el.classList.remove('active');});
-  var desc=document.getElementById('levelDesc');
-  if(desc)desc.classList.add('hidden');
-}
-
-// ── Terminar juego ──
-async function endGame(){
-  closeOverlay('endConfirmOverlay');
-  if(game){
-    try{await sbPatch('tor_games?id=eq.'+game.id,{status:'closed'});}catch(e){}
-  }
-  stopRealtime();
-  resetGameState();
-  // Mostrar encuesta de satisfacción antes de volver al inicio
-  document.getElementById('feedbackText').value='';
-  document.getElementById('feedbackOverlay').classList.remove('hidden');
-}
-
-// ── Feedback ──
-async function submitFeedback(){
-  var text=document.getElementById('feedbackText').value.trim();
-  if(!text){toast('Escribe algo para continuar');return;}
+async function checkXXXAccess(){
+  if(!_xxxUnlocked)return;
   try{
-    await sbPost('tor_feedback',{id:uid5(),text:text});
-    toast('¡Gracias por tu opinión! 🙌',2800);
+    if(_xxxPhone){
+      var r=await sbGet('tor_unlock_requests','?phone=eq.'+_xxxPhone+'&status=eq.rechazado&select=id&limit=1');
+      if(Array.isArray(r)&&r.length>0){revocarAcceso();return;}
+    }
+    if(_xxxCodeId){
+      var r2=await sbGet('tor_unlock_codes','?id=eq.'+_xxxCodeId+'&active=eq.false&select=id&limit=1');
+      if(Array.isArray(r2)&&r2.length>0){revocarAcceso();return;}
+    }
   }catch(e){}
-  _closeFeedback();
-}
-function skipFeedback(){_closeFeedback();}
-function _closeFeedback(){
-  document.getElementById('feedbackOverlay').classList.add('hidden');
-  show('welcome');
 }
 
-// ── Invitar ──
-function openInviteOverlay(){
-  document.getElementById('overlayCode').textContent=game?game.id:'------';
-  document.getElementById('overlayUrl').textContent=gameUrl();
-  document.getElementById('inviteOverlay').classList.remove('hidden');
+function revocarAcceso(){
+  _xxxUnlocked=false;_xxxPhone=null;_xxxCodeId=null;
+  clearTimeout(_inactivityTimer);
+  var el=document.createElement('div');
+  el.className='overlay';
+  el.style.cssText='position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,.85);display:flex;align-items:center;justify-content:center;padding:24px;';
+  el.innerHTML='<div class="overlay-sheet" style="text-align:center"><div style="font-size:32px;margin-bottom:8px">🚫</div><div class="overlay-title">Acceso revocado</div><div class="overlay-sub" style="margin:8px 0 16px">Tu pago fue rechazado.<br>Contacta al administrador.</div><button id="btnCerrarRevocacion" class="btn btn-gold">Entendido</button></div>';
+  document.body.appendChild(el);
+  document.getElementById('btnCerrarRevocacion').addEventListener('click',function(){
+    el.remove();game=null;show('screen-welcome');
+  });
 }
-function copyLink(){
-  var url=gameUrl();
-  if(navigator.clipboard){
-    navigator.clipboard.writeText(url).then(function(){toast('Link copiado');}).catch(function(){toast(url,4000);});
-  }else{toast(url,4000);}
-}
-function shareGame(){
-  var url=gameUrl();
-  var text='¿Te atreverías a jugar verdad o reto conmigo? 🎲 Únete: '+url;
-  if(navigator.share){
-    navigator.share({title:'Verdad o Reto · Terraza Luna',text:'¡Únete a nuestra partida!',url:url}).catch(function(){});
-  }else{
-    window.open('https://wa.me/?text='+encodeURIComponent(text),'_blank');
+
+function openEndConfirmOverlay(){document.getElementById('endConfirmOverlay').classList.remove('hidden');}
+function closeEndConfirmOverlay(){document.getElementById('endConfirmOverlay').classList.add('hidden');}
+
+function endGame(silent){
+  if(game){
+    sbPatch('tor_games?id=eq.'+game.id,{status:'ended'}).catch(function(){});
+    if(_roomCode){
+      fetch(SB+'/rest/v1/tor_rooms?code=eq.'+_roomCode,{method:'PATCH',headers:Object.assign({},h(),{'Prefer':'return=minimal'}),body:JSON.stringify({status:'waiting',current_game_id:null})}).catch(function(){});
+    }
+  }
+  stopRealtime();stopPolling();
+  game=null;
+  closeEndConfirmOverlay();
+  if(!silent)document.getElementById('feedbackOverlay').classList.remove('hidden');
+  if(_roomCode){
+    renderRoomScreen();
+    show('screen-room');
+    if(!_isHost)startRoomPolling();
+  } else {
+    show('screen-welcome');
   }
 }
 
-// ── Opciones ──
-function openOptionsOverlay(){document.getElementById('optionsOverlay').classList.remove('hidden');}
-function openEndConfirmOverlay(){document.getElementById('endConfirmOverlay').classList.remove('hidden');}
-function openAddPlayerOverlay(){
-  document.getElementById('newPlayerName').value='';
-  document.getElementById('addPlayerOverlay').classList.remove('hidden');
-  setTimeout(function(){document.getElementById('newPlayerName').focus();},200);
+function submitFeedback(){
+  var txt=document.getElementById('feedbackText').value.trim();
+  if(txt)sbPost('tor_feedback',{text:txt}).catch(function(){});
+  document.getElementById('feedbackOverlay').classList.add('hidden');
 }
-function openAddCardOverlay(){
-  document.getElementById('newCardText').value='';
-  setCardType('truth');
-  document.getElementById('addCardOverlay').classList.remove('hidden');
-  setTimeout(function(){document.getElementById('newCardText').focus();},200);
-}
+function skipFeedback(){document.getElementById('feedbackOverlay').classList.add('hidden');}
 
-// ── Agregar jugador durante el juego ──
-async function confirmAddPlayer(){
-  var name=document.getElementById('newPlayerName').value.trim();
-  if(!name){toast('Escribe un nombre');return;}
-  if(!game){closeOverlay('addPlayerOverlay');return;}
-  var updated=game.players.concat([{name:name,color:col(game.players.length)}]);
-  try{
-    await sbPatch('tor_games?id=eq.'+game.id,{players:updated});
-    game.players=updated;
-    closeOverlay('addPlayerOverlay');
-    toast(name+' se unió al juego');
-  }catch(e){toast('Error al agregar jugador');}
-}
-
-// ── Agregar carta durante el juego ──
 function setCardType(type){
   selectedCardType=type;
   document.getElementById('tabTruth').classList.toggle('active',type==='truth');
   document.getElementById('tabDare').classList.toggle('active',type==='dare');
 }
+
 async function confirmAddCard(){
-  var text=document.getElementById('newCardText').value.trim();
-  if(!text){toast('Escribe el contenido');return;}
-  if(!game){closeOverlay('addCardOverlay');return;}
-  var type=selectedCardType;
-  var lvl=(game.level==='mixto'||game.level==='comunidad')?'familiar':game.level;
-  var newCard={text:text,level:lvl,source:'comunidad'};
+  var txt=document.getElementById('newCardText').value.trim();
+  if(!txt){toast('Escribe algo');return;}
+  var card={text:txt,type:selectedCardType,level:game?game.level:'familiar',source:'juego',approved:false};
   try{
-    if(type==='truth'){
-      var res=await sbPost('tor_questions',newCard);
-      var saved=(res&&res[0])||newCard;
-      allQComm.push(saved);commQDone=false;
-    }else{
-      var res2=await sbPost('tor_dares',Object.assign({},newCard,{mode:game.mode||'presencial'}));
-      var saved2=(res2&&res2[0])||newCard;
-      allDComm.push(saved2);commDDone=false;
-    }
+    await sbPost('tor_cards_community',card);
+    if(selectedCardType==='truth')allQComm.push(card);else allDComm.push(card);
+    document.getElementById('newCardText').value='';
     closeOverlay('addCardOverlay');
-    toast('Guardada y añadida al mazo');
+    toast('¡Carta agregada!');
   }catch(e){toast('Error al guardar');}
 }
 
-// ══════════════════════════════════════════
-// REALTIME / SYNC (para multiplayer vía link)
-// ══════════════════════════════════════════
-
-function stateChanged(rec){
-  if(!game)return true;
-  return(
-    rec.status!==game.status||
-    rec.current_player_index!==game.current_player_index||
-    rec.round!==game.round||
-    JSON.stringify(rec.current_card)!==JSON.stringify(game.current_card)||
-    (rec.players&&rec.players.length!==game.players.length)
-  );
-}
-
-function applyRemoteState(rec){
-  if(!game||rec.id!==game.id)return;
-  if(!stateChanged(rec))return;
-  game=Object.assign(game,rec);
-  syncDisplay();
-}
-
-function syncDisplay(){
+async function confirmAddPlayer(){
+  var name=document.getElementById('newPlayerName').value.trim();
+  if(!name){toast('Ingresa un nombre');return;}
   if(!game)return;
-  if(game.status==='closed'||game.status==='finished'){
-    stopRealtime();
-    resetGameState();
-    // Solo redirigir si el usuario sigue en la pantalla de juego (no interrumpir flujo de nuevo juego)
-    var cardScreen=document.getElementById('screen-card');
-    if(cardScreen&&!cardScreen.classList.contains('hidden')){show('welcome');}
-    return;
-  }
-  if(game.status==='playing'){
-    // Si no hay cartas cargadas (joined via link), cargarlas primero
-    if(!allQ.length&&!allQComm.length){
-      loadCardPool(game.level,game.mode).then(function(){
-        if(game&&game.current_card)showCard(game.current_card);
-        else if(game){var c=pickRandomCard();if(c){game.current_card=c;showCard(c);}}
-      }).catch(function(){});
-      return;
-    }
-    if(game.current_card)showCard(game.current_card);
-  }
+  var players=game.players||[];
+  players.push({name:name,color:col(players.length)});
+  game.players=players;
+  await sbPatch('tor_games?id=eq.'+game.id,{players:players});
+  document.getElementById('newPlayerName').value='';
+  closeOverlay('addPlayerOverlay');
+  toast(name+' se unió 🎉');
+}
+
+function openOptionsOverlay(){document.getElementById('optionsOverlay').classList.remove('hidden');}
+function openAddPlayerOverlay(){document.getElementById('addPlayerOverlay').classList.remove('hidden');setTimeout(function(){document.getElementById('newPlayerName').focus();},200);}
+function openAddCardOverlay(){document.getElementById('addCardOverlay').classList.remove('hidden');setTimeout(function(){document.getElementById('newCardText').focus();},200);}
+function openInviteOverlay(){
+  document.getElementById('overlayCode').textContent=game?game.id.slice(0,6).toUpperCase():'------';
+  var url=gameUrl();
+  document.getElementById('overlayUrl').textContent=url;
+  document.getElementById('inviteOverlay').classList.remove('hidden');
+}
+function copyLink(){navigator.clipboard.writeText(gameUrl()).then(function(){toast('¡Link copiado!');});}
+function shareGame(){
+  var url=gameUrl();
+  var msg='¿Juegas Verdad o Reto conmigo? 🎲 '+url;
+  if(navigator.share)navigator.share({title:'Verdad o Reto',text:msg,url:url}).catch(function(){});
+  else window.open('https://wa.me/?text='+encodeURIComponent(msg),'_blank');
 }
 
 function startRealtime(){
-  if(_ws)return;
+  stopRealtime();
+  if(!game)return;
+  var url=SB.replace('https','wss')+'/realtime/v1/websocket?apikey='+SK+'&vsn=1.0.0';
   try{
-    var wsUrl=SB.replace('https://','wss://')+'/realtime/v1/websocket?apikey='+SK+'&vsn=1.0.0';
-    _ws=new WebSocket(wsUrl);
-    _ws.onopen=function(){
-      _ws.send(JSON.stringify({topic:'realtime:public:tor_games',event:'phx_join',payload:{config:{postgres_changes:[{event:'UPDATE',schema:'public',table:'tor_games'}]}},ref:String(++_wsRef)}));
-      _wsHb=setInterval(function(){if(_ws&&_ws.readyState===1)_ws.send(JSON.stringify({topic:'phoenix',event:'heartbeat',payload:{},ref:String(++_wsRef)}));},25000);
+    _ws=new WebSocket(url);
+    _ws.onopen=function(){_ws.send(JSON.stringify({topic:'realtime:tor_games:id=eq.'+game.id,event:'phx_join',payload:{},ref:'1'}));};
+    _ws.onmessage=function(e){
+      try{
+        var m=JSON.parse(e.data);
+        if(m.event==='postgres_changes'&&m.payload&&m.payload.record){
+          var rec=m.payload.record;
+          if(!game||rec.id!==game.id)return;
+          if(rec.status==='ended'){endGame(true);return;}
+          if(rec.current_card&&JSON.stringify(rec.current_card)!==JSON.stringify(game.current_card)){
+            game.current_card=rec.current_card;game.current_player_idx=rec.current_player_idx||0;game.round=rec.round||1;
+            showCard(rec.current_card);
+          }
+        }
+      }catch(er){}
     };
-    _ws.onmessage=function(m){
-      try{var d=JSON.parse(m.data);if(d&&d.event==='postgres_changes'&&d.payload&&d.payload.record)applyRemoteState(d.payload.record);}catch(e){}
-    };
-    _ws.onclose=function(){clearInterval(_wsHb);_ws=null;if(game&&game.status==='playing')setTimeout(startRealtime,5000);};
-    _ws.onerror=function(){try{_ws.close();}catch(e){}};
+    _wsHb=setInterval(function(){if(_ws&&_ws.readyState===1)_ws.send(JSON.stringify({topic:'phoenix',event:'heartbeat',payload:{},ref:'hb'}));},25000);
   }catch(e){}
 }
-
-function stopRealtime(){
-  if(_ws){try{_ws.close();}catch(e){}_ws=null;}
-  clearInterval(_wsHb);
-  clearInterval(_pollInterval);_pollInterval=null;
-}
-
+function stopRealtime(){if(_wsHb){clearInterval(_wsHb);_wsHb=null;}if(_ws){try{_ws.close();}catch(e){}; _ws=null;}}
 function startPolling(){
-  if(_pollInterval)return;
+  stopPolling();if(!game)return;
   _pollInterval=setInterval(async function(){
-    if(!game||game.status==='closed'){clearInterval(_pollInterval);_pollInterval=null;return;}
-    try{
-      var rows=await sbGet('tor_games','?id=eq.'+game.id+'&select=id,status,current_player_index,round,current_card,players');
-      if(rows&&rows.length)applyRemoteState(rows[0]);
-    }catch(e){}
-  },2500);
+    if(!game)return;
+    try{var rows=await sbGet('tor_games','?id=eq.'+game.id+'&select=status');if(rows&&rows[0]&&rows[0].status==='ended')endGame(true);}catch(e){}
+  },8000);
 }
+function stopPolling(){if(_pollInterval){clearInterval(_pollInterval);_pollInterval=null;}}
 
-// ══════════════════════════════════════════
-// MARKETING MEDIA
-// ══════════════════════════════════════════
-async function showMarketingMedia(onDone){
+function openXXXModal(){document.getElementById('codeXXXOverlay').classList.remove('hidden');}
+function closeXXXModal(){document.getElementById('codeXXXOverlay').classList.add('hidden');}
+
+async function submitPagoXXX(){
+  var file=document.getElementById('pagoFile').files[0];
+  var phone=document.getElementById('inputTelXXX').value.trim();
+  if(!phone||phone.replace(/\D/g,'').length<10){toast('Ingresa tu número de teléfono');return;}
+  if(!file){toast('Selecciona el comprobante');return;}
+  var btn=document.querySelector('#pagoForm .btn-gold');
+  if(btn){btn.disabled=true;btn.textContent='Enviando…';}
   try{
-    var rows=await sbGet('tor_media','?order=id.asc');
-    if(!rows||!rows.length){onDone();return;}
-    var item=rows[Math.floor(Math.random()*rows.length)];
-    var ov=document.getElementById('mktOverlay');
-    var img=document.getElementById('mktImg');
-    var vid=document.getElementById('mktVideo');
-    img.style.display='none';vid.style.display='none';vid.src='';
-    document.getElementById('mktCountdown').style.display='none';
-    ov.style.opacity='0';ov.style.display='flex';
-    setTimeout(function(){ov.style.opacity='1';},20);
-    function dismiss(){ov.style.opacity='0';setTimeout(function(){ov.style.display='none';onDone();},500);}
-    if(item.type==='photo'){
-      img.src=item.url;img.style.display='block';
-      var cdEl=document.getElementById('mktCountdown');
-      var cdNum=document.getElementById('mktCountdownNum');
-      var cdRing=document.getElementById('mktCountdownRing');
-      var CIRC=47.1;
-      var durRows=await fetch(SB+'/rest/v1/tor_settings?key=eq.photo_duration&select=value',{headers:h()}).then(function(r){return r.json();}).catch(function(){return[];});
-      var TOTAL=(durRows&&durRows.length)?Math.max(1,parseInt(durRows[0].value)||4):4;
-      var remaining=TOTAL;
-      cdNum.textContent=remaining;cdRing.style.strokeDashoffset='0';cdRing.style.transition='none';
-      cdEl.style.display='flex';void cdRing.getBoundingClientRect();
-      cdRing.style.transition='stroke-dashoffset 1s linear';
-      cdRing.style.strokeDashoffset=String(CIRC/TOTAL);
-      var cdTick=setInterval(function(){remaining--;cdNum.textContent=Math.max(remaining,0);cdRing.style.strokeDashoffset=String(CIRC/TOTAL*(TOTAL-remaining));if(remaining<=0)clearInterval(cdTick);},1000);
-      setTimeout(function(){clearInterval(cdTick);cdEl.style.display='none';dismiss();},TOTAL*1000);
-    }else{
-      vid.src=item.url;vid.style.display='block';
-      vid.onended=function(){dismiss();};
-      var p=vid.play();if(p&&p.catch){p.catch(function(){});}
+    var ext=file.name.split('.').pop().toLowerCase();
+    var fname='comp_'+Date.now()+'.'+ext;
+    var upRes=await fetch(SB+'/storage/v1/object/comprobantes/'+fname,{method:'POST',headers:{'apikey':SK,'Authorization':'Bearer '+SK,'Content-Type':file.type},body:file});
+    var imgUrl=upRes.ok?(SB+'/storage/v1/object/public/comprobantes/'+fname):null;
+    var reqRes=await sbPost('tor_unlock_requests',{phone:phone,status:'pendiente',comprobante_url:imgUrl});
+    var reqId=Array.isArray(reqRes)?reqRes[0]?.id:reqRes?.id;
+    if(imgUrl&&reqId){
+      fetch(SB+'/functions/v1/validate-receipt',{method:'POST',headers:{'apikey':SK,'Authorization':'Bearer '+SK,'Content-Type':'application/json'},body:JSON.stringify({request_id:reqId,image_url:imgUrl,phone:phone})}).catch(function(){});
     }
-  }catch(e){onDone();}
+    _xxxPhone=phone;
+    unlockPaidLevels();
+    closeXXXModal();
+    if(selectedLevel&&LOCKED_LEVELS.includes(selectedLevel))goToPlayers();
+    toast('¡Acceso concedido! Comprobante enviado para revisión.');
+  }catch(e){toast('Error al enviar. Intenta de nuevo.');}
+  finally{if(btn){btn.disabled=false;btn.textContent='Enviar comprobante';}}
 }
 
-// ══════════════════════════════════════════
-// INIT: Unirse a juego existente vía URL
-// ══════════════════════════════════════════
+async function validateCodigoXXX(){
+  var raw=document.getElementById('inputCodigoXXX').value.trim();
+  var errEl=document.getElementById('codeXXXError');
+  errEl.style.display='none';
+  if(!raw){errEl.textContent='Ingresa tu teléfono o código.';errEl.style.display='block';return;}
+  var onlyDigits=raw.replace(/\D/g,'');
+  var isPhone=onlyDigits.length>=10;
+  try{
+    if(isPhone){
+      var rows=await sbGet('tor_unlock_requests','?phone=eq.'+onlyDigits+'&status=eq.aprobado&select=id&limit=1');
+      if(Array.isArray(rows)&&rows.length){_xxxPhone=onlyDigits;unlockPaidLevels();closeXXXModal();if(selectedLevel&&LOCKED_LEVELS.includes(selectedLevel))goToPlayers();toast('¡Acceso concedido!');return;}
+      errEl.textContent='Teléfono no encontrado o pago no aprobado.';errEl.style.display='block';
+    }else{
+      var codeRows=await sbGet('tor_unlock_codes','?code=eq.'+raw.toUpperCase()+'&active=eq.true&select=id,expires_at&limit=1');
+      if(Array.isArray(codeRows)&&codeRows.length){
+        var ce=codeRows[0];
+        if(ce.expires_at&&new Date(ce.expires_at)<new Date()){errEl.textContent='Este código ya expiró.';errEl.style.display='block';return;}
+        _xxxCodeId=ce.id;unlockPaidLevels();closeXXXModal();if(selectedLevel&&LOCKED_LEVELS.includes(selectedLevel))goToPlayers();toast('¡Código válido!');return;
+      }
+      errEl.textContent='Código inválido o expirado.';errEl.style.display='block';
+    }
+  }catch(e){errEl.textContent='Error de conexión.';errEl.style.display='block';}
+}
+
+document.addEventListener('vorNotifPrompt',function(){
+  if(!('Notification' in window)||Notification.permission!=='default')return;
+  setTimeout(function(){Notification.requestPermission();},2000);
+});
+
 (async function(){
+  if('serviceWorker' in navigator)navigator.serviceWorker.register('/sw-vor.js').catch(function(){});
   var p=new URLSearchParams(window.location.search);
-  var id=p.get('id');
-  if(!id)return;
-  // Mostrar cargando brevemente
-  try{
-    var rows=await sbGet('tor_games','?id=eq.'+id+'&select=*');
-    if(!rows||!rows.length){toast('Código de juego no encontrado');return;}
-    game=rows[0];
-    if(game.status==='playing'){
-      resetPools();
-      await loadCardPool(game.level,game.mode);
-      startRealtime();
-      startPolling();
-      if(game.current_card){showCard(game.current_card);}
-      else{var c=pickRandomCard();if(c){game.current_card=c;showCard(c);}}
-    }else if(game.status==='lobby'){
-      // En el nuevo flujo no hay lobby — mostrar welcome
-      toast('El juego aún no ha iniciado');
-      game=null;
-    }else{
-      toast('Este juego ya terminó');
-      game=null;
-    }
-  }catch(e){toast('Error al unirse al juego');}
+  var gameId=p.get('id');
+  initRoom();
+  if(gameId){
+    try{
+      var rows=await sbGet('tor_games','?id=eq.'+gameId+'&select=*');
+      if(rows&&rows.length&&rows[0].status==='playing'){
+        game=rows[0];resetPools();await loadCardPool(game.level,game.mode);
+        startRealtime();startPolling();
+        if(game.current_card)showCard(game.current_card);
+        else{var c=pickRandomCard();if(c){game.current_card=c;showCard(c);}}
+        return;
+      }
+    }catch(e){}
+  }
+  if(!_roomCode)show('screen-welcome');
 })();
 </script>
-
-<!-- PWA Service Worker + Push Notifications -->
 <script>
-const VAPID_PUBLIC_KEY = 'BKZRTMenzFsK0AF7ItrF34Ua0tolF4sz9ywrEgFNjFqfNBK2nbb2d5i1KQSGhAWmJzbJN8mxRQiDE5zoI875gNU';
-
-function urlBase64ToUint8Array(base64String) {
-  const padding = '='.repeat((4 - base64String.length % 4) % 4);
-  const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
-  const rawData = atob(base64);
-  return Uint8Array.from([...rawData].map(c => c.charCodeAt(0)));
+// ── Funciones del modal XXX (inyectadas por separado) ──
+function showXXXCodigo(){
+  ['xxxViewAdquirir','xxxViewConfirm','xxxViewAprobado','xxxViewRechazado'].forEach(function(id){var e=document.getElementById(id);if(e)e.style.display='none';});
+  var v=document.getElementById('xxxViewCodigo');if(v)v.style.display='block';
 }
-
-async function subscribePush() {
-  try {
-    // Esperar SW activo (navigator.serviceWorker.ready garantiza estado 'active')
-    const reg = await navigator.serviceWorker.ready;
-
-    // ¿Ya está suscrito?
-    let sub = await reg.pushManager.getSubscription();
-    if (!sub) {
-      sub = await reg.pushManager.subscribe({
-        userVisibleOnly: true,
-        applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY),
-      });
+function showXXXAdquirir(){
+  ['xxxViewCodigo','xxxViewConfirm','xxxViewAprobado','xxxViewRechazado'].forEach(function(id){var e=document.getElementById(id);if(e)e.style.display='none';});
+  var v=document.getElementById('xxxViewAdquirir');if(v)v.style.display='block';
+  loadXXXPricing();
+}
+function showXXXView(id){
+  ['xxxViewCodigo','xxxViewAdquirir','xxxViewConfirm','xxxViewAprobado','xxxViewRechazado'].forEach(function(vid){var e=document.getElementById(vid);if(e)e.style.display='none';});
+  var v=document.getElementById(id);if(v)v.style.display='block';
+}
+async function loadXXXPricing(){
+  try{
+    var rows=await sbGet('tor_config','?key=eq.precio_xxx&select=value&limit=1');
+    if(rows&&rows[0]&&rows[0].value){document.getElementById('pago-precio')&&(document.getElementById('pago-precio').textContent='$'+rows[0].value+' MXN');}
+    var info=await sbGet('tor_config','?key=eq.pago_info&select=value&limit=1');
+    if(info&&info[0]&&info[0].value){
+      var v=info[0].value;
+      if(v.banco)document.getElementById('pago-banco').textContent=v.banco;
+      if(v.clabe)document.getElementById('pago-clabe').textContent=v.clabe;
+      if(v.cuenta)document.getElementById('pago-cuenta').textContent=v.cuenta;
+      if(v.beneficiario)document.getElementById('pago-beneficiario').textContent=v.beneficiario;
     }
-
-    // Guardar en Supabase — on_conflict evita error por endpoint duplicado
-    const j = sub.toJSON();
-    const resp = await fetch(SB + '/rest/v1/push_subscriptions?on_conflict=endpoint', {
-      method: 'POST',
-      headers: {
-        'apikey': SK,
-        'Authorization': 'Bearer ' + SK,
-        'Content-Type': 'application/json',
-        'Prefer': 'resolution=ignore-duplicates',
-      },
-      body: JSON.stringify({
-        endpoint: j.endpoint,
-        p256dh:   j.keys.p256dh,
-        auth:     j.keys.auth,
-      }),
-    });
-    if (resp.ok || resp.status === 201) {
-      console.log('[VoR Push] Suscripción guardada ✓');
-    } else {
-      const txt = await resp.text();
-      console.warn('[VoR Push] Error Supabase:', resp.status, txt);
-    }
-  } catch (err) {
-    console.warn('[VoR Push] Error al suscribir:', err);
+  }catch(e){}
+}
+function xxxFileSelected(inp){
+  var info=document.getElementById('xxxFileInfo');
+  if(inp.files[0]){
+    info.textContent='✓ '+inp.files[0].name;
+    info.style.display='block';
+    var label=document.getElementById('xxxFileLabel');
+    if(label)label.style.borderColor='var(--gold)';
   }
 }
+// Wrapper: submitPagoXXX usa los IDs del HTML real
+var _submitPagoXXX_original=submitPagoXXX;
+submitPagoXXX=async function(){
+  var fileInput=document.getElementById('xxxFileInput');
+  var phoneInput=document.getElementById('xxxPhone');
+  var errEl=document.getElementById('xxxSubmitError');
+  if(errEl)errEl.style.display='none';
+  var phone=(phoneInput?phoneInput.value:'').trim();
+  var file=fileInput?fileInput.files[0]:null;
+  if(!phone||phone.replace(/\D/g,'').length<10){if(errEl){errEl.textContent='Ingresa tu número de teléfono.';errEl.style.display='block';}return;}
+  if(!file){if(errEl){errEl.textContent='Selecciona el comprobante de pago.';errEl.style.display='block';}return;}
+  var btn=document.getElementById('btnSubmitPago');
+  if(btn){btn.disabled=true;btn.textContent='Enviando…';}
+  try{
+    var ext=file.name.split('.').pop().toLowerCase();
+    var fname='comp_'+Date.now()+'.'+ext;
+    var upRes=await fetch(SB+'/storage/v1/object/comprobantes/'+fname,{method:'POST',headers:{'apikey':SK,'Authorization':'Bearer '+SK,'Content-Type':file.type},body:file});
+    var imgUrl=upRes.ok?(SB+'/storage/v1/object/public/comprobantes/'+fname):null;
+    var reqRes=await sbPost('tor_unlock_requests',{phone:phone.replace(/\D/g,''),status:'pendiente',comprobante_url:imgUrl});
+    var reqId=Array.isArray(reqRes)?reqRes[0]?.id:reqRes?.id;
+    if(imgUrl&&reqId){
+      fetch(SB+'/functions/v1/validate-receipt',{method:'POST',headers:{'apikey':SK,'Authorization':'Bearer '+SK,'Content-Type':'application/json'},body:JSON.stringify({request_id:reqId,image_url:imgUrl,phone:phone.replace(/\D/g,'')})}).catch(function(){});
+    }
+    _xxxPhone=phone.replace(/\D/g,'');
+    unlockPaidLevels();
+    closeXXXModal();
+    if(selectedLevel&&LOCKED_LEVELS.includes(selectedLevel))goToPlayers();
+    toast('¡Acceso concedido! Comprobante enviado para revisión.');
+  }catch(e){if(errEl){errEl.textContent='Error al enviar. Intenta de nuevo.';errEl.style.display='block';}}
+  finally{if(btn){btn.disabled=false;btn.textContent='Enviar comprobante';}}
+};
 
-function initPush() {
-  if (!('serviceWorker' in navigator) || !('PushManager' in window) || !('Notification' in window)) return;
-  if (Notification.permission === 'granted') {
-    // Ya tiene permiso → suscribir de inmediato
-    subscribePush();
-  } else if (Notification.permission === 'default') {
-    // Pedir permiso la próxima vez que el usuario toque "Jugar"
-    document.addEventListener('vorNotifPrompt', function() {
-      Notification.requestPermission().then(function(perm) {
-        if (perm === 'granted') subscribePush();
-      });
-    }, { once: true });
-  }
+function confirmXXXDisclaimer(){
+  var chks=['chk1','chk2','chk3','chk4'];
+  var allChecked=chks.every(function(id){var el=document.getElementById(id);return el&&el.checked;});
+  if(!allChecked){toast('Acepta todos los puntos para continuar');return;}
+  document.getElementById('xxxDisclaimerOverlay').classList.add('hidden');
+  openXXXModal();
 }
-
-// Cargar config al arrancar (precio, banco, etc.)
-loadConfig().catch(function(){});
-
-if ('serviceWorker' in navigator) {
-  window.addEventListener('load', function() {
-    navigator.serviceWorker.register('/sw-vor.js', { scope: '/tor' })
-      .then(function(reg) {
-        reg.addEventListener('updatefound', function() {
-          var newSW = reg.installing;
-          newSW.addEventListener('statechange', function() {
-            if (newSW.state === 'installed' && navigator.serviceWorker.controller) {
-              console.log('[VoR PWA] Nueva versión disponible');
-            }
-          });
-        });
-        initPush();
-      })
-      .catch(function(err) {
-        console.warn('[VoR PWA] Service worker no pudo registrarse:', err);
-      });
-  });
+function cancelXXXDisclaimer(){
+  document.getElementById('xxxDisclaimerOverlay').classList.add('hidden');
+  selectedLevel=null;
+  document.querySelectorAll('.level-option').forEach(function(el){el.classList.remove('active');});
+  document.getElementById('levelDesc').classList.add('hidden');
+}
+function procederDesdeAprobado(){
+  closeXXXModal();
+  if(selectedLevel&&LOCKED_LEVELS.includes(selectedLevel))goToPlayers();
+}
+// handleLockedLevel abre el disclaimer primero, luego el modal
+function handleLockedLevel(level){
+  _setLevel(level);
+  if(!_xxxUnlocked){
+    document.getElementById('xxxDisclaimerOverlay').classList.remove('hidden');
+  }
 }
 </script>
+
 </body>
 </html>
