@@ -934,43 +934,91 @@ tr:hover td{background:var(--bg3);}
     </div>
     <!-- ── ENGAGEMENT ── -->
     <div class="section" id="section-engagement">
-      <div class="page-header">
-        <div class="page-label">Algoritmo</div>
-        <div class="page-title">Engagement de cartas</div>
-        <div class="page-sub">Tiempo promedio que los jugadores permanecen en cada carta. Cartas con más tiempo = más interesantes. Usa la IA para generar contenido similar al más popular.</div>
+      <div class="page-header" style="display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:12px;">
+        <div>
+          <div class="page-label">Analytics</div>
+          <div class="page-title">Engagement</div>
+          <div class="page-sub">Actividad de sesiones, niveles, horarios y rendimiento de cartas.</div>
+        </div>
+        <div style="display:flex;gap:8px;align-items:center;">
+          <select id="eng-periodo" onchange="loadEngagement()" style="background:var(--bg3);border:1px solid var(--line2);border-radius:10px;color:var(--ink);font-size:13px;padding:8px 12px;font-family:'Inter Tight',sans-serif;cursor:pointer;">
+            <option value="7">Últimos 7 días</option>
+            <option value="14">Últimos 14 días</option>
+            <option value="30" selected>Últimos 30 días</option>
+            <option value="90">Últimos 90 días</option>
+          </select>
+          <button onclick="loadEngagement()" style="background:var(--bg3);border:1px solid var(--line2);border-radius:10px;color:var(--gold);font-size:12px;font-weight:700;padding:9px 16px;cursor:pointer;font-family:'Inter Tight',sans-serif;letter-spacing:.06em;text-transform:uppercase;">↻</button>
+        </div>
       </div>
 
-      <!-- Filtros -->
-      <div class="toolbar" style="flex-wrap:wrap;gap:10px;margin-bottom:16px;">
-        <select id="eng-filter-level" onchange="filterEngagement()" style="background:var(--bg3);border:1px solid var(--line2);border-radius:10px;color:var(--ink);font-size:13px;padding:9px 12px;font-family:'Inter Tight',sans-serif;cursor:pointer;">
-          <option value="">Todos los niveles</option>
-          <option value="familiar">Familiar</option>
-          <option value="light">Light</option>
-          <option value="hot">Hot</option>
-          <option value="extremo">Extremo</option>
-          <option value="xxx">XXX</option>
-        </select>
-        <select id="eng-filter-mode" onchange="filterEngagement()" style="background:var(--bg3);border:1px solid var(--line2);border-radius:10px;color:var(--ink);font-size:13px;padding:9px 12px;font-family:'Inter Tight',sans-serif;cursor:pointer;">
-          <option value="">Presencial y distancia</option>
-          <option value="presencial">Presencial</option>
-          <option value="distancia">Distancia</option>
-        </select>
-        <select id="eng-filter-type" onchange="filterEngagement()" style="background:var(--bg3);border:1px solid var(--line2);border-radius:10px;color:var(--ink);font-size:13px;padding:9px 12px;font-family:'Inter Tight',sans-serif;cursor:pointer;">
-          <option value="">Preguntas y retos</option>
-          <option value="pregunta">Solo preguntas</option>
-          <option value="reto">Solo retos</option>
-        </select>
-        <select id="eng-filter-sort" onchange="filterEngagement()" style="background:var(--bg3);border:1px solid var(--line2);border-radius:10px;color:var(--ink);font-size:13px;padding:9px 12px;font-family:'Inter Tight',sans-serif;cursor:pointer;">
-          <option value="desc">Más tiempo primero (populares)</option>
-          <option value="asc">Menos tiempo primero (descartadas)</option>
-        </select>
-        <button onclick="loadEngagement()" style="background:var(--bg3);border:1px solid var(--line2);border-radius:10px;color:var(--gold);font-size:12px;font-weight:700;padding:9px 16px;cursor:pointer;font-family:'Inter Tight',sans-serif;letter-spacing:.06em;text-transform:uppercase;">↻ Actualizar</button>
+      <!-- KPIs -->
+      <div id="eng-kpis" style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:20px;"></div>
+
+      <!-- Fila: actividad diaria + horas pico -->
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px;">
+        <div style="background:var(--bg2);border:1px solid var(--line);border-radius:16px;padding:18px;">
+          <div style="font-size:10px;letter-spacing:.15em;text-transform:uppercase;color:var(--gold);font-weight:700;margin-bottom:14px;">Partidas por día</div>
+          <div id="eng-chart-dias" style="display:flex;align-items:flex-end;gap:5px;height:80px;"></div>
+          <div id="eng-chart-dias-labels" style="display:flex;gap:5px;margin-top:5px;"></div>
+        </div>
+        <div style="background:var(--bg2);border:1px solid var(--line);border-radius:16px;padding:18px;">
+          <div style="font-size:10px;letter-spacing:.15em;text-transform:uppercase;color:var(--gold);font-weight:700;margin-bottom:14px;">Horas más activas</div>
+          <div id="eng-horas" style="display:flex;flex-direction:column;gap:7px;"></div>
+        </div>
       </div>
 
-      <!-- Stats rápidos -->
+      <!-- Fila: niveles + modo + feedback -->
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;margin-bottom:24px;">
+        <div style="background:var(--bg2);border:1px solid var(--line);border-radius:16px;padding:18px;">
+          <div style="font-size:10px;letter-spacing:.15em;text-transform:uppercase;color:var(--gold);font-weight:700;margin-bottom:14px;">Niveles jugados</div>
+          <div id="eng-niveles" style="display:flex;flex-direction:column;gap:8px;"></div>
+        </div>
+        <div style="background:var(--bg2);border:1px solid var(--line);border-radius:16px;padding:18px;">
+          <div style="font-size:10px;letter-spacing:.15em;text-transform:uppercase;color:var(--gold);font-weight:700;margin-bottom:14px;">Modo de juego</div>
+          <div id="eng-modos" style="display:flex;flex-direction:column;gap:8px;"></div>
+          <div style="margin-top:18px;">
+            <div style="font-size:10px;letter-spacing:.15em;text-transform:uppercase;color:var(--gold);font-weight:700;margin-bottom:10px;">Promedio por nivel</div>
+            <div id="eng-promedios" style="display:flex;flex-direction:column;gap:6px;font-size:11px;color:var(--dim);"></div>
+          </div>
+        </div>
+        <div style="background:var(--bg2);border:1px solid var(--line);border-radius:16px;padding:18px;">
+          <div style="font-size:10px;letter-spacing:.15em;text-transform:uppercase;color:var(--gold);font-weight:700;margin-bottom:14px;">Feedback de usuarios</div>
+          <div id="eng-feedback" style="display:flex;flex-direction:column;gap:10px;max-height:220px;overflow-y:auto;"></div>
+        </div>
+      </div>
+
+      <!-- Divider: card engagement -->
+      <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px;">
+        <div style="font-size:10px;letter-spacing:.2em;text-transform:uppercase;color:var(--gold);font-weight:700;white-space:nowrap;">Engagement de cartas</div>
+        <div style="flex:1;height:1px;background:var(--line);"></div>
+        <div style="display:flex;gap:8px;">
+          <select id="eng-filter-level" onchange="filterEngagement()" style="background:var(--bg3);border:1px solid var(--line2);border-radius:8px;color:var(--ink);font-size:12px;padding:6px 10px;font-family:'Inter Tight',sans-serif;cursor:pointer;">
+            <option value="">Todos los niveles</option>
+            <option value="familiar">Familiar</option>
+            <option value="light">Light</option>
+            <option value="hot">Hot</option>
+            <option value="extremo">Extremo</option>
+            <option value="xxx">XXX</option>
+          </select>
+          <select id="eng-filter-mode" onchange="filterEngagement()" style="background:var(--bg3);border:1px solid var(--line2);border-radius:8px;color:var(--ink);font-size:12px;padding:6px 10px;font-family:'Inter Tight',sans-serif;cursor:pointer;">
+            <option value="">Ambos modos</option>
+            <option value="presencial">Presencial</option>
+            <option value="distancia">Distancia</option>
+          </select>
+          <select id="eng-filter-type" onchange="filterEngagement()" style="background:var(--bg3);border:1px solid var(--line2);border-radius:8px;color:var(--ink);font-size:12px;padding:6px 10px;font-family:'Inter Tight',sans-serif;cursor:pointer;">
+            <option value="">Todo</option>
+            <option value="pregunta">Preguntas</option>
+            <option value="reto">Retos</option>
+          </select>
+          <select id="eng-filter-sort" onchange="filterEngagement()" style="background:var(--bg3);border:1px solid var(--line2);border-radius:8px;color:var(--ink);font-size:12px;padding:6px 10px;font-family:'Inter Tight',sans-serif;cursor:pointer;">
+            <option value="desc">Más vistas primero</option>
+            <option value="asc">Menos vistas primero</option>
+          </select>
+        </div>
+      </div>
+
       <div id="eng-stats" style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:16px;"></div>
 
-      <!-- Tabla -->
       <div class="table-wrap" id="eng-table-wrap">
         <table>
           <thead>
@@ -992,7 +1040,7 @@ tr:hover td{background:var(--bg3);}
       </div>
       <div id="eng-empty" class="empty-state hidden">
         <div class="empty-icon">🔥</div>
-        <div class="empty-text">Aún no hay datos de engagement</div>
+        <div class="empty-text">Aún no hay datos de engagement de cartas</div>
         <div class="empty-sub">Los datos se acumulan mientras los jugadores usan el juego</div>
       </div>
     </div><!-- /section-engagement -->
@@ -2971,14 +3019,163 @@ async function sendPushNotification(){
 
 // ── ENGAGEMENT ──
 var _engagementRows=[];
+
 async function loadEngagement(){
-  var tbody=document.getElementById('eng-tbody');
-  tbody.innerHTML='<tr><td colspan="8" style="text-align:center;padding:40px;color:var(--faint)">Cargando…</td></tr>';
-  try{
-    var rows=await sbGet('tor_card_engagement','?select=*');
-    _engagementRows=Array.isArray(rows)?rows:[];
-  }catch(e){_engagementRows=[];}
+  var dias=parseInt((document.getElementById('eng-periodo')||{value:'30'}).value||30,10);
+  var desde=new Date(Date.now()-dias*86400000).toISOString();
+
+  // Cargar todo en paralelo
+  var [cardRows, gameRows, feedRows] = await Promise.all([
+    sbGet('tor_card_engagement','?select=*').catch(function(){return [];}),
+    sbGet('tor_games','?select=id,level,mode,round,players,created_at&created_at=gte.'+desde+'&order=created_at.asc').catch(function(){return [];}),
+    sbGet('tor_feedback','?select=text,created_at&order=created_at.desc').catch(function(){return [];})
+  ]);
+
+  _engagementRows=Array.isArray(cardRows)?cardRows:[];
+  var games=Array.isArray(gameRows)?gameRows:[];
+  var feedbacks=Array.isArray(feedRows)?feedRows:[];
+
+  renderEngagementSesiones(games, dias);
+  renderEngagementFeedback(feedbacks);
   filterEngagement();
+}
+
+function renderEngagementSesiones(games, dias){
+  var LEVEL_COLORS={familiar:'#6BCB77',light:'#4D96FF',hot:'#FF6B6B',extremo:'#C77DFF',mixto:'#FFD93D',xxx:'#FF4D6D',comunidad:'#4ECDC4'};
+  var total=games.length;
+  var hoy=new Date().toISOString().split('T')[0];
+  var hoyCount=games.filter(function(g){return (g.created_at||'').startsWith(hoy);}).length;
+  var activasNow=games.filter(function(g){return g.status==='active';}).length;
+  var avgPlayers=total?Math.round(games.reduce(function(a,g){return a+(Array.isArray(g.players)?g.players.length:0);},0)/total*10)/10:0;
+  var avgRounds=total?Math.round(games.reduce(function(a,g){return a+(g.round||1);},0)/total*10)/10:0;
+
+  // KPIs
+  document.getElementById('eng-kpis').innerHTML=
+    engKpi('🎮','Partidas totales',total,'en los últimos '+dias+' días')+
+    engKpi('☀️','Hoy',hoyCount,'partidas iniciadas hoy')+
+    engKpi('👥','Jugadores prom.',avgPlayers,'por partida')+
+    engKpi('🔁','Rondas prom.',avgRounds,'por partida');
+
+  // Actividad por día (últimos días)
+  var diasMap={};
+  games.forEach(function(g){
+    var d=(g.created_at||'').split('T')[0];
+    if(d)diasMap[d]=(diasMap[d]||0)+1;
+  });
+  var diasArr=[];
+  for(var i=Math.min(dias,14)-1;i>=0;i--){
+    var d=new Date(Date.now()-i*86400000).toISOString().split('T')[0];
+    diasArr.push({d:d,n:diasMap[d]||0});
+  }
+  var maxD=Math.max(1,...diasArr.map(function(x){return x.n;}));
+  var chartDias=document.getElementById('eng-chart-dias');
+  var chartLab=document.getElementById('eng-chart-dias-labels');
+  if(chartDias){
+    chartDias.innerHTML=diasArr.map(function(x){
+      var h=Math.max(4,Math.round((x.n/maxD)*80));
+      var isHoy=x.d===hoy;
+      return '<div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;">'
+        +'<div style="font-size:9px;color:'+(isHoy?'var(--gold)':'var(--dim)')+';">'+x.n+'</div>'
+        +'<div style="width:100%;height:'+h+'px;background:'+(isHoy?'var(--gold)':'var(--line2)')+';border-radius:3px 3px 0 0;"></div>'
+        +'</div>';
+    }).join('');
+    chartLab.innerHTML=diasArr.map(function(x){
+      var label=x.d.slice(8);// día del mes
+      return '<div style="flex:1;text-align:center;font-size:9px;color:var(--faint);">'+label+'</div>';
+    }).join('');
+  }
+
+  // Horas pico
+  var horasMap={};
+  games.forEach(function(g){
+    if(!g.created_at)return;
+    var d=new Date(g.created_at);
+    var h=d.toLocaleString('en-US',{timeZone:'America/Mexico_City',hour:'numeric',hour12:false}).replace('24','0');
+    horasMap[h]=(horasMap[h]||0)+1;
+  });
+  var horasArr=Object.keys(horasMap).map(function(h){return{h:parseInt(h,10),n:horasMap[h]};})
+    .sort(function(a,b){return b.n-a.n;}).slice(0,5);
+  var maxH=Math.max(1,...horasArr.map(function(x){return x.n;}));
+  var horasFmt=function(h){var suffix=h>=12?'pm':'am';var hh=h%12||12;return hh+':00'+suffix;};
+  var horasEl=document.getElementById('eng-horas');
+  if(horasEl) horasEl.innerHTML=horasArr.map(function(x){
+    var pct=Math.round((x.n/maxH)*100);
+    return '<div><div style="display:flex;justify-content:space-between;font-size:11px;margin-bottom:3px;">'
+      +'<span style="color:var(--ink);font-weight:600;">'+horasFmt(x.h)+'</span>'
+      +'<span style="color:var(--dim);">'+x.n+' partidas</span></div>'
+      +'<div style="height:5px;background:var(--line);border-radius:3px;overflow:hidden;">'
+      +'<div style="height:100%;width:'+pct+'%;background:var(--gold);border-radius:3px;"></div></div></div>';
+  }).join('');
+
+  // Niveles
+  var lvlMap={};
+  games.forEach(function(g){if(g.level)lvlMap[g.level]=(lvlMap[g.level]||0)+1;});
+  var lvlArr=Object.keys(lvlMap).map(function(l){return{l:l,n:lvlMap[l]};}).sort(function(a,b){return b.n-a.n;});
+  var maxL=Math.max(1,...lvlArr.map(function(x){return x.n;}));
+  var nivelesEl=document.getElementById('eng-niveles');
+  if(nivelesEl) nivelesEl.innerHTML=lvlArr.map(function(x){
+    var pct=Math.round((x.n/total)*100);
+    var color=LEVEL_COLORS[x.l]||'var(--gold)';
+    return '<div><div style="display:flex;justify-content:space-between;font-size:11px;margin-bottom:3px;">'
+      +'<span style="color:var(--ink);font-weight:600;">'+esc(LEVEL_LABELS[x.l]||x.l)+'</span>'
+      +'<span style="color:var(--dim);">'+x.n+' ('+pct+'%)</span></div>'
+      +'<div style="height:6px;background:var(--line);border-radius:3px;overflow:hidden;">'
+      +'<div style="height:100%;width:'+Math.round((x.n/maxL)*100)+'%;background:'+color+';border-radius:3px;"></div></div></div>';
+  }).join('');
+
+  // Modos
+  var modoMap={};
+  games.forEach(function(g){if(g.mode)modoMap[g.mode]=(modoMap[g.mode]||0)+1;});
+  var modoEl=document.getElementById('eng-modos');
+  if(modoEl) modoEl.innerHTML=Object.keys(modoMap).map(function(m){
+    var pct=Math.round((modoMap[m]/total)*100);
+    return '<div style="display:flex;align-items:center;justify-content:space-between;">'
+      +'<span style="font-size:13px;font-weight:600;color:var(--ink);">'+(m==='distancia'?'📡 Distancia':'👥 Presencial')+'</span>'
+      +'<span style="font-size:12px;color:var(--dim);">'+modoMap[m]+' · '+pct+'%</span></div>';
+  }).join('');
+
+  // Promedios por nivel
+  var lvlStats={};
+  games.forEach(function(g){
+    if(!g.level)return;
+    if(!lvlStats[g.level])lvlStats[g.level]={rondas:[],jugadores:[]};
+    lvlStats[g.level].rondas.push(g.round||1);
+    lvlStats[g.level].jugadores.push(Array.isArray(g.players)?g.players.length:0);
+  });
+  var avgEl=document.getElementById('eng-promedios');
+  if(avgEl) avgEl.innerHTML=Object.keys(lvlStats).sort().map(function(l){
+    var s=lvlStats[l];
+    var ar=Math.round(s.rondas.reduce(function(a,v){return a+v;},0)/s.rondas.length*10)/10;
+    var aj=Math.round(s.jugadores.reduce(function(a,v){return a+v;},0)/s.jugadores.length*10)/10;
+    return '<div style="display:flex;justify-content:space-between;padding:3px 0;border-bottom:1px solid var(--line);">'
+      +'<span style="color:var(--ink);font-weight:600;">'+esc(LEVEL_LABELS[l]||l)+'</span>'
+      +'<span>'+aj+' jug · '+ar+' rondas</span></div>';
+  }).join('');
+}
+
+function renderEngagementFeedback(feedbacks){
+  var el=document.getElementById('eng-feedback');
+  if(!el)return;
+  if(!feedbacks||!feedbacks.length){
+    el.innerHTML='<div style="color:var(--faint);font-size:12px;text-align:center;padding:20px 0;">Sin feedback aún</div>';
+    return;
+  }
+  el.innerHTML=feedbacks.map(function(f){
+    var fecha=f.created_at?new Date(f.created_at).toLocaleDateString('es-MX',{day:'2-digit',month:'short'}):'';
+    return '<div style="padding:10px 12px;background:var(--bg3);border-radius:10px;border:1px solid var(--line);">'
+      +'<div style="font-size:12px;color:var(--ink);line-height:1.4;">'+esc(f.text||'')+'</div>'
+      +(fecha?'<div style="font-size:10px;color:var(--faint);margin-top:5px;">'+fecha+'</div>':'')
+      +'</div>';
+  }).join('');
+}
+
+function engKpi(icon,label,val,sub){
+  return '<div style="background:var(--bg2);border:1px solid var(--line);border-radius:14px;padding:16px 18px;">'
+    +'<div style="font-size:20px;margin-bottom:6px;">'+icon+'</div>'
+    +'<div style="font-size:24px;font-family:\'Cormorant Garamond\',serif;font-weight:700;color:var(--ink);">'+val+'</div>'
+    +'<div style="font-size:11px;font-weight:700;color:var(--dim);margin-top:2px;text-transform:uppercase;letter-spacing:.06em;">'+label+'</div>'
+    +(sub?'<div style="font-size:10px;color:var(--faint);margin-top:3px;">'+sub+'</div>':'')
+    +'</div>';
 }
 
 function filterEngagement(){
