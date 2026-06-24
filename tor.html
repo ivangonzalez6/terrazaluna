@@ -318,8 +318,7 @@ textarea{resize:none;line-height:1.5;}
 
   <div class="game-bar">
     <button class="game-bar-btn" onclick="openInviteOverlay()">📲 Invitar</button>
-    <button class="game-bar-btn" style="border-color:rgba(212,175,55,.45);background:rgba(212,175,55,.1);" onclick="openAddCardOverlay()">✏️ Proponer</button>
-    <button class="game-bar-btn" onclick="openOptionsOverlay()">⋯ Más</button>
+    <button class="game-bar-btn" onclick="openOptionsOverlay()" style="font-size:22px;line-height:1;padding:6px 14px;">＋</button>
     <button class="game-bar-btn danger" onclick="openEndConfirmOverlay()">✕ Salir</button>
   </div>
 </div>
@@ -354,7 +353,7 @@ textarea{resize:none;line-height:1.5;}
       <div class="menu-item-arrow">›</div>
     </div>
     <div class="menu-item" onclick="closeOverlay('optionsOverlay');openAddCardOverlay()">
-      <div><div class="menu-item-label">Agregar pregunta o reto</div><div class="menu-item-sub">Se guarda en De la comunidad</div></div>
+      <div><div class="menu-item-label">Agregar pregunta o reto</div><div class="menu-item-sub">Se agregará a lista de cartas</div></div>
       <div class="menu-item-arrow">›</div>
     </div>
     <button class="overlay-close" onclick="closeOverlay('optionsOverlay')">Cancelar</button>
@@ -375,17 +374,17 @@ textarea{resize:none;line-height:1.5;}
 <div class="overlay hidden" id="codeXXXOverlay">
   <div class="overlay-sheet">
 
-    <!-- Vista A: Ingresar código -->
+    <!-- Vista A: Ingresar teléfono -->
     <div id="xxxViewCodigo">
       <div class="overlay-title">🔞 Nivel XXX</div>
-      <div class="overlay-sub">Este nivel requiere un código de acceso. Ingrésalo abajo o adquiere uno.</div>
+      <div class="overlay-sub">Este nivel requiere acceso previo. Ingresa tu número de WhatsApp registrado.</div>
       <div class="row-input" style="margin-bottom:8px;">
-        <input id="inputCodigoXXX" placeholder="Código de acceso…" maxlength="8" style="text-transform:uppercase;letter-spacing:.18em;font-size:17px;font-family:'Cormorant Garamond',serif;" onkeydown="if(event.key==='Enter')validateCodigoXXX()">
+        <input id="inputCodigoXXX" type="tel" placeholder="10 dígitos…" maxlength="15" style="font-size:17px;font-family:'Inter Tight',sans-serif;letter-spacing:.06em;" onkeydown="if(event.key==='Enter')validateCodigoXXX()">
         <button class="btn-confirm-sm" onclick="validateCodigoXXX()">Entrar</button>
       </div>
       <div id="codeXXXError" style="color:#c0392b;font-size:12px;margin-bottom:10px;display:none;"></div>
       <div class="overlay-divider"></div>
-      <button class="btn btn-gold" onclick="showXXXAdquirir()" style="width:100%;margin-bottom:10px;">🛒 Adquirir código de acceso</button>
+      <button class="btn btn-gold" onclick="showXXXAdquirir()" style="width:100%;margin-bottom:10px;">🛒 Adquirir acceso XXX</button>
       <button class="overlay-close" onclick="closeOverlay('codeXXXOverlay')">Cancelar</button>
     </div>
 
@@ -417,28 +416,24 @@ textarea{resize:none;line-height:1.5;}
       <div id="xxxSubmitError" style="color:#c0392b;font-size:12px;margin-bottom:8px;display:none;"></div>
 
       <button class="btn btn-gold" id="btnSubmitPago" onclick="submitPagoXXX()" style="width:100%;margin-bottom:10px;">Enviar comprobante</button>
-      <button class="overlay-close" onclick="showXXXCodigo()">← Volver / Ya tengo código</button>
+      <button class="overlay-close" onclick="showXXXCodigo()">← Volver / Ya tengo acceso</button>
     </div>
 
-    <!-- Vista C: Revisión manual (sin auto-aprobación) -->
+    <!-- Vista C: Revisión manual -->
     <div id="xxxViewConfirm" style="display:none;text-align:center;padding:8px 0;">
       <div style="font-size:40px;margin-bottom:12px;">🕐</div>
       <div class="overlay-title" style="font-size:20px;">En revisión</div>
-      <div style="font-size:14px;color:var(--dim);line-height:1.6;margin:12px 0 20px;">Tu comprobante requiere verificación manual. Te enviamos el código por WhatsApp en cuanto sea aprobado.</div>
+      <div style="font-size:14px;color:var(--dim);line-height:1.6;margin:12px 0 20px;">Tu comprobante requiere verificación manual. Te avisamos por WhatsApp en cuanto sea aprobado — luego entra con tu número.</div>
       <button class="overlay-close" onclick="closeOverlay('codeXXXOverlay')">Cerrar</button>
     </div>
 
-    <!-- Vista D: Aprobado — mostrar código -->
+    <!-- Vista D: Aprobado -->
     <div id="xxxViewAprobado" style="display:none;text-align:center;padding:8px 0;">
       <div style="font-size:36px;margin-bottom:10px;">🎉</div>
-      <div class="overlay-title" style="font-size:20px;color:#2d7a2d;">¡Pago validado!</div>
-      <div id="xxxAprobadoSub" style="font-size:13px;color:var(--dim);margin:8px 0 6px;">Tu código de acceso — guárdalo, lo necesitarás en la próxima sesión:</div>
-      <div style="display:inline-flex;align-items:center;gap:6px;background:#fef3c7;border:1px solid #f59e0b;border-radius:8px;padding:5px 12px;font-size:12px;font-weight:600;color:#92400e;margin-bottom:10px;">⏱ Válido por 24 horas</div>
-      <div style="background:var(--gold-pale);border:2px dashed var(--gold);border-radius:12px;padding:18px;margin-bottom:16px;">
-        <div id="xxxCodigoGenerado" style="font-family:'Cormorant Garamond',serif;font-size:36px;font-weight:600;letter-spacing:.25em;color:var(--gold);line-height:1;"></div>
-      </div>
+      <div class="overlay-title" style="font-size:20px;color:#2d7a2d;">¡Acceso activado!</div>
+      <div id="xxxAprobadoSub" style="font-size:13px;color:var(--dim);margin:8px 0 16px;line-height:1.6;">Tu número de WhatsApp quedó registrado. A partir de ahora entra al nivel XXX con tu número — no necesitas recordar nada más.</div>
       <button class="btn btn-gold" onclick="procederDesdeAprobado()" style="width:100%;margin-bottom:10px;">Continuar al juego →</button>
-      <button class="overlay-close" onclick="closeOverlay('codeXXXOverlay')">Cerrar (usar después)</button>
+      <button class="overlay-close" onclick="closeOverlay('codeXXXOverlay')">Cerrar (entrar después)</button>
     </div>
 
     <!-- Vista E: Rechazado -->
@@ -498,7 +493,7 @@ textarea{resize:none;line-height:1.5;}
 <div class="overlay hidden" id="addCardOverlay" onclick="closeOverlay('addCardOverlay',event)">
   <div class="overlay-sheet">
     <div class="overlay-title">Agregar al juego</div>
-    <div class="overlay-sub">Se añade al mazo y se guarda en De la comunidad</div>
+    <div class="overlay-sub">Se agregará a lista de cartas</div>
     <div class="type-tabs">
       <button class="type-tab active" id="tabTruth" onclick="setCardType('truth')">Verdad</button>
       <button class="type-tab" id="tabDare" onclick="setCardType('dare')">Reto</button>
@@ -561,7 +556,9 @@ const LEVEL_INFO={
 
 // ── Estado ──
 var selectedMode='presencial', selectedLevel=null, selectedCardType='truth';
-var _xxxUnlocked=false; // true cuando el usuario validó código de acceso
+var _xxxUnlocked=false; // true cuando el usuario validó acceso
+var _xxxPhone=null;    // teléfono validado, para verificar revocación
+var _xxxCodeId=null;   // legacy (no usado)
 var game=null, _pendingPlayers=[];
 // Pools de cartas
 var allQ=[], allD=[], allQComm=[], allDComm=[];
@@ -723,23 +720,20 @@ function showXXXAdquirir(){
   if(btn){btn.disabled=false;btn.textContent='Enviar comprobante';}
 }
 
-// ── Validar código ingresado manualmente ──
+// ── Validar acceso por teléfono ──
 async function validateCodigoXXX(){
-  var code=document.getElementById('inputCodigoXXX').value.trim().toUpperCase();
+  var phone=document.getElementById('inputCodigoXXX').value.trim().replace(/\D/g,'');
   var errEl=document.getElementById('codeXXXError');
-  if(code.length<4){errEl.textContent='Ingresa el código completo.';errEl.style.display='block';return;}
+  if(phone.length<10){errEl.textContent='Ingresa tu número de WhatsApp (10 dígitos).';errEl.style.display='block';return;}
   errEl.style.display='none';
   try{
-    var r=await sbGet('tor_unlock_codes','?code=eq.'+code+'&select=id,expires_at,used,multi_use');
-    if(!Array.isArray(r)||r.length===0){errEl.textContent='Código inválido o no encontrado.';errEl.style.display='block';return;}
-    var rec=r[0];
-    if(new Date(rec.expires_at)<new Date()){errEl.textContent='Este código ya expiró.';errEl.style.display='block';return;}
-    if(rec.used&&!rec.multi_use){errEl.textContent='Este código ya fue utilizado.';errEl.style.display='block';return;}
-    // Solo marcar como usado si es de un solo uso
-    if(!rec.multi_use) await sbPatch('tor_unlock_codes?id=eq.'+rec.id,{used:true});
+    var r=await sbGet('tor_unlock_requests','?phone=eq.'+phone+'&status=eq.aprobado&select=id,phone&limit=1');
+    if(!Array.isArray(r)||r.length===0){
+      errEl.textContent='Número no encontrado o acceso no aprobado.';errEl.style.display='block';return;
+    }
+    _xxxPhone=phone;
     document.getElementById('codeXXXOverlay').classList.add('hidden');
     unlockPaidLevels();
-    // No abrir disclaimer aquí — se abrirá desde initGame() después de ingresar jugadores
     show('players');
   }catch(e){errEl.textContent='Error de conexión. Intenta de nuevo.';errEl.style.display='block';}
 }
@@ -777,19 +771,14 @@ async function submitPagoXXX(){
     });
     var result=await verR.json();
     document.getElementById('xxxViewAdquirir').style.display='none';
-    if(result.code){
-      // Siempre mostrar el código — validado o pendiente de verificación
-      document.getElementById('xxxCodigoGenerado').textContent=result.code;
-      var subEl=document.getElementById('xxxAprobadoSub');
-      if(subEl){
-        subEl.textContent=result.fully_validated
-          ? 'Tu código de acceso — guárdalo, lo necesitarás en la próxima sesión:'
-          : 'Tu código está listo. Si el pago es correcto se activará en breve — guárdalo:';
-      }
+    if(result.fully_validated){
+      _xxxPhone=phone;
       document.getElementById('xxxViewAprobado').style.display='block';
-      if(result.fully_validated) unlockPaidLevels();
+      unlockPaidLevels();
+    } else if(result.code||result.request_id){
+      // En revisión manual — acceso pendiente de aprobación
+      document.getElementById('xxxViewConfirm').style.display='block';
     } else {
-      // Error real — sin código asignado
       errEl.textContent=result.message||'Error al procesar. Intenta de nuevo.';
       errEl.style.display='block';
       btn.disabled=false;btn.textContent='Enviar comprobante';
@@ -1030,7 +1019,9 @@ function showCard(card){
 
   // Formato: "Luis, tómate un shot de tequila"
   var raw=card.text||'';
-  var formatted=p.name+', '+raw.charAt(0).toLowerCase()+raw.slice(1);
+  var prefix='',body=raw;
+  if(raw.charAt(0)==='¿'||raw.charAt(0)==='¡'){prefix=raw.charAt(0);body=raw.slice(1);}
+  var formatted=p.name+', '+prefix+body.charAt(0).toLowerCase()+body.slice(1);
   document.getElementById('cardText').textContent=formatted;
 
   // Badge verdad/reto
@@ -1049,9 +1040,42 @@ function showCard(card){
   document.getElementById('levelBadge').textContent=LEVELS[game.level]?LEVELS[game.level].label:game.level;
 }
 
+// ── Verificar que acceso XXX sigue activo ──
+async function checkXXXAccess(){
+  if(!_xxxUnlocked||!_xxxPhone)return true;
+  try{
+    var r=await sbGet('tor_unlock_requests','?phone=eq.'+_xxxPhone+'&status=eq.aprobado&select=id&limit=1');
+    if(Array.isArray(r)&&r.length===0){
+        _xxxUnlocked=false;
+        // Bloquear juego
+        if(game){
+          await sbPatch('tor_games?id=eq.'+game.id,{status:'ended'}).catch(function(){});
+          game=null;
+        }
+        show('home');
+        setTimeout(function(){
+          var el=document.createElement('div');
+          el.style.cssText='position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,.92);display:flex;flex-direction:column;align-items:center;justify-content:center;padding:32px;text-align:center;';
+          el.innerHTML='<div style="font-size:40px;margin-bottom:16px;">🚫</div>'
+            +'<div style="font-family:\'Cormorant Garamond\',serif;font-size:28px;color:#f0e4c4;font-weight:700;margin-bottom:12px;">Acceso revocado</div>'
+            +'<div style="font-size:15px;color:#aaa;line-height:1.6;max-width:300px;">Tu pago fue rechazado y el acceso a este número fue revocado. Contacta a Terraza Luna para más información.</div>'
+            +'<button onclick="this.parentElement.remove()" style="margin-top:28px;padding:12px 28px;border-radius:10px;border:1px solid rgba(212,175,55,.4);background:rgba(212,175,55,.1);color:#c9a35b;font-size:13px;font-weight:600;cursor:pointer;font-family:\'Inter Tight\',sans-serif;letter-spacing:.06em;text-transform:uppercase;">Cerrar</button>';
+          document.body.appendChild(el);
+        },100);
+        return false;
+    }
+  }catch(e){}
+  return true;
+}
+
 // ── Siguiente turno ──
 async function nextTurn(){
   if(!game)return;
+  // Verificar acceso XXX en niveles de pago
+  if(LOCKED_LEVELS.indexOf(game.level)>=0){
+    var ok=await checkXXXAccess();
+    if(!ok)return;
+  }
   // Registrar tiempo en carta actual antes de avanzar
   if(_cardShownAt&&_trackedCard){
     var dur=(Date.now()-_cardShownAt)/1000;
