@@ -597,8 +597,8 @@ function resetInactivityTimer(){
 }
 
 var game=null, _pendingPlayers=[];
-// Pools de cartas
-var allQ=[], allD=[], allQComm=[], allDComm=[];
+// Pools de cartas (allCombined es el pool unificado en orden determinístico)
+var allQ=[], allD=[], allQComm=[], allDComm=[], allCombined=[];
 var usedQIdx=[], usedDIdx=[], usedQCommIdx=[], usedDCommIdx=[];
 var commQDone=false, commDDone=false;
 // Realtime
@@ -670,7 +670,7 @@ function startSalaPolling(){
       await loadCardPool(game.level,game.mode);
       startRealtime();startPolling();
       if(game.current_card)showCard(game.current_card);
-      else{var c=pickRandomCard();if(c){game.current_card=c;showCard(c);}}
+      else{var c=pickCardForTurn(0);if(c){game.current_card=c;showCard(c);}}
       toast('🎮 ¡El juego comenzó!');
     }catch(e){}
   },3000);
@@ -705,6 +705,11 @@ function initSala(){
   }
 }
 
+// ── PRNG determinístico (Mulberry32) ──
+function strHash(s){var h=0;for(var i=0;i<s.length;i++){h=Math.imul(31,h)+s.charCodeAt(i)|0;}return h>>>0;}
+function mulberry32(seed){return function(){seed|=0;seed=seed+0x6D2B79F5|0;var t=Math.imul(seed^seed>>>15,1|seed);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296;};}
+function seededShuffle(arr,seed){var rng=mulberry32(seed),a=arr.slice();for(var i=a.length-1;i>0;i--){var j=Math.floor(rng()*(i+1)),t=a[i];a[i]=a[j];a[j]=t;}return a;}
+
 // ── API ──
 function h(){return{'apikey':SK,'Authorization':'Bearer '+SK,'Content-Type':'application/json'};}
 async function sbGet(t,f){var r=await fetch(SB+'/rest/v1/'+t+(f||''),{headers:h()});return r.json();}
@@ -719,7 +724,7 @@ function uid5(){var c='ABCDEFGHJKMNPQRSTUVWXYZ23456789';var r='';for(var i=0;i<5
 function ini(n){return String(n||'').trim().substring(0,2).toUpperCase()||'?';}
 function col(i){return COLORS[i%COLORS.length];}
 function shuffle(arr){for(var i=arr.length-1;i>0;i--){var j=Math.floor(Math.random()*(i+1));var t=arr[i];arr[i]=arr[j];arr[j]=t;}return arr;}
-function resetPools(){allQ=[];allD=[];allQComm=[];allDComm=[];usedQIdx=[];usedDIdx=[];usedQCommIdx=[];usedDCommIdx=[];commQDone=false;commDDone=false;}
+function resetPools(){allQ=[];allD=[];allQComm=[];allDComm=[];allCombined=[];usedQIdx=[];usedDIdx=[];usedQCommIdx=[];usedDCommIdx=[];commQDone=false;commDDone=false;}
 function gameUrl(){var base=window.location.origin+window.location.pathname;return game?base+'?id='+game.id:base;}
 function closeOverlay(id,e){if(e&&e.target!==document.getElementById(id))return;document.getElementById(id).classList.add('hidden');}
 
@@ -808,9 +813,6 @@ function _setLevel(level){
   var desc=document.getElementById('levelDesc');
   desc.innerHTML='<strong style="color:var(--gold)">'+(LEVELS[level]?LEVELS[level].label:level)+'</strong> — '+esc(info.desc||'');
   desc.classList.remove('hidden');
-  if(!['hot','extremo','mixto','xxx'].includes(level)||_xxxUnlocked){
-    setTimeout(function(){goToPlayers();},600);
-  }
 }
 
 // ── PANTALLA 4: Juego ──
@@ -842,9 +844,9 @@ async function initGame(){
     resetPools();
     await loadCardPool(game.level,game.mode);
     startRealtime();startPolling();
-    var c=pickRandomCard();
+    var c=pickCardForTurn(0);
     if(!c){toast('No hay cartas disponibles para este nivel.');sbPatch('tor_games?id=eq.'+game.id,{status:'ended'}).catch(function(){});stopRealtime();stopPolling();game=null;return;}
-    game.current_card=c;sbPatch('tor_games?id=eq.'+game.id,{current_card:c}).catch(function(){});showCard(c);
+    game.current_card=c;sbPatch('tor_games?id=eq.'+game.id,{current_card:c,current_player_index:0,round:1}).catch(function(){});showCard(c);
     if(_salaCode){
       fetch(SB+'/rest/v1/tor_rooms?code=eq.'+_salaCode,{method:'PATCH',headers:Object.assign({},h(),{'Prefer':'return=minimal'}),body:JSON.stringify({status:'playing',current_game_id:game.id})}).catch(function(){});
     }
@@ -857,36 +859,25 @@ async function loadCardPool(level,mode){
   var lvls=(level==='mixto')?['familiar','light','hot','extremo']:[level];
   for(var i=0;i<lvls.length;i++){
     var l=lvls[i];
-    var qr=await sbGet('tor_questions','?level=eq.'+l+'&select=id,text');
-    var dr=await sbGet('tor_dares','?level=eq.'+l+'&select=id,text');
+    // order=id garantiza el mismo orden en todos los dispositivos
+    var qr=await sbGet('tor_questions','?level=eq.'+l+'&select=id,text&order=id');
+    var dr=await sbGet('tor_dares','?level=eq.'+l+'&select=id,text&order=id');
     if(Array.isArray(qr))allQ=allQ.concat(qr.map(function(c){return Object.assign({},c,{type:'truth'});}));
     if(Array.isArray(dr))allD=allD.concat(dr.map(function(c){return Object.assign({},c,{type:'dare'});}));
   }
-  shuffle(allQ);shuffle(allD);
+  // Shuffle determinístico: mismo game.id → mismo orden en todos los dispositivos
+  var seed=strHash(game?game.id:'default');
+  allCombined=seededShuffle(allQ.concat(allD),seed);
 }
 
-function pickFromPool(arr,used){
-  if(!arr.length)return null;
-  var avail=arr.map(function(_,i){return i;}).filter(function(i){return!used.includes(i);});
-  if(!avail.length)return null;
-  var i=avail[Math.floor(Math.random()*avail.length)];
-  used.push(i);return arr[i];
-}
-
-function pickRandomCard(){
-  if(!game)return null;
+function pickCardForTurn(turnOverride){
+  if(!game||!allCombined.length)return null;
   var players=game.players||[];
   var idx=game.current_player_index||0;
   var p=players[idx%players.length];
-  var useQ=Math.random()<0.5;
-  var card=null;
-  if(useQ){card=pickFromPool(allQ,usedQIdx)||pickFromPool(allD,usedDIdx);}
-  else{card=pickFromPool(allD,usedDIdx)||pickFromPool(allQ,usedQIdx);}
-  if(!card){
-    if(!allQ.length&&!allD.length)return null;
-    usedQIdx=[];usedDIdx=[];
-    return pickRandomCard();
-  }
+  // Número de turno absoluto: todos los dispositivos calculan el mismo
+  var turn=(turnOverride!==undefined)?turnOverride:(((game.round||1)-1)*players.length+idx);
+  var card=Object.assign({},allCombined[turn%allCombined.length]);
   if(p)card._player=p;
   return card;
 }
@@ -923,8 +914,10 @@ async function nextTurn(){
   var players=game.players||[];
   var nextIdx=((game.current_player_index||0)+1)%players.length;
   var round=nextIdx===0?(game.round||1)+1:(game.round||1);
+  // Calcular turno antes de actualizar game para que pickCardForTurn use los valores nuevos
+  var nextTurnNum=((round-1)*players.length)+nextIdx;
   game.current_player_index=nextIdx;game.round=round;
-  var c=pickRandomCard();
+  var c=pickCardForTurn(nextTurnNum);
   if(!c){toast('¡Se acabaron las cartas!');return;}
   game.current_card=c;
   sbPatch('tor_games?id=eq.'+game.id,{current_card:c,current_player_index:nextIdx,round:round}).catch(function(){});
@@ -1140,7 +1133,7 @@ document.addEventListener('vorNotifPrompt',function(){
         game=rows[0];resetPools();await loadCardPool(game.level,game.mode);
         startRealtime();startPolling();
         if(game.current_card)showCard(game.current_card);
-        else{var c=pickRandomCard();if(c){game.current_card=c;showCard(c);}}
+        else{var c=pickCardForTurn(0);if(c){game.current_card=c;showCard(c);}}
         return;
       }
     }catch(e){}
