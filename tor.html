@@ -203,84 +203,30 @@ textarea{resize:none;line-height:1.5;}
       <div class="hero-ornament"><div class="hero-ornament-inner">El clásico de las noches épicas</div></div>
     </div>
 
+    <!-- Banner de sala activa (guest que volvió) -->
+    <div id="salaGuestBanner" style="display:none;text-align:center;margin:8px 0 4px;">
+      <div style="display:inline-flex;align-items:center;gap:8px;background:rgba(201,163,91,.1);border:1px solid rgba(201,163,91,.25);border-radius:10px;padding:8px 14px;">
+        <span style="font-size:13px;">🎮</span>
+        <span style="font-size:12px;color:var(--gold);font-weight:600;font-family:'Inter Tight',sans-serif;">Sala activa — esperando nuevo juego…</span>
+        <button onclick="salirDeSala()" style="font-size:10px;color:var(--faint);background:none;border:none;cursor:pointer;padding:0 0 0 4px;text-transform:uppercase;letter-spacing:.04em;">Salir</button>
+      </div>
+    </div>
+
     <div class="mode-grid">
-      <div class="mode-card" onclick="crearSala()" style="border-color:rgba(212,175,55,.35);">
-        <div class="mode-card-icon">✨</div>
-        <div class="mode-card-label">Crear sala</div>
-        <div class="mode-card-sub">Invita a tus amigos<br>con un código</div>
+      <div class="mode-card" onclick="selectMode('presencial')">
+        <div class="mode-card-icon">🍹</div>
+        <div class="mode-card-label">Presencial</div>
+        <div class="mode-card-sub">Retos y preguntas<br>en persona</div>
       </div>
-      <div class="mode-card" onclick="show('screen-join')">
-        <div class="mode-card-icon">🔗</div>
-        <div class="mode-card-label">Unirse</div>
-        <div class="mode-card-sub">Ingresa el código<br>de sala</div>
+      <div class="mode-card" onclick="selectMode('distancia')">
+        <div class="mode-card-icon">📱</div>
+        <div class="mode-card-label">A<br>distancia</div>
+        <div class="mode-card-sub">Por videollamada<br>o chat</div>
       </div>
     </div>
 
-    <div style="text-align:center;margin-top:4px;">
-      <button onclick="jugarSoloSinSala()" style="background:none;border:none;font-size:12px;color:var(--faint);cursor:pointer;font-family:'Inter Tight',sans-serif;letter-spacing:.04em;padding:8px;">Jugar sin sala →</button>
-    </div>
   </div>
 </div>
-
-<!-- ══════════════════════════════════════════
-     PANTALLA: UNIRSE A SALA
-══════════════════════════════════════════ -->
-<div class="screen hidden" id="screen-join">
-  <div class="inner">
-    <div>
-      <div class="section-label">Unirse a sala</div>
-      <div class="section-title" style="margin-top:4px;">Ingresa el código</div>
-    </div>
-    <input id="inputJoinCode" placeholder="Código de sala (ej: LUNA42)" maxlength="10"
-      style="text-transform:uppercase;letter-spacing:.15em;font-size:20px;font-family:'Cormorant Garamond',serif;text-align:center;"
-      onkeydown="if(event.key==='Enter')confirmarUnirse()">
-    <div id="joinError" style="color:#c0392b;font-size:12px;display:none;text-align:center;"></div>
-    <button class="btn btn-gold" onclick="confirmarUnirse()">Unirse a la sala</button>
-    <button class="btn" onclick="show('screen-welcome')" style="background:transparent;border-color:var(--line2);color:var(--dim);">Volver</button>
-  </div>
-</div>
-
-<!-- ══════════════════════════════════════════
-     PANTALLA: SALA (host y guests)
-══════════════════════════════════════════ -->
-<div class="screen hidden" id="screen-room">
-  <div class="inner">
-    <!-- Header sala -->
-    <div style="text-align:center;">
-      <div class="section-label" id="roomRoleLabel">Sala creada</div>
-      <div style="margin:8px 0 4px;display:flex;align-items:center;justify-content:center;gap:12px;">
-        <div style="font-family:'Cormorant Garamond',serif;font-size:48px;font-weight:600;letter-spacing:.25em;color:var(--gold);" id="roomCodeDisplay">—</div>
-      </div>
-      <div id="roomHostInfo" style="font-size:12px;color:var(--dim);margin-bottom:4px;"></div>
-    </div>
-
-    <!-- Compartir (solo host) -->
-    <div id="roomShareBox" style="display:none;background:var(--bg3);border:1px solid var(--line2);border-radius:12px;padding:14px 16px;">
-      <div style="font-size:11px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--dim);margin-bottom:8px;">Comparte con tus amigos</div>
-      <div style="display:flex;gap:8px;">
-        <input id="roomShareUrl" readonly style="flex:1;font-size:12px;color:var(--faint);background:var(--bg2);border-color:var(--line);">
-        <button onclick="copiarLinkSala()" style="padding:10px 14px;border-radius:8px;border:1px solid rgba(212,175,55,.4);background:rgba(212,175,55,.1);color:var(--gold);font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap;">📋 Copiar</button>
-      </div>
-    </div>
-
-    <!-- Estado sala -->
-    <div style="background:var(--bg3);border:1px solid var(--line);border-radius:12px;padding:14px 16px;">
-      <div style="font-size:11px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--dim);margin-bottom:10px;">Estado de la sala</div>
-      <div id="roomStatus" style="font-size:14px;color:var(--dim);line-height:1.6;">⏳ Esperando jugadores…</div>
-    </div>
-
-    <!-- Acciones -->
-    <div id="roomHostActions" style="display:none;">
-      <button class="btn btn-gold" onclick="iniciarDesdeRoom()">Configurar y jugar →</button>
-    </div>
-    <div id="roomGuestWait" style="display:none;text-align:center;">
-      <div style="font-size:13px;color:var(--dim);line-height:1.6;">El host iniciará el juego en breve.<br>Esta pantalla se actualizará sola. 🎮</div>
-    </div>
-
-    <button onclick="salirDeSala()" style="background:none;border:none;font-size:12px;color:var(--faint);cursor:pointer;font-family:'Inter Tight',sans-serif;letter-spacing:.04em;padding:8px;text-align:center;">Salir de la sala</button>
-  </div>
-</div>
-
 
 <!-- ══════════════════════════════════════════
      PANTALLA 2: JUGADORES
@@ -644,110 +590,67 @@ var commQDone=false, commDDone=false;
 // Realtime
 var _ws=null, _wsRef=0, _wsHb=null, _pollInterval=null;
 // Salas
-var _roomCode=null;
-var _roomPollInterval=null;
-var _roomLastGameId=null;
+// sala vars are below
 // Marketing media
 var _cardCount=0; // cartas mostradas en el juego actual (para cadencia de marketing)
 var _cardShownAt=null; // timestamp cuando se mostró la carta actual
 var _trackedCard=null; // carta actual siendo trackeada
 var _config={}; // configuración dinámica desde tor_config
 
-// ── SALAS VIRTUALES ──
-var _roomData=null;   // objeto sala actual {id, code, status, host_name}
-var _isHost=false;
+// ── SALAS (transparente — el usuario nunca las ve) ──
+// Una sala = grupo de usuarios ligados al mismo host.
+// El host crea la sala automáticamente al iniciar su primer juego.
+// Los guests llegan por link ?sala=CODE y quedan ligados en localStorage.
+// Cuando el host inicia un nuevo juego, todos los guests auto-entran.
 
-function genRoomCode(){
-  var chars='ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
-  return Array.from({length:6},function(){return chars[Math.floor(Math.random()*chars.length)];}).join('');
+var _salaCode=null;   // código de sala (6 chars)
+var _salaIsHost=false;
+var _salaPollInterval=null;
+var _salaLastGameId=null;
+
+function genSalaCode(){
+  var c='ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+  return Array.from({length:6},function(){return c[Math.floor(Math.random()*c.length)];}).join('');
 }
 
-async function crearSala(){
-  var code=genRoomCode();
+// Llamado al iniciar un juego (host). Si no hay sala, crea una.
+async function ensureSala(){
+  if(_salaCode)return _salaCode;
+  _salaCode=genSalaCode();
+  _salaIsHost=true;
   try{
-    var r=await fetch(SB+'/rest/v1/tor_rooms',{
+    await fetch(SB+'/rest/v1/tor_rooms',{
       method:'POST',
-      headers:Object.assign({},h(),{'Prefer':'return=representation'}),
-      body:JSON.stringify({code:code,status:'waiting'})
+      headers:Object.assign({},h(),{'Prefer':'return=minimal'}),
+      body:JSON.stringify({code:_salaCode,status:'waiting'})
     });
-    var data=await r.json();
-    if(!r.ok)throw new Error('Error creando sala');
-    _roomData=Array.isArray(data)?data[0]:data;
-    _roomCode=code;
-    _roomLastGameId=null;
-    _isHost=true;
-    try{localStorage.setItem('tor_room',code);localStorage.setItem('tor_room_host','1');}catch(e){}
-    renderRoomScreen();
-    show('screen-room');
-  }catch(e){toast('Error al crear la sala. Intenta de nuevo.');}
+    localStorage.setItem('tor_sala',_salaCode);
+    localStorage.setItem('tor_sala_host','1');
+  }catch(e){}
+  return _salaCode;
 }
 
-async function confirmarUnirse(){
-  var code=(document.getElementById('inputJoinCode').value||'').trim().toUpperCase();
-  var errEl=document.getElementById('joinError');
-  errEl.style.display='none';
-  if(!code||code.length<4){errEl.textContent='Ingresa el código de sala.';errEl.style.display='block';return;}
-  try{
-    var rows=await sbGet('tor_rooms','?code=eq.'+code+'&limit=1&select=*');
-    if(!Array.isArray(rows)||!rows.length){errEl.textContent='Sala no encontrada. Verifica el código.';errEl.style.display='block';return;}
-    _roomData=rows[0];
-    _roomCode=code;
-    _roomLastGameId=null;
-    _isHost=false;
-    try{localStorage.setItem('tor_room',code);localStorage.removeItem('tor_room_host');}catch(e){}
-    renderRoomScreen();
-    show('screen-room');
-    startRoomPolling();
-  }catch(e){errEl.textContent='Error de conexión. Intenta de nuevo.';errEl.style.display='block';}
+// Enlace de sala compartible (host lo ve en el overlay de invitación)
+function getSalaUrl(){
+  var base=window.location.origin+window.location.pathname;
+  return _salaCode ? base+'?sala='+_salaCode : gameUrl();
 }
 
-function renderRoomScreen(){
-  document.getElementById('roomCodeDisplay').textContent=_roomCode;
-  document.getElementById('roomRoleLabel').textContent=_isHost?'Tu sala':'Sala unida';
-  document.getElementById('roomHostInfo').textContent=_isHost?'Comparte el código con tus amigos':'Esperando que el host inicie el juego…';
-  document.getElementById('roomHostActions').style.display=_isHost?'block':'none';
-  document.getElementById('roomGuestWait').style.display=_isHost?'none':'block';
-  document.getElementById('roomShareBox').style.display=_isHost?'block':'none';
-  var shareUrl=window.location.origin+window.location.pathname+'?room='+_roomCode;
-  var el=document.getElementById('roomShareUrl');
-  if(el)el.value=shareUrl;
-}
-
-function copiarLinkSala(){
-  var url=window.location.origin+window.location.pathname+'?room='+_roomCode;
-  navigator.clipboard.writeText(url).then(function(){toast('¡Link copiado! Compártelo con tus amigos 🎉');});
-}
-
-function iniciarDesdeRoom(){
-  // Host va a seleccionar modo → nivel → jugadores → inicia juego etiquetado con sala
-  show('screen-level');
-}
-
-function jugarSoloSinSala(){
-  _roomCode=null;_roomData=null;_isHost=false;
-  try{localStorage.removeItem('tor_room');localStorage.removeItem('tor_room_host');}catch(e){}
-  show('screen-level');
-}
-
-function salirDeSala(){
-  stopRoomPolling();
-  _roomCode=null;_roomData=null;_isHost=false;_roomLastGameId=null;
-  try{localStorage.removeItem('tor_room');localStorage.removeItem('tor_room_host');}catch(e){}
-  show('screen-welcome');
-}
-
-function startRoomPolling(){
-  stopRoomPolling();
-  if(!_roomCode||_isHost)return;
-  _roomPollInterval=setInterval(async function(){
-    if(game){stopRoomPolling();return;}
+// Guest: polling para detectar nuevo juego activo en la sala
+function startSalaPolling(){
+  stopSalaPolling();
+  if(!_salaCode||_salaIsHost)return;
+  document.getElementById('salaGuestBanner').style.display='block';
+  _salaPollInterval=setInterval(async function(){
+    if(game){stopSalaPolling();document.getElementById('salaGuestBanner').style.display='none';return;}
     try{
-      var rows=await sbGet('tor_games','?room_code=eq.'+encodeURIComponent(_roomCode)+'&status=eq.playing&order=created_at.desc&limit=1&select=*');
+      var rows=await sbGet('tor_games','?room_code=eq.'+_salaCode+'&status=eq.playing&order=created_at.desc&limit=1&select=*');
       if(!rows||!rows.length)return;
       var found=rows[0];
-      if(found.id===_roomLastGameId)return;
-      _roomLastGameId=found.id;
-      stopRoomPolling();
+      if(found.id===_salaLastGameId)return;
+      _salaLastGameId=found.id;
+      stopSalaPolling();
+      document.getElementById('salaGuestBanner').style.display='none';
       game=found;
       resetPools();
       await loadCardPool(game.level,game.mode);
@@ -758,19 +661,33 @@ function startRoomPolling(){
     }catch(e){}
   },3000);
 }
-
-function stopRoomPolling(){
-  if(_roomPollInterval){clearInterval(_roomPollInterval);_roomPollInterval=null;}
+function stopSalaPolling(){
+  if(_salaPollInterval){clearInterval(_salaPollInterval);_salaPollInterval=null;}
 }
 
-function initRoom(){
+function salirDeSala(){
+  stopSalaPolling();
+  _salaCode=null;_salaIsHost=false;_salaLastGameId=null;
+  localStorage.removeItem('tor_sala');localStorage.removeItem('tor_sala_host');
+  document.getElementById('salaGuestBanner').style.display='none';
+}
+
+function initSala(){
   var p=new URLSearchParams(window.location.search);
-  var roomFromUrl=p.get('room');
-  if(roomFromUrl){
+  var salaFromUrl=p.get('sala');
+  if(salaFromUrl){
     // Llegó por link de invitación
-    document.getElementById('inputJoinCode').value=roomFromUrl.toUpperCase();
-    show('screen-join');
-    setTimeout(confirmarUnirse,300);
+    _salaCode=salaFromUrl.toUpperCase();
+    _salaIsHost=false;
+    localStorage.setItem('tor_sala',_salaCode);
+    localStorage.removeItem('tor_sala_host');
+    return;
+  }
+  // Restaurar de localStorage
+  var saved=localStorage.getItem('tor_sala');
+  if(saved){
+    _salaCode=saved;
+    _salaIsHost=!!localStorage.getItem('tor_sala_host');
   }
 }
 
@@ -898,7 +815,7 @@ async function initGame(){
   btn.disabled=true;btn.textContent='Iniciando…';
   try{
     var body={level:selectedLevel,mode:selectedMode,players:players,status:'playing',current_card:null,current_player_idx:0,round:1};
-    if(_roomCode)body.room_code=_roomCode;
+    var sala=await ensureSala();if(sala)body.room_code=sala;
     var data=await sbPost('tor_games',body);
     if(!data||data.error)throw new Error('Error');
     game=Array.isArray(data)?data[0]:data;
@@ -907,8 +824,8 @@ async function initGame(){
     startRealtime();startPolling();
     var c=pickRandomCard();
     if(c){game.current_card=c;sbPatch('tor_games?id=eq.'+game.id,{current_card:c}).catch(function(){});showCard(c);}
-    if(_roomCode&&_roomData){
-      fetch(SB+'/rest/v1/tor_rooms?code=eq.'+_roomCode,{method:'PATCH',headers:Object.assign({},h(),{'Prefer':'return=minimal'}),body:JSON.stringify({status:'playing',current_game_id:game.id})}).catch(function(){});
+    if(_salaCode){
+      fetch(SB+'/rest/v1/tor_rooms?code=eq.'+_salaCode,{method:'PATCH',headers:Object.assign({},h(),{'Prefer':'return=minimal'}),body:JSON.stringify({status:'playing',current_game_id:game.id})}).catch(function(){});
     }
   }catch(err){toast('Error al iniciar. Intenta de nuevo.');console.error(err);}
   finally{btn.disabled=false;btn.textContent='Iniciar Juego';}
@@ -1027,20 +944,18 @@ function closeEndConfirmOverlay(){document.getElementById('endConfirmOverlay').c
 function endGame(silent){
   if(game){
     sbPatch('tor_games?id=eq.'+game.id,{status:'ended'}).catch(function(){});
-    if(_roomCode){
-      fetch(SB+'/rest/v1/tor_rooms?code=eq.'+_roomCode,{method:'PATCH',headers:Object.assign({},h(),{'Prefer':'return=minimal'}),body:JSON.stringify({status:'waiting',current_game_id:null})}).catch(function(){});
+    if(_salaCode){
+      fetch(SB+'/rest/v1/tor_rooms?code=eq.'+_salaCode,{method:'PATCH',headers:Object.assign({},h(),{'Prefer':'return=minimal'}),body:JSON.stringify({status:'waiting',current_game_id:null})}).catch(function(){});
     }
   }
   stopRealtime();stopPolling();
   game=null;
   closeEndConfirmOverlay();
   if(!silent)document.getElementById('feedbackOverlay').classList.remove('hidden');
-  if(_roomCode){
-    renderRoomScreen();
-    show('screen-room');
-    if(!_isHost)startRoomPolling();
-  } else {
-    show('screen-welcome');
+  show('screen-welcome');
+  if(_salaCode&&!_salaIsHost){
+    _salaLastGameId=game?game.id:_salaLastGameId;
+    startSalaPolling();
   }
 }
 
@@ -1087,14 +1002,14 @@ function openOptionsOverlay(){document.getElementById('optionsOverlay').classLis
 function openAddPlayerOverlay(){document.getElementById('addPlayerOverlay').classList.remove('hidden');setTimeout(function(){document.getElementById('newPlayerName').focus();},200);}
 function openAddCardOverlay(){document.getElementById('addCardOverlay').classList.remove('hidden');setTimeout(function(){document.getElementById('newCardText').focus();},200);}
 function openInviteOverlay(){
-  document.getElementById('overlayCode').textContent=game?game.id.slice(0,6).toUpperCase():'------';
-  var url=gameUrl();
+  var url=getSalaUrl();
+  document.getElementById('overlayCode').textContent=_salaCode||'------';
   document.getElementById('overlayUrl').textContent=url;
   document.getElementById('inviteOverlay').classList.remove('hidden');
 }
-function copyLink(){navigator.clipboard.writeText(gameUrl()).then(function(){toast('¡Link copiado!');});}
+function copyLink(){navigator.clipboard.writeText(getSalaUrl()).then(function(){toast('¡Link de sala copiado!');});}
 function shareGame(){
-  var url=gameUrl();
+  var url=getSalaUrl();
   var msg='¿Juegas Verdad o Reto conmigo? 🎲 '+url;
   if(navigator.share)navigator.share({title:'Verdad o Reto',text:msg,url:url}).catch(function(){});
   else window.open('https://wa.me/?text='+encodeURIComponent(msg),'_blank');
@@ -1196,7 +1111,7 @@ document.addEventListener('vorNotifPrompt',function(){
   if('serviceWorker' in navigator)navigator.serviceWorker.register('/sw-vor.js').catch(function(){});
   var p=new URLSearchParams(window.location.search);
   var gameId=p.get('id');
-  initRoom();
+  initSala();
   if(gameId){
     try{
       var rows=await sbGet('tor_games','?id=eq.'+gameId+'&select=*');
@@ -1209,7 +1124,8 @@ document.addEventListener('vorNotifPrompt',function(){
       }
     }catch(e){}
   }
-  if(!_roomCode)show('screen-welcome');
+  show('screen-welcome');
+  if(_salaCode&&!_salaIsHost)startSalaPolling();
 })();
 </script>
 <script>
