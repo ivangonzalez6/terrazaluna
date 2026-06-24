@@ -1077,32 +1077,82 @@ tr:hover td{background:var(--bg3);}
     <div class="modal-body">
       <!-- Configuración -->
       <div id="gcForm">
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px;">
-          <div>
-            <div class="modal-label">Cantidad de códigos</div>
-            <input id="gcCantidad" type="number" min="1" max="100" value="1"
-              style="width:100%;box-sizing:border-box;border:1px solid var(--line2);border-radius:10px;padding:10px 12px;font-size:18px;font-family:'Cormorant Garamond',serif;font-weight:600;text-align:center;color:var(--ink);background:var(--bg3);">
-          </div>
-          <div>
-            <div class="modal-label">Vigencia</div>
-            <select id="gcDuracion" style="width:100%;box-sizing:border-box;border:1px solid var(--line2);border-radius:10px;padding:10px 12px;font-size:13px;font-family:'Inter Tight',sans-serif;color:var(--ink);background:var(--bg3);height:42px;">
-              <option value="1">1 hora</option>
-              <option value="2">2 horas</option>
-              <option value="24">24 horas</option>
-              <option value="48">48 horas</option>
-              <option value="168">7 días</option>
-              <option value="720">30 días</option>
-              <option value="8760">1 año</option>
-            </select>
+        <!-- Tipo de código -->
+        <div style="display:flex;gap:8px;margin-bottom:16px;">
+          <button id="gcTipoAleatorio" onclick="gcSetTipo('aleatorio')"
+            style="flex:1;padding:10px;border-radius:10px;border:2px solid var(--gold);background:var(--gold);color:#000;font-size:12px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;cursor:pointer;">
+            🎲 Código aleatorio
+          </button>
+          <button id="gcTipoTelefono" onclick="gcSetTipo('telefono')"
+            style="flex:1;padding:10px;border-radius:10px;border:2px solid var(--line2);background:transparent;color:var(--dim);font-size:12px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;cursor:pointer;">
+            📱 Teléfono como código
+          </button>
+        </div>
+
+        <!-- Aleatorio: cantidad + vigencia -->
+        <div id="gcPanelAleatorio">
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px;">
+            <div>
+              <div class="modal-label">Cantidad de códigos</div>
+              <input id="gcCantidad" type="number" min="1" max="100" value="1"
+                style="width:100%;box-sizing:border-box;border:1px solid var(--line2);border-radius:10px;padding:10px 12px;font-size:18px;font-family:'Cormorant Garamond',serif;font-weight:600;text-align:center;color:var(--ink);background:var(--bg3);">
+            </div>
+            <div>
+              <div class="modal-label">Vigencia</div>
+              <select id="gcDuracion" style="width:100%;box-sizing:border-box;border:1px solid var(--line2);border-radius:10px;padding:10px 12px;font-size:13px;font-family:'Inter Tight',sans-serif;color:var(--ink);background:var(--bg3);height:42px;">
+                <option value="1">1 hora</option>
+                <option value="2">2 horas</option>
+                <option value="24">24 horas</option>
+                <option value="48">48 horas</option>
+                <option value="168">7 días</option>
+                <option value="720">30 días</option>
+                <option value="8760">1 año</option>
+              </select>
+            </div>
           </div>
         </div>
-        <div style="margin-bottom:16px;">
+
+        <!-- Teléfono: número + vigencia -->
+        <div id="gcPanelTelefono" style="display:none;">
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px;">
+            <div>
+              <div class="modal-label">Número de teléfono</div>
+              <input id="gcTelefonoVal" type="tel" placeholder="10 dígitos" maxlength="15"
+                style="width:100%;box-sizing:border-box;border:1px solid var(--line2);border-radius:10px;padding:10px 12px;font-size:15px;font-family:'Inter Tight',sans-serif;color:var(--ink);background:var(--bg3);">
+            </div>
+            <div>
+              <div class="modal-label">Vigencia</div>
+              <select id="gcDuracionTel" style="width:100%;box-sizing:border-box;border:1px solid var(--line2);border-radius:10px;padding:10px 12px;font-size:13px;font-family:'Inter Tight',sans-serif;color:var(--ink);background:var(--bg3);height:42px;">
+                <option value="1">1 hora</option>
+                <option value="2">2 horas</option>
+                <option value="24">24 horas</option>
+                <option value="48">48 horas</option>
+                <option value="168">7 días</option>
+                <option value="720">30 días</option>
+                <option value="8760">1 año</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <!-- Etiqueta (ambos tipos) -->
+        <div style="margin-bottom:14px;">
           <div class="modal-label">Etiqueta / concepto <span style="font-weight:400;color:var(--faint)">(para identificarlos)</span></div>
           <input id="gcEtiqueta" type="text" placeholder="Ej: Promo Nov 2026, Testing, Evento…" maxlength="60"
             style="width:100%;box-sizing:border-box;border:1px solid var(--line2);border-radius:10px;padding:10px 12px;font-size:13px;font-family:'Inter Tight',sans-serif;color:var(--ink);background:var(--bg3);">
         </div>
+
+        <!-- Multi-uso -->
+        <label style="display:flex;align-items:center;gap:10px;padding:12px 14px;background:var(--bg3);border:1px solid var(--line2);border-radius:10px;cursor:pointer;margin-bottom:16px;user-select:none;">
+          <input type="checkbox" id="gcMultiUso" style="width:16px;height:16px;accent-color:var(--gold);cursor:pointer;">
+          <div>
+            <div style="font-size:13px;font-weight:600;color:var(--ink);">Código multi-jugador</div>
+            <div style="font-size:11px;color:var(--dim);margin-top:1px;">Permite que múltiples jugadores lo usen al mismo tiempo sin consumirse</div>
+          </div>
+        </label>
+
         <div id="gcError" style="color:#c0392b;font-size:12px;margin-bottom:10px;display:none;"></div>
-        <button class="btn-primary" id="gcBtn" onclick="generarCodigosLote()" style="width:100%;padding:14px;font-size:14px;">Generar códigos</button>
+        <button class="btn-primary" id="gcBtn" onclick="generarCodigosLote()" style="width:100%;padding:14px;font-size:14px;">Generar código</button>
       </div>
 
       <!-- Resultado -->
@@ -1112,7 +1162,7 @@ tr:hover td{background:var(--bg3);}
           <button onclick="copiarTodosCodigos()" style="font-size:11px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;background:var(--bg3);border:1px solid var(--line2);border-radius:8px;padding:6px 12px;cursor:pointer;color:var(--dim);">📋 Copiar todos</button>
         </div>
         <div id="gcListaCodigos" style="background:var(--bg3);border:1px solid var(--line);border-radius:12px;padding:8px;max-height:320px;overflow-y:auto;"></div>
-        <div style="margin-top:12px;font-size:12px;color:var(--faint);line-height:1.5;">⏱ Vigencia configurada según selección · 🔂 Un solo uso por código</div>
+        <div style="margin-top:12px;font-size:12px;color:var(--faint);line-height:1.5;" id="gcResultNota">⏱ Vigencia configurada según selección</div>
         <button onclick="resetModalCodigos()" style="margin-top:14px;width:100%;background:transparent;border:1px solid var(--line);border-radius:10px;padding:11px;font-size:12px;font-weight:600;cursor:pointer;color:var(--dim);font-family:'Inter Tight',sans-serif;letter-spacing:.06em;text-transform:uppercase;">Generar más códigos</button>
       </div>
     </div>
@@ -2672,6 +2722,22 @@ async function eliminarCodigo(id,code){
 
 // ── GENERAR CÓDIGOS ──
 var _generatedCodes=[];
+var _gcTipo='aleatorio';
+
+function gcSetTipo(tipo){
+  _gcTipo=tipo;
+  var esAleatorio=(tipo==='aleatorio');
+  document.getElementById('gcPanelAleatorio').style.display=esAleatorio?'block':'none';
+  document.getElementById('gcPanelTelefono').style.display=esAleatorio?'none':'block';
+  var btnA=document.getElementById('gcTipoAleatorio'),btnT=document.getElementById('gcTipoTelefono');
+  btnA.style.background=esAleatorio?'var(--gold)':'transparent';
+  btnA.style.color=esAleatorio?'#000':'var(--dim)';
+  btnA.style.borderColor=esAleatorio?'var(--gold)':'var(--line2)';
+  btnT.style.background=esAleatorio?'transparent':'var(--gold)';
+  btnT.style.color=esAleatorio?'var(--dim)':'#000';
+  btnT.style.borderColor=esAleatorio?'var(--line2)':'var(--gold)';
+  document.getElementById('gcBtn').textContent=esAleatorio?'Generar código':'Agregar teléfono';
+}
 
 function genCodeStr(){
   var c='ABCDEFGHJKLMNPQRSTUVWXYZ23456789',r='';
@@ -2691,38 +2757,58 @@ function resetModalCodigos(){
   var err=document.getElementById('gcError');if(err)err.style.display='none';
   var cant=document.getElementById('gcCantidad');if(cant)cant.value='1';
   var et=document.getElementById('gcEtiqueta');if(et)et.value='';
-  var btn=document.getElementById('gcBtn');if(btn){btn.disabled=false;btn.textContent='Generar códigos';}
+  var tel=document.getElementById('gcTelefonoVal');if(tel)tel.value='';
+  var mu=document.getElementById('gcMultiUso');if(mu)mu.checked=false;
+  gcSetTipo('aleatorio');
 }
 
 async function generarCodigosLote(){
-  var cantidad=parseInt(document.getElementById('gcCantidad').value,10)||0;
-  var horas=parseInt(document.getElementById('gcDuracion').value,10)||24;
-  var etiqueta=(document.getElementById('gcEtiqueta').value||'').trim();
   var err=document.getElementById('gcError');
   err.style.display='none';
-  if(cantidad<1||cantidad>100){err.textContent='La cantidad debe estar entre 1 y 100.';err.style.display='block';return;}
+  var etiqueta=(document.getElementById('gcEtiqueta').value||'').trim();
+  var multiUso=document.getElementById('gcMultiUso').checked;
   var btn=document.getElementById('gcBtn');
-  btn.disabled=true;btn.textContent='Generando…';
-  var expires=new Date(Date.now()+horas*3600*1000).toISOString();
-  var nuevos=[],usados={};
-  for(var i=0;i<cantidad;i++){
-    var code;do{code=genCodeStr();}while(usados[code]);usados[code]=1;
-    nuevos.push({code:code,label:etiqueta||null,expires_at:expires,used:false,active:true});
+
+  var nuevos=[];
+
+  if(_gcTipo==='telefono'){
+    // Modo teléfono como código
+    var telRaw=(document.getElementById('gcTelefonoVal').value||'').replace(/\D/g,'');
+    if(telRaw.length<10){err.textContent='Ingresa un número de teléfono válido (10 dígitos).';err.style.display='block';return;}
+    var horas=parseInt(document.getElementById('gcDuracionTel').value,10)||24;
+    var expires=new Date(Date.now()+horas*3600*1000).toISOString();
+    nuevos.push({code:telRaw,phone:telRaw,label:etiqueta||null,expires_at:expires,used:false,multi_use:true});
+  } else {
+    // Modo aleatorio
+    var cantidad=parseInt(document.getElementById('gcCantidad').value,10)||0;
+    if(cantidad<1||cantidad>100){err.textContent='La cantidad debe estar entre 1 y 100.';err.style.display='block';return;}
+    var horas=parseInt(document.getElementById('gcDuracion').value,10)||24;
+    var expires=new Date(Date.now()+horas*3600*1000).toISOString();
+    var usados={};
+    for(var i=0;i<cantidad;i++){
+      var code;do{code=genCodeStr();}while(usados[code]);usados[code]=1;
+      nuevos.push({code:code,label:etiqueta||null,expires_at:expires,used:false,multi_use:multiUso});
+    }
   }
+
+  btn.disabled=true;btn.textContent='Guardando…';
   try{
     var res=await sbPost('tor_unlock_codes',nuevos);
-    if(!res||res.error||res.message)throw new Error('insert');
+    if(!res||(Array.isArray(res)&&res[0]&&res[0].error)||res.message)throw new Error('insert');
     _generatedCodes=nuevos.map(function(n){return n.code;});
     renderGeneratedCodes();
     document.getElementById('gcForm').style.display='none';
     document.getElementById('gcResultado').style.display='block';
     var n=_generatedCodes.length;
     document.getElementById('gcResultLabel').textContent=n+' código'+(n>1?'s':'')+' generado'+(n>1?'s':'')+':';
+    var nota=multiUso||_gcTipo==='telefono'?'🔁 Multi-jugador · varios pueden usarlo al mismo tiempo':'🔂 Un solo uso por código';
+    document.getElementById('gcResultNota').textContent='⏱ Vigencia configurada · '+nota;
     loadCodigos();
   }catch(e){
-    err.textContent='Error al generar los códigos. Intenta de nuevo.';err.style.display='block';
+    err.textContent='Error al guardar el código. Verifica la consola.';err.style.display='block';
+    console.error('generarCodigosLote error:',e);
   }finally{
-    btn.disabled=false;btn.textContent='Generar códigos';
+    btn.disabled=false;btn.textContent=_gcTipo==='telefono'?'Agregar teléfono':'Generar código';
   }
 }
 

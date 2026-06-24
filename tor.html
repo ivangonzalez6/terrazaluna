@@ -953,8 +953,10 @@ async function checkXXXAccess(){
       if(Array.isArray(r)&&r.length>0){revocarAcceso();return;}
     }
     if(_xxxCodeId){
-      var r2=await sbGet('tor_unlock_codes','?id=eq.'+_xxxCodeId+'&active=eq.false&select=id&limit=1');
-      if(Array.isArray(r2)&&r2.length>0){revocarAcceso();return;}
+      // Revocar si el código fue marcado como usado (y no es multi-uso) o fue eliminado
+      var r2=await sbGet('tor_unlock_codes','?id=eq.'+_xxxCodeId+'&select=id,used,multi_use&limit=1');
+      if(!Array.isArray(r2)||!r2.length){revocarAcceso();return;} // eliminado
+      if(!r2[0].multi_use&&r2[0].used){revocarAcceso();return;}  // usado y no multi-uso
     }
   }catch(e){}
 }
@@ -1121,14 +1123,25 @@ async function validateCodigoXXX(){
   var isPhone=onlyDigits.length>=10;
   try{
     if(isPhone){
+      // 1. Verificar pago aprobado
       var rows=await sbGet('tor_unlock_requests','?phone=eq.'+onlyDigits+'&status=eq.aprobado&select=id&limit=1');
       if(Array.isArray(rows)&&rows.length){_xxxPhone=onlyDigits;unlockPaidLevels();closeXXXModal();if(selectedLevel&&LOCKED_LEVELS.includes(selectedLevel))goToPlayers();toast('¡Acceso concedido!');return;}
+      // 2. Verificar teléfono registrado como código en tor_unlock_codes
+      var telCode=await sbGet('tor_unlock_codes','?code=eq.'+onlyDigits+'&select=id,expires_at,used,multi_use&limit=1');
+      if(Array.isArray(telCode)&&telCode.length){
+        var tc=telCode[0];
+        if(tc.expires_at&&new Date(tc.expires_at)<new Date()){errEl.textContent='Este acceso ha expirado.';errEl.style.display='block';return;}
+        if(!tc.multi_use&&tc.used){errEl.textContent='Este acceso ya fue utilizado.';errEl.style.display='block';return;}
+        _xxxCodeId=tc.id;unlockPaidLevels();closeXXXModal();if(selectedLevel&&LOCKED_LEVELS.includes(selectedLevel))goToPlayers();toast('¡Acceso concedido!');return;
+      }
       errEl.textContent='Teléfono no encontrado o pago no aprobado.';errEl.style.display='block';
     }else{
-      var codeRows=await sbGet('tor_unlock_codes','?code=eq.'+raw.toUpperCase()+'&active=eq.true&select=id,expires_at&limit=1');
+      var codeInput=raw.replace(/\D/g,'').length>=10?raw.replace(/\D/g,''):raw.toUpperCase();
+      var codeRows=await sbGet('tor_unlock_codes','?code=eq.'+codeInput+'&select=id,expires_at,used,multi_use&limit=1');
       if(Array.isArray(codeRows)&&codeRows.length){
         var ce=codeRows[0];
         if(ce.expires_at&&new Date(ce.expires_at)<new Date()){errEl.textContent='Este código ya expiró.';errEl.style.display='block';return;}
+        if(!ce.multi_use&&ce.used){errEl.textContent='Este código ya fue utilizado.';errEl.style.display='block';return;}
         _xxxCodeId=ce.id;unlockPaidLevels();closeXXXModal();if(selectedLevel&&LOCKED_LEVELS.includes(selectedLevel))goToPlayers();toast('¡Código válido!');return;
       }
       errEl.textContent='Código inválido o expirado.';errEl.style.display='block';
