@@ -559,6 +559,25 @@ var selectedMode='presencial', selectedLevel=null, selectedCardType='truth';
 var _xxxUnlocked=false; // true cuando el usuario validó acceso
 var _xxxPhone=null;    // teléfono validado, para verificar revocación
 var _xxxCodeId=null;   // legacy (no usado)
+var _inactivityTimer=null;
+var INACTIVITY_MS=15*60*1000; // 15 minutos
+
+function resetInactivityTimer(){
+  if(!_xxxUnlocked)return;
+  clearTimeout(_inactivityTimer);
+  _inactivityTimer=setTimeout(function(){
+    if(!_xxxUnlocked)return;
+    _xxxUnlocked=false;
+    _xxxPhone=null;
+    if(game){
+      sbPatch('tor_games?id=eq.'+game.id,{status:'ended'}).catch(function(){});
+      game=null;
+    }
+    show('home');
+    toast('Sesión cerrada por inactividad. Ingresa tu número para continuar.',4000);
+  },INACTIVITY_MS);
+}
+
 var game=null, _pendingPlayers=[];
 // Pools de cartas
 var allQ=[], allD=[], allQComm=[], allDComm=[];
@@ -606,8 +625,12 @@ function selectMode(mode){
 function initPlayersGrid(){
   var g=document.getElementById('namesGrid');
   g.innerHTML='';
-  addPlayerField();
-  addPlayerField();
+  var saved=[];
+  try{saved=JSON.parse(localStorage.getItem('tor_players')||'[]');}catch(e){}
+  var names=saved.length>=2?saved:['',''];
+  names.forEach(function(){addPlayerField();});
+  var inputs=g.querySelectorAll('input');
+  inputs.forEach(function(inp,i){if(saved[i])inp.value=saved[i];});
   setTimeout(function(){var f=g.querySelector('input');if(f)f.focus();},200);
 }
 
@@ -683,6 +706,7 @@ function handleLockedLevel(level){
 var LOCKED_LEVELS=['hot','extremo','mixto','xxx'];
 function unlockPaidLevels(){
   _xxxUnlocked=true;
+  resetInactivityTimer();
   LOCKED_LEVELS.forEach(function(l){
     var lock=document.getElementById('lock-'+l);
     if(lock)lock.style.display='none';
@@ -820,6 +844,7 @@ async function initGame(){
   if(hasError){toast('Completa todos los nombres');return;}
   var nameSet=new Set(players.map(function(p){return p.name.toLowerCase();}));
   if(nameSet.size!==players.length){toast('No puede haber nombres repetidos');return;}
+  try{localStorage.setItem('tor_players',JSON.stringify(players.map(function(p){return p.name;})));}catch(e){}
   _pendingPlayers=players;
   if(!selectedLevel){toast('Elige un nivel para continuar');return;}
   // Mostrar disclaimer en CADA inicio de niveles de pago
@@ -1076,6 +1101,7 @@ async function nextTurn(){
   if(LOCKED_LEVELS.indexOf(game.level)>=0){
     var ok=await checkXXXAccess();
     if(!ok)return;
+    resetInactivityTimer();
   }
   // Registrar tiempo en carta actual antes de avanzar
   if(_cardShownAt&&_trackedCard){
