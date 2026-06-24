@@ -374,12 +374,12 @@ textarea{resize:none;line-height:1.5;}
 <div class="overlay hidden" id="codeXXXOverlay">
   <div class="overlay-sheet">
 
-    <!-- Vista A: Ingresar teléfono -->
+    <!-- Vista A: Ingresar teléfono o código -->
     <div id="xxxViewCodigo">
       <div class="overlay-title">🔞 Nivel XXX</div>
-      <div class="overlay-sub">Este nivel requiere acceso previo. Ingresa tu número de WhatsApp registrado.</div>
+      <div class="overlay-sub">Ingresa tu número de WhatsApp registrado o un código de acceso.</div>
       <div class="row-input" style="margin-bottom:8px;">
-        <input id="inputCodigoXXX" type="tel" placeholder="10 dígitos…" maxlength="15" style="font-size:17px;font-family:'Inter Tight',sans-serif;letter-spacing:.06em;" onkeydown="if(event.key==='Enter')validateCodigoXXX()">
+        <input id="inputCodigoXXX" placeholder="Teléfono o código…" maxlength="15" style="font-size:17px;font-family:'Inter Tight',sans-serif;letter-spacing:.06em;text-transform:uppercase;" onkeydown="if(event.key==='Enter')validateCodigoXXX()">
         <button class="btn-confirm-sm" onclick="validateCodigoXXX()">Entrar</button>
       </div>
       <div id="codeXXXError" style="color:#c0392b;font-size:12px;margin-bottom:10px;display:none;"></div>
@@ -744,21 +744,47 @@ function showXXXAdquirir(){
   if(btn){btn.disabled=false;btn.textContent='Enviar comprobante';}
 }
 
-// ── Validar acceso por teléfono ──
+// ── Validar acceso por teléfono o código ──
 async function validateCodigoXXX(){
-  var phone=document.getElementById('inputCodigoXXX').value.trim().replace(/\D/g,'');
+  var raw=document.getElementById('inputCodigoXXX').value.trim();
   var errEl=document.getElementById('codeXXXError');
-  if(phone.length<10){errEl.textContent='Ingresa tu número de WhatsApp (10 dígitos).';errEl.style.display='block';return;}
   errEl.style.display='none';
+  if(!raw){errEl.textContent='Ingresa tu teléfono o código.';errEl.style.display='block';return;}
+
+  var onlyDigits=raw.replace(/\D/g,'');
+  var isPhone=onlyDigits.length>=10;
+  var isCode=raw.replace(/\s/g,'').length>=6;
+
+  if(!isPhone&&!isCode){errEl.textContent='Ingresa tu número (10 dígitos) o un código de acceso.';errEl.style.display='block';return;}
+
   try{
-    var r=await sbGet('tor_unlock_requests','?phone=eq.'+phone+'&status=eq.aprobado&select=id,phone&limit=1');
-    if(!Array.isArray(r)||r.length===0){
-      errEl.textContent='Número no encontrado o acceso no aprobado.';errEl.style.display='block';return;
+    // 1. Intentar como teléfono
+    if(isPhone){
+      var rPhone=await sbGet('tor_unlock_requests','?phone=eq.'+onlyDigits+'&status=eq.aprobado&select=id&limit=1');
+      if(Array.isArray(rPhone)&&rPhone.length>0){
+        _xxxPhone=onlyDigits;
+        document.getElementById('codeXXXOverlay').classList.add('hidden');
+        unlockPaidLevels();
+        show('players');
+        return;
+      }
     }
-    _xxxPhone=phone;
-    document.getElementById('codeXXXOverlay').classList.add('hidden');
-    unlockPaidLevels();
-    show('players');
+    // 2. Intentar como código
+    var code=raw.toUpperCase().replace(/\s/g,'');
+    var rCode=await sbGet('tor_unlock_codes','?code=eq.'+code+'&select=id,used,multi_use,expires_at&limit=1');
+    if(Array.isArray(rCode)&&rCode.length>0){
+      var rec=rCode[0];
+      if(rec.expires_at&&new Date(rec.expires_at)<new Date()){errEl.textContent='Este código ya expiró.';errEl.style.display='block';return;}
+      if(rec.used&&!rec.multi_use){errEl.textContent='Este código ya fue utilizado.';errEl.style.display='block';return;}
+      if(!rec.multi_use) await sbPatch('tor_unlock_codes',rec.id,{used:true});
+      _xxxPhone=null; // acceso por código, sin teléfono
+      _xxxCodeId=rec.id;
+      document.getElementById('codeXXXOverlay').classList.add('hidden');
+      unlockPaidLevels();
+      show('players');
+      return;
+    }
+    errEl.textContent='No encontrado. Verifica tu teléfono o código.';errEl.style.display='block';
   }catch(e){errEl.textContent='Error de conexión. Intenta de nuevo.';errEl.style.display='block';}
 }
 
@@ -1065,10 +1091,12 @@ function showCard(card){
 
 // ── Verificar que acceso XXX sigue activo ──
 async function checkXXXAccess(){
-  if(!_xxxUnlocked||!_xxxPhone)return true;
+  if(!_xxxUnlocked)return true;
   try{
-    var r=await sbGet('tor_unlock_requests','?phone=eq.'+_xxxPhone+'&status=eq.rechazado&select=id&limit=1');
-    if(Array.isArray(r)&&r.length>0){
+    // Verificar revocación por teléfono
+    if(_xxxPhone){
+      var r=await sbGet('tor_unlock_requests','?phone=eq.'+_xxxPhone+'&status=eq.rechazado&select=id&limit=1');
+      if(Array.isArray(r)&&r.length>0){
         _xxxUnlocked=false;
         if(game){
           await sbPatch('tor_games?id=eq.'+game.id,{status:'ended'}).catch(function(){});
@@ -1089,6 +1117,18 @@ async function checkXXXAccess(){
           });
         },100);
         return false;
+      }
+    }
+    // Verificar revocación por código (si used=true y no multi_use → bloqueado externamente)
+    if(_xxxCodeId){
+      var rc=await sbGet('tor_unlock_codes','?id=eq.'+_xxxCodeId+'&select=used,multi_use&limit=1');
+      if(Array.isArray(rc)&&rc.length>0&&rc[0].used&&!rc[0].multi_use){
+        _xxxUnlocked=false;
+        if(game){await sbPatch('tor_games?id=eq.'+game.id,{status:'ended'}).catch(function(){});game=null;}
+        show('welcome');
+        toast('Tu código de acceso fue revocado.',4000);
+        return false;
+      }
     }
   }catch(e){}
   return true;
