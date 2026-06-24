@@ -3586,10 +3586,16 @@ function filterEngagement(){
   var rows=_engagementRows.filter(function(r){
     if(lvl&&r.level!==lvl)return false;
     if(mode&&r.mode!==mode)return false;
-    if(type&&r.type!==type)return false;
+    // card_type en la vista, pero filtramos igual
+    var ct=r.card_type||r.type||'';
+    if(type&&ct!==type)return false;
     return true;
   });
-  rows.sort(function(a,b){var av=a.avg_ms||0,bv=b.avg_ms||0;return sort==='asc'?av-bv:bv-av;});
+  rows.sort(function(a,b){
+    var av=parseFloat(a.avg_duration||a.avg_ms||0);
+    var bv=parseFloat(b.avg_duration||b.avg_ms||0);
+    return sort==='asc'?av-bv:bv-av;
+  });
   renderEngagement(rows);
 }
 
@@ -3607,21 +3613,24 @@ function renderEngagement(rows){
   }
   wrap.classList.remove('hidden');
   empty.classList.add('hidden');
-  var totalShown=rows.reduce(function(a,r){return a+(r.shown_count||0);},0);
-  var avgAll=rows.length?Math.round(rows.reduce(function(a,r){return a+(r.avg_ms||0);},0)/rows.length/1000):0;
+  // Compatibilidad: vista usa veces_mostrada/avg_duration/pct_descartada
+  var totalShown=rows.reduce(function(a,r){return a+(r.veces_mostrada||r.shown_count||0);},0);
+  var avgAll=rows.length?Math.round(rows.reduce(function(a,r){return a+parseFloat(r.avg_duration||0);},0)/rows.length):0;
   stats.innerHTML=statCard(rows.length,'Cartas medidas')+statCard(totalShown,'Veces mostradas')+statCard(avgAll+'s','Tiempo promedio');
   tbody.innerHTML=rows.map(function(r){
-    var avgS=((r.avg_ms||0)/1000).toFixed(1);
-    var fast=r.fast_pct!=null?Math.round(r.fast_pct)+'%':'—';
+    var ct=r.card_type||r.type||'pregunta';
+    var shown=r.veces_mostrada||r.shown_count||0;
+    var avgS=parseFloat(r.avg_duration||0).toFixed(1);
+    var pct=r.pct_descartada!=null?Math.round(parseFloat(r.pct_descartada))+'%':(r.fast_pct!=null?Math.round(r.fast_pct)+'%':'—');
     return '<tr>'
-      +'<td style="font-size:13px;">'+esc(r.card_text||r.text||'—')+'</td>'
-      +'<td>'+(r.type==='reto'?'⚡ Reto':'❓ Pregunta')+'</td>'
+      +'<td style="font-size:13px;">'+esc(r.text||r.card_text||'—')+'</td>'
+      +'<td>'+(ct==='reto'?'⚡ Reto':'❓ Pregunta')+'</td>'
       +'<td>'+esc(LEVEL_LABELS[r.level]||r.level||'—')+'</td>'
       +'<td style="font-size:12px;">'+(r.mode==='distancia'?'Distancia':'Presencial')+'</td>'
-      +'<td>'+(r.shown_count||0)+'</td>'
+      +'<td>'+shown+'</td>'
       +'<td style="font-weight:700;color:var(--gold)">'+avgS+'s</td>'
-      +'<td>'+fast+'</td>'
-      +'<td class="td-actions"><button class="btn-view" onclick="openGenerateAI(\''+esc(r.type||'pregunta')+'\',\''+esc(r.level||'familiar')+'\',\''+esc(r.mode||'presencial')+'\')">✨ Similar</button></td>'
+      +'<td>'+pct+'</td>'
+      +'<td class="td-actions"><button class="btn-view" onclick="openGenerateAI(\''+esc(ct)+'\',\''+esc(r.level||'familiar')+'\',\''+esc(r.mode||'presencial')+'\')">✨ Similar</button></td>'
       +'</tr>';
   }).join('');
 }
