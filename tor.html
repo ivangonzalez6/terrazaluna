@@ -736,29 +736,29 @@ function startSalaPolling(){
 
   _salaPollInterval=setInterval(async function(){
     try{
-      // Verificar si la sala fue cerrada por el host
-      var salaRows=await sbGet('tor_rooms','?code=eq.'+_salaCode+'&select=status');
-      if(salaRows&&salaRows[0]&&salaRows[0].status==='closed'){
-        salirDeSala();
-        toast('La sala fue cerrada.',3000);
-        return;
+      // Leer estado de sala (una sola query, fuente de verdad)
+      var salaRows=await sbGet('tor_rooms','?code=eq.'+_salaCode+'&select=status,current_game_id');
+      if(!salaRows||!salaRows[0])return;
+      var sala=salaRows[0];
+      if(sala.status==='closed'){salirDeSala();toast('La sala fue cerrada.',3000);return;}
+      // Hay juego activo nuevo
+      var cgid=sala.current_game_id;
+      if(sala.status==='playing'&&cgid&&cgid!==_salaLastGameId){
+        var rows=await sbGet('tor_games','?id=eq.'+cgid+'&select=*');
+        if(!rows||!rows.length||rows[0].status!=='playing')return;
+        var found=rows[0];
+        _salaLastGameId=found.id;
+        stopSalaPolling();
+        game=found;
+        resetPools();
+        await loadCardPool(game.level,game.mode);
+        startRealtime();startPolling();
+        if(game.current_card)showCard(game.current_card);
+        else{var c=pickCardForTurn(0);if(c){game.current_card=c;showCard(c);}}
+        toast('🎮 ¡Nuevo juego!');
       }
-      // Buscar juego activo
-      var rows=await sbGet('tor_games','?room_code=eq.'+_salaCode+'&status=eq.playing&order=created_at.desc&limit=1&select=*');
-      if(!rows||!rows.length)return;
-      var found=rows[0];
-      if(found.id===_salaLastGameId)return;
-      _salaLastGameId=found.id;
-      stopSalaPolling();
-      game=found;
-      resetPools();
-      await loadCardPool(game.level,game.mode);
-      startRealtime();startPolling();
-      if(game.current_card)showCard(game.current_card);
-      else{var c=pickCardForTurn(0);if(c){game.current_card=c;showCard(c);}}
-      toast('🎮 ¡Nuevo juego!');
     }catch(e){}
-  },3000);
+  },2500);
 }
 function stopSalaPolling(){
   if(_salaPollInterval){clearInterval(_salaPollInterval);_salaPollInterval=null;}
@@ -1269,20 +1269,41 @@ function startPolling(){
   stopPolling();if(!game)return;
   _pollInterval=setInterval(async function(){
     if(!game)return;
+    var gid=game.id;
     try{
-      var rows=await sbGet('tor_games','?id=eq.'+game.id+'&select=status,current_card,current_player_index,round');
+      // Para guests: verificar estado de sala (tor_rooms siempre es legible)
+      if(_salaCode&&!_salaIsHost){
+        var sr=await sbGet('tor_rooms','?code=eq.'+_salaCode+'&select=status,current_game_id');
+        if(sr&&sr[0]){
+          if(sr[0].status==='closed'){salirDeSala();return;}
+          // Si la sala ya no está en 'playing' con este juego → host terminó
+          var salaGameId=sr[0].current_game_id;
+          if(sr[0].status!=='playing'||(salaGameId!==null&&salaGameId!==undefined&&salaGameId!==gid)){
+            if(game&&game.id===gid){_salaLastGameId=gid;endGame(true);}
+            return;
+          }
+          if(!salaGameId){
+            // current_game_id es null → host terminó el juego
+            if(game&&game.id===gid){_salaLastGameId=gid;endGame(true);}
+            return;
+          }
+        }
+      }
+      // Sincronizar carta desde tor_games (fallback si realtime falló)
+      var rows=await sbGet('tor_games','?id=eq.'+gid+'&select=status,current_card,current_player_index,round');
       if(!rows||!rows[0])return;
       var r=rows[0];
-      if(r.status==='ended'){endGame(true);return;}
-      // Sincronizar carta aunque realtime haya fallado
-      if(r.current_card&&JSON.stringify(r.current_card)!==JSON.stringify(game.current_card)){
-        game.current_card=r.current_card;
-        game.current_player_index=r.current_player_index||0;
-        game.round=r.round||1;
-        showCard(r.current_card);
+      if(r.status==='ended'){if(game&&game.id===gid)endGame(true);return;}
+      if(r.current_card&&JSON.stringify(r.current_card)!==JSON.stringify(game&&game.current_card)){
+        if(game&&game.id===gid){
+          game.current_card=r.current_card;
+          game.current_player_index=r.current_player_index||0;
+          game.round=r.round||1;
+          showCard(r.current_card);
+        }
       }
     }catch(e){}
-  },3000);
+  },2500);
 }
 function stopPolling(){if(_pollInterval){clearInterval(_pollInterval);_pollInterval=null;}}
 
