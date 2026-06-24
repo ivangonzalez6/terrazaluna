@@ -1086,6 +1086,8 @@ tr:hover td{background:var(--bg3);}
           <div>
             <div class="modal-label">Vigencia</div>
             <select id="gcDuracion" style="width:100%;box-sizing:border-box;border:1px solid var(--line2);border-radius:10px;padding:10px 12px;font-size:13px;font-family:'Inter Tight',sans-serif;color:var(--ink);background:var(--bg3);height:42px;">
+              <option value="1">1 hora</option>
+              <option value="2">2 horas</option>
               <option value="24">24 horas</option>
               <option value="48">48 horas</option>
               <option value="168">7 días</option>
@@ -2692,7 +2694,7 @@ async function generarCodigosLote(){
   function mkCode(){return Array.from({length:8},function(){return chars[Math.floor(Math.random()*chars.length)];}).join('');}
   var expires=new Date(Date.now()+duracion*60*60*1000).toISOString();
   var rows=Array.from({length:cantidad},function(){
-    return {code:mkCode(),used:false,multi_use:false,expires_at:expires,label:etiqueta||null};
+    return {code:mkCode(),used:false,multi_use:false,expires_at:expires,label:etiqueta||null,phone:null};
   });
   try{
     var r=await fetch(SB+'/rest/v1/tor_unlock_codes',{
