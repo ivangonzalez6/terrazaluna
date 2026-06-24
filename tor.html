@@ -563,6 +563,7 @@ var selectedMode='presencial', selectedLevel=null, selectedCardType='truth';
 var _xxxUnlocked=false; // true cuando el usuario validó acceso
 var _xxxPhone=null;    // teléfono validado, para verificar revocación
 var _xxxCodeId=null;   // legacy (no usado)
+var _disclaimerAccepted=false; // true cuando el disclaimer fue aceptado en esta sesión de inicio
 var _inactivityTimer=null;
 var INACTIVITY_MS=15*60*1000; // 15 minutos
 
@@ -823,6 +824,12 @@ async function initGame(){
   });
   if(hasError){toast('Completa los nombres');return;}
   if(players.length<2){toast('Mínimo 2 jugadores');return;}
+  // Mostrar disclaimer para niveles adultos antes de iniciar
+  if(LOCKED_LEVELS.includes(selectedLevel)&&!_disclaimerAccepted){
+    ['chk1','chk2','chk3','chk4'].forEach(function(id){var el=document.getElementById(id);if(el)el.checked=false;});
+    document.getElementById('xxxDisclaimerOverlay').classList.remove('hidden');
+    return;
+  }
   try{localStorage.setItem('tor_players',JSON.stringify(players.map(function(p){return p.name;})));}catch(e){}
   var btn=document.getElementById('startGameBtn');
   btn.disabled=true;btn.textContent='Iniciando…';
@@ -962,7 +969,7 @@ function endGame(silent){
     }
   }
   stopRealtime();stopPolling();
-  game=null;
+  game=null;_disclaimerAccepted=false;
   closeEndConfirmOverlay();
   if(!silent)document.getElementById('feedbackOverlay').classList.remove('hidden');
   show('screen-welcome');
@@ -1216,24 +1223,25 @@ function confirmXXXDisclaimer(){
   var allChecked=chks.every(function(id){var el=document.getElementById(id);return el&&el.checked;});
   if(!allChecked){toast('Acepta todos los puntos para continuar');return;}
   document.getElementById('xxxDisclaimerOverlay').classList.add('hidden');
-  openXXXModal();
+  _disclaimerAccepted=true;
+  initGame();
 }
 function cancelXXXDisclaimer(){
   document.getElementById('xxxDisclaimerOverlay').classList.add('hidden');
-  selectedLevel=null;
-  document.querySelectorAll('.level-option').forEach(function(el){el.classList.remove('active');});
-  document.getElementById('levelDesc').classList.add('hidden');
+  // El usuario queda en la pantalla de jugadores, sin cancelar el nivel
 }
 
 function procederDesdeAprobado(){
   closeXXXModal();
   if(selectedLevel&&LOCKED_LEVELS.includes(selectedLevel))goToPlayers();
 }
-// handleLockedLevel abre el disclaimer primero, luego el modal
+// handleLockedLevel: primero pide teléfono/código, disclaimer va antes de iniciar
 function handleLockedLevel(level){
   _setLevel(level);
   if(!_xxxUnlocked){
-    document.getElementById('xxxDisclaimerOverlay').classList.remove('hidden');
+    openXXXModal();
+  } else {
+    goToPlayers();
   }
 }
 </script>
