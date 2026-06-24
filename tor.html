@@ -1042,10 +1042,9 @@ function showCard(card){
 async function checkXXXAccess(){
   if(!_xxxUnlocked||!_xxxPhone)return true;
   try{
-    var r=await sbGet('tor_unlock_requests','?phone=eq.'+_xxxPhone+'&status=eq.aprobado&select=id&limit=1');
-    if(Array.isArray(r)&&r.length===0){
+    var r=await sbGet('tor_unlock_requests','?phone=eq.'+_xxxPhone+'&status=eq.rechazado&select=id&limit=1');
+    if(Array.isArray(r)&&r.length>0){
         _xxxUnlocked=false;
-        // Bloquear juego
         if(game){
           await sbPatch('tor_games?id=eq.'+game.id,{status:'ended'}).catch(function(){});
           game=null;
@@ -1057,7 +1056,7 @@ async function checkXXXAccess(){
           el.innerHTML='<div style="font-size:40px;margin-bottom:16px;">🚫</div>'
             +'<div style="font-family:\'Cormorant Garamond\',serif;font-size:28px;color:#f0e4c4;font-weight:700;margin-bottom:12px;">Acceso revocado</div>'
             +'<div style="font-size:15px;color:#aaa;line-height:1.6;max-width:300px;">Tu pago fue rechazado y el acceso a este número fue revocado. Contacta a Terraza Luna para más información.</div>'
-            +'<button onclick="this.parentElement.remove()" style="margin-top:28px;padding:12px 28px;border-radius:10px;border:1px solid rgba(212,175,55,.4);background:rgba(212,175,55,.1);color:#c9a35b;font-size:13px;font-weight:600;cursor:pointer;font-family:\'Inter Tight\',sans-serif;letter-spacing:.06em;text-transform:uppercase;">Cerrar</button>';
+            +'<button onclick="this.parentElement.remove();show(\'home\');" style="margin-top:28px;padding:12px 28px;border-radius:10px;border:1px solid rgba(212,175,55,.4);background:rgba(212,175,55,.1);color:#c9a35b;font-size:13px;font-weight:600;cursor:pointer;font-family:\'Inter Tight\',sans-serif;letter-spacing:.06em;text-transform:uppercase;">Cerrar</button>';
           document.body.appendChild(el);
         },100);
         return false;
