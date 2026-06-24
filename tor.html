@@ -198,6 +198,22 @@ textarea{resize:none;line-height:1.5;}
 </style>
 </head>
 <body>
+<script>
+// Ocultar welcome inmediatamente si el usuario es guest de sala
+// (evita el flash de la pantalla de inicio mientras carga el IIFE async)
+(function(){
+  var p=new URLSearchParams(window.location.search);
+  var salaParam=p.get('sala');
+  var savedSala=localStorage.getItem('tor_sala');
+  var isHost=!!localStorage.getItem('tor_sala_host');
+  if((salaParam||savedSala)&&!isHost){
+    document.addEventListener('DOMContentLoaded',function(){
+      var sw=document.getElementById('screen-welcome');
+      if(sw)sw.classList.add('hidden');
+    });
+  }
+})();
+</script>
 
 <!-- ══════════════════════════════════════════
      PANTALLA 1: BIENVENIDA
@@ -1228,8 +1244,20 @@ function startPolling(){
   stopPolling();if(!game)return;
   _pollInterval=setInterval(async function(){
     if(!game)return;
-    try{var rows=await sbGet('tor_games','?id=eq.'+game.id+'&select=status');if(rows&&rows[0]&&rows[0].status==='ended')endGame(true);}catch(e){}
-  },8000);
+    try{
+      var rows=await sbGet('tor_games','?id=eq.'+game.id+'&select=status,current_card,current_player_index,round');
+      if(!rows||!rows[0])return;
+      var r=rows[0];
+      if(r.status==='ended'){endGame(true);return;}
+      // Sincronizar carta aunque realtime haya fallado
+      if(r.current_card&&JSON.stringify(r.current_card)!==JSON.stringify(game.current_card)){
+        game.current_card=r.current_card;
+        game.current_player_index=r.current_player_index||0;
+        game.round=r.round||1;
+        showCard(r.current_card);
+      }
+    }catch(e){}
+  },3000);
 }
 function stopPolling(){if(_pollInterval){clearInterval(_pollInterval);_pollInterval=null;}}
 
