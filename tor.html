@@ -843,7 +843,8 @@ async function initGame(){
     await loadCardPool(game.level,game.mode);
     startRealtime();startPolling();
     var c=pickRandomCard();
-    if(c){game.current_card=c;sbPatch('tor_games?id=eq.'+game.id,{current_card:c}).catch(function(){});showCard(c);}
+    if(!c){toast('No hay cartas disponibles para este nivel.');sbPatch('tor_games?id=eq.'+game.id,{status:'ended'}).catch(function(){});stopRealtime();stopPolling();game=null;return;}
+    game.current_card=c;sbPatch('tor_games?id=eq.'+game.id,{current_card:c}).catch(function(){});showCard(c);
     if(_salaCode){
       fetch(SB+'/rest/v1/tor_rooms?code=eq.'+_salaCode,{method:'PATCH',headers:Object.assign({},h(),{'Prefer':'return=minimal'}),body:JSON.stringify({status:'playing',current_game_id:game.id})}).catch(function(){});
     }
@@ -856,15 +857,12 @@ async function loadCardPool(level,mode){
   var lvls=(level==='mixto')?['familiar','light','hot','extremo']:[level];
   for(var i=0;i<lvls.length;i++){
     var l=lvls[i];
-    var qr=await sbGet('tor_cards','?level=eq.'+l+'&type=eq.truth&select=id,text,type');
-    var dr=await sbGet('tor_cards','?level=eq.'+l+'&type=eq.dare&select=id,text,type');
-    allQ=allQ.concat(Array.isArray(qr)?qr:[]);
-    allD=allD.concat(Array.isArray(dr)?dr:[]);
+    var qr=await sbGet('tor_questions','?level=eq.'+l+'&select=id,text');
+    var dr=await sbGet('tor_dares','?level=eq.'+l+'&select=id,text');
+    if(Array.isArray(qr))allQ=allQ.concat(qr.map(function(c){return Object.assign({},c,{type:'truth'});}));
+    if(Array.isArray(dr))allD=allD.concat(dr.map(function(c){return Object.assign({},c,{type:'dare'});}));
   }
-  var cq=await sbGet('tor_cards_community','?approved=eq.true&type=eq.truth&select=id,text,type');
-  var cd=await sbGet('tor_cards_community','?approved=eq.true&type=eq.dare&select=id,text,type');
-  allQComm=Array.isArray(cq)?cq:[];allDComm=Array.isArray(cd)?cd:[];
-  shuffle(allQ);shuffle(allD);shuffle(allQComm);shuffle(allDComm);
+  shuffle(allQ);shuffle(allD);
 }
 
 function pickFromPool(arr,used){
@@ -885,10 +883,10 @@ function pickRandomCard(){
   if(useQ){card=pickFromPool(allQ,usedQIdx)||pickFromPool(allD,usedDIdx);}
   else{card=pickFromPool(allD,usedDIdx)||pickFromPool(allQ,usedQIdx);}
   if(!card){
-    if(!commQDone){card=pickFromPool(allQComm,usedQCommIdx);if(usedQCommIdx.length>=allQComm.length)commQDone=true;}
-    if(!card&&!commDDone){card=pickFromPool(allDComm,usedDCommIdx);if(usedDCommIdx.length>=allDComm.length)commDDone=true;}
+    if(!allQ.length&&!allD.length)return null;
+    usedQIdx=[];usedDIdx=[];
+    return pickRandomCard();
   }
-  if(!card){usedQIdx=[];usedDIdx=[];usedQCommIdx=[];usedDCommIdx=[];commQDone=false;commDDone=false;return pickRandomCard();}
   if(p)card._player=p;
   return card;
 }
