@@ -711,7 +711,7 @@ async function sbPost(t,b){var r=await fetch(SB+'/rest/v1/'+t,{method:'POST',hea
 async function sbPatch(t,b){return fetch(SB+'/rest/v1/'+t,{method:'PATCH',headers:Object.assign({},h(),{'Prefer':'return=minimal'}),body:JSON.stringify(b)});}
 
 // ── Helpers ──
-function show(s){document.querySelectorAll('.screen').forEach(function(el){el.classList.toggle('hidden',el.id!=='screen-'+s);});}
+function show(s){var id=s.indexOf('screen-')===0?s:'screen-'+s;document.querySelectorAll('.screen').forEach(function(el){el.classList.toggle('hidden',el.id!==id);});}
 function toast(m,dur){var t=document.getElementById('toast');t.textContent=m;t.classList.add('show');clearTimeout(t._t);t._t=setTimeout(function(){t.classList.remove('show');},dur||2600);}
 function esc(s){return String(s||'').replace(/[&<>"']/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];});}
 function uid5(){var c='ABCDEFGHJKMNPQRSTUVWXYZ23456789';var r='';for(var i=0;i<5;i++)r+=c[Math.floor(Math.random()*c.length)];return r;}
