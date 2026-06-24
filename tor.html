@@ -629,6 +629,8 @@ var _ws=null, _wsRef=0, _wsHb=null, _pollInterval=null;
 var _cardCount=0; // cartas mostradas en el juego actual (para cadencia de marketing)
 var _cardShownAt=null; // timestamp cuando se mostró la carta actual
 var _trackedCard=null; // carta actual siendo trackeada
+var _sessionTagScores={}; // tag → {total: N, count: N} — preferencias semánticas de la sesión
+var _tagReorderTurn=0;   // último turno en que se reordenó el pool
 var _config={}; // configuración dinámica desde tor_config
 
 // ── SALAS (transparente — el usuario nunca las ve) ──
@@ -744,7 +746,7 @@ function uid5(){var c='ABCDEFGHJKMNPQRSTUVWXYZ23456789';var r='';for(var i=0;i<5
 function ini(n){return String(n||'').trim().substring(0,2).toUpperCase()||'?';}
 function col(i){return COLORS[i%COLORS.length];}
 function shuffle(arr){for(var i=arr.length-1;i>0;i--){var j=Math.floor(Math.random()*(i+1));var t=arr[i];arr[i]=arr[j];arr[j]=t;}return arr;}
-function resetPools(){allQ=[];allD=[];allQComm=[];allDComm=[];allCombined=[];usedQIdx=[];usedDIdx=[];usedQCommIdx=[];usedDCommIdx=[];commQDone=false;commDDone=false;}
+function resetPools(){allQ=[];allD=[];allQComm=[];allDComm=[];allCombined=[];usedQIdx=[];usedDIdx=[];usedQCommIdx=[];usedDCommIdx=[];commQDone=false;commDDone=false;_sessionTagScores={};_tagReorderTurn=0;}
 function gameUrl(){var base=window.location.origin+window.location.pathname;return game?base+'?id='+game.id:base;}
 function closeOverlay(id,e){if(e&&e.target!==document.getElementById(id))return;document.getElementById(id).classList.add('hidden');}
 
@@ -880,8 +882,8 @@ async function loadCardPool(level,mode){
   for(var i=0;i<lvls.length;i++){
     var l=lvls[i];
     // order=id garantiza el mismo orden en todos los dispositivos
-    var qr=await sbGet('tor_questions','?level=eq.'+l+'&select=id,text&order=id');
-    var dr=await sbGet('tor_dares','?level=eq.'+l+'&select=id,text&order=id');
+    var qr=await sbGet('tor_questions','?level=eq.'+l+'&select=id,text,tags&order=id');
+    var dr=await sbGet('tor_dares','?level=eq.'+l+'&select=id,text,tags&order=id');
     if(Array.isArray(qr))allQ=allQ.concat(qr.map(function(c){return Object.assign({},c,{type:'truth'});}));
     if(Array.isArray(dr))allD=allD.concat(dr.map(function(c){return Object.assign({},c,{type:'dare'});}));
   }
@@ -904,6 +906,12 @@ function pickCardForTurn(turnOverride){
 
 function showCard(card){
   if(!card||!game)return;
+  // Registrar cuándo se mostró (solo host, para no duplicar)
+  if(!_salaCode||_salaIsHost){
+    _trackCardStat(); // guardar duración de la carta anterior si hay
+    _cardShownAt=Date.now();
+    _trackedCard=card;
+  }
   var players=game.players||[];
   var idx=game.current_player_index||0;
   var p=card._player||players[idx%players.length]||{name:'?'};
@@ -924,6 +932,70 @@ function showCard(card){
   resetInactivityTimer();
 }
 
+function _trackCardStat(){
+  if(!_trackedCard||!_cardShownAt||!game)return;
+  var durSec=Math.round((Date.now()-_cardShownAt)/100)/10; // 1 decimal
+  if(durSec<1||durSec>600)return; // ignorar datos inválidos
+  var card=_trackedCard;
+  _cardShownAt=null;_trackedCard=null;
+  var cardType=card.type==='truth'?'pregunta':'reto';
+  var payload={
+    card_id:card.id||null,
+    card_type:cardType,
+    level:game.level||null,
+    mode:game.mode||null,
+    duration_seconds:durSec
+  };
+  // Acumular preferencias semánticas de la sesión
+  _updateTagScores(card, durSec);
+  // fire-and-forget, sin bloquear el flujo de juego
+  fetch(SB+'/rest/v1/tor_card_stats',{
+    method:'POST',
+    headers:Object.assign({},h(),{'Prefer':'return=minimal'}),
+    body:JSON.stringify(payload)
+  }).catch(function(){});
+}
+
+// ── Recomendación semántica por tags ──
+function _updateTagScores(card, durSec){
+  if(!card||!card.tags||!card.tags.length)return;
+  card.tags.forEach(function(tag){
+    if(!_sessionTagScores[tag])_sessionTagScores[tag]={total:0,count:0};
+    _sessionTagScores[tag].total+=durSec;
+    _sessionTagScores[tag].count++;
+  });
+}
+function _tagScore(card){
+  if(!card||!card.tags||!card.tags.length)return 0;
+  var keys=Object.keys(_sessionTagScores);
+  if(!keys.length)return 0;
+  var score=0;
+  card.tags.forEach(function(tag){
+    var s=_sessionTagScores[tag];
+    if(s&&s.count>0)score+=(s.total/s.count);
+  });
+  return score/card.tags.length;
+}
+function _maybeReorderPool(nextTurnNum){
+  // Solo reordenar si hay suficientes datos y no se hizo ya recientemente
+  if(!allCombined.length||nextTurnNum<5)return;
+  if(nextTurnNum-_tagReorderTurn<3)return;
+  if(!Object.keys(_sessionTagScores).length)return;
+  _tagReorderTurn=nextTurnNum;
+  // Cartas ya jugadas se quedan en su lugar; reordenar solo las restantes
+  var played=allCombined.slice(0,nextTurnNum);
+  var remaining=allCombined.slice(nextTurnNum);
+  if(remaining.length<2)return;
+  // Pequeño jitter determinístico para no mostrar siempre lo mismo
+  var rng=mulberry32((nextTurnNum*1999)^strHash(game?game.id:'x'));
+  remaining.sort(function(a,b){
+    var sa=_tagScore(a)+(rng()*3);
+    var sb=_tagScore(b)+(rng()*3);
+    return sb-sa;
+  });
+  allCombined=played.concat(remaining);
+}
+
 async function nextTurn(){
   if(!game)return;
   var isGuest=(_salaCode&&!_salaIsHost);
@@ -937,6 +1009,8 @@ async function nextTurn(){
   // Calcular turno antes de actualizar game para que pickCardForTurn use los valores nuevos
   var nextTurnNum=((round-1)*players.length)+nextIdx;
   game.current_player_index=nextIdx;game.round=round;
+  // Solo el host reordena (él empuja la carta a Supabase, los guests la reciben)
+  if(!_salaCode||_salaIsHost)_maybeReorderPool(nextTurnNum);
   var c=pickCardForTurn(nextTurnNum);
   if(!c){toast('¡Se acabaron las cartas!');return;}
   game.current_card=c;
@@ -979,6 +1053,7 @@ function closeEndConfirmOverlay(){document.getElementById('endConfirmOverlay').c
 
 function endGame(silent){
   if(game){
+    _trackCardStat(); // guardar duración de la última carta
     sbPatch('tor_games?id=eq.'+game.id,{status:'ended'}).catch(function(){});
     if(_salaCode){
       fetch(SB+'/rest/v1/tor_rooms?code=eq.'+_salaCode,{method:'PATCH',headers:Object.assign({},h(),{'Prefer':'return=minimal'}),body:JSON.stringify({status:'waiting',current_game_id:null})}).catch(function(){});
