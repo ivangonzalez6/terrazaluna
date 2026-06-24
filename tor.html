@@ -1185,7 +1185,7 @@ function setCardType(type){
 async function confirmAddCard(){
   var txt=document.getElementById('newCardText').value.trim();
   if(!txt){toast('Escribe algo');return;}
-  var card={text:txt,type:selectedCardType,level:game?game.level:'familiar',source:'comunidad',approved:false};
+  var card={text:txt,type:selectedCardType,level:game?game.level:'familiar',source:'comunidad',approved:false,game_id:game?game.id:null,user_ref:_xxxPhone||null};
   try{
     var saved=await sbPost('tor_cards_community',card);
     var savedId=(Array.isArray(saved)?saved[0]:saved)?.id||('comm_'+Date.now());
