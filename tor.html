@@ -189,6 +189,12 @@ textarea{resize:none;line-height:1.5;}
   .level-grid{grid-template-columns:1fr 1fr;}
   .mode-card{padding:18px 12px;}
 }
+
+/* ── SALA WAITING (guests entre juegos) ── */
+#screen-sala-waiting{background:linear-gradient(180deg,#0d0b08 0%,#080807 100%);justify-content:center;}
+.sala-waiting-dots{display:flex;gap:8px;justify-content:center;align-items:center;margin:20px 0 8px;}
+.sala-waiting-dot{width:7px;height:7px;border-radius:50%;background:var(--gold);}
+@keyframes sala-pulse{0%,100%{opacity:.25;transform:scale(.75)}50%{opacity:1;transform:scale(1.2)}}
 </style>
 </head>
 <body>
@@ -324,6 +330,27 @@ textarea{resize:none;line-height:1.5;}
     <button class="game-bar-btn" onclick="openInviteOverlay()">📲 Invitar</button>
     <button class="game-bar-btn" onclick="openOptionsOverlay()" style="font-size:22px;line-height:1;padding:6px 14px;">＋</button>
     <button class="game-bar-btn danger" onclick="openEndConfirmOverlay()">✕ Salir</button>
+  </div>
+</div>
+
+
+<!-- ══════════════════════════════════════════
+     PANTALLA ESPERA SALA (GUESTS ENTRE JUEGOS)
+══════════════════════════════════════════ -->
+<div class="screen hidden" id="screen-sala-waiting">
+  <div class="inner" style="justify-content:center;text-align:center;gap:16px;padding:40px 0;">
+    <div style="font-size:52px;line-height:1;margin-bottom:4px">🌙</div>
+    <div>
+      <div class="hero-ornament"><div class="hero-ornament-inner">Sala activa</div></div>
+      <div class="section-title" style="font-size:clamp(22px,5vw,30px);margin-top:10px;line-height:1.2">Los secretos<br>aún no terminan</div>
+    </div>
+    <div style="font-size:14px;color:var(--dim);line-height:1.7;max-width:300px;margin:0 auto">El host iniciará un nuevo juego pronto.</div>
+    <div class="sala-waiting-dots">
+      <div class="sala-waiting-dot" style="animation:sala-pulse 1.5s ease-in-out infinite 0s"></div>
+      <div class="sala-waiting-dot" style="animation:sala-pulse 1.5s ease-in-out infinite .3s"></div>
+      <div class="sala-waiting-dot" style="animation:sala-pulse 1.5s ease-in-out infinite .6s"></div>
+    </div>
+    <button class="btn btn-outline" style="margin-top:8px" onclick="salirDeSala()">Salir de la sala</button>
   </div>
 </div>
 
@@ -643,6 +670,8 @@ var _salaCode=null;   // código de sala (6 chars)
 var _salaIsHost=false;
 var _salaPollInterval=null;
 var _salaLastGameId=null;
+var _guestWaitTimer=null;     // timeout 15min para guest en sala-waiting
+var _salaInactivityTimer=null; // timeout 15min del host para cerrar sala
 
 function genSalaCode(){
   var c='ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
@@ -676,36 +705,69 @@ function getSalaUrl(){
 function startSalaPolling(){
   stopSalaPolling();
   if(!_salaCode||_salaIsHost)return;
-  document.getElementById('salaGuestBanner').style.display='block';
+  // Mostrar pantalla de espera
+  show('screen-sala-waiting');
+  // Timer propio del guest: 15min sin juego → salir de sala
+  _guestWaitTimer=setTimeout(function(){
+    salirDeSala();
+    toast('La sala cerró por inactividad.',3500);
+  },INACTIVITY_MS);
+
   _salaPollInterval=setInterval(async function(){
-    if(game){stopSalaPolling();document.getElementById('salaGuestBanner').style.display='none';return;}
     try{
+      // Verificar si la sala fue cerrada por el host
+      var salaRows=await sbGet('tor_rooms','?code=eq.'+_salaCode+'&select=status');
+      if(salaRows&&salaRows[0]&&salaRows[0].status==='closed'){
+        salirDeSala();
+        toast('La sala fue cerrada.',3000);
+        return;
+      }
+      // Buscar juego activo
       var rows=await sbGet('tor_games','?room_code=eq.'+_salaCode+'&status=eq.playing&order=created_at.desc&limit=1&select=*');
       if(!rows||!rows.length)return;
       var found=rows[0];
       if(found.id===_salaLastGameId)return;
       _salaLastGameId=found.id;
       stopSalaPolling();
-      document.getElementById('salaGuestBanner').style.display='none';
       game=found;
       resetPools();
       await loadCardPool(game.level,game.mode);
       startRealtime();startPolling();
       if(game.current_card)showCard(game.current_card);
       else{var c=pickCardForTurn(0);if(c){game.current_card=c;showCard(c);}}
-      toast('🎮 ¡El juego comenzó!');
+      toast('🎮 ¡Nuevo juego!');
     }catch(e){}
   },3000);
 }
 function stopSalaPolling(){
   if(_salaPollInterval){clearInterval(_salaPollInterval);_salaPollInterval=null;}
+  if(_guestWaitTimer){clearTimeout(_guestWaitTimer);_guestWaitTimer=null;}
 }
 
 function salirDeSala(){
   stopSalaPolling();
+  if(_salaInactivityTimer){clearTimeout(_salaInactivityTimer);_salaInactivityTimer=null;}
   _salaCode=null;_salaIsHost=false;_salaLastGameId=null;
   localStorage.removeItem('tor_sala');localStorage.removeItem('tor_sala_host');
   document.getElementById('salaGuestBanner').style.display='none';
+  show('screen-welcome');
+}
+
+// Host: reiniciar timer de inactividad de sala (se llama al avanzar cartas)
+function resetSalaInactivityTimer(){
+  if(!_salaCode||!_salaIsHost)return;
+  if(_salaInactivityTimer)clearTimeout(_salaInactivityTimer);
+  _salaInactivityTimer=setTimeout(function(){
+    // Cerrar sala para todos
+    fetch(SB+'/rest/v1/tor_rooms?code=eq.'+_salaCode,{method:'PATCH',headers:Object.assign({},h(),{'Prefer':'return=minimal'}),body:JSON.stringify({status:'closed'})}).catch(function(){});
+    if(game){sbPatch('tor_games?id=eq.'+game.id,{status:'ended'}).catch(function(){});}
+    stopRealtime();stopPolling();
+    game=null;_disclaimerAccepted=false;
+    _xxxUnlocked=false;_xxxPhone=null;
+    clearTimeout(_inactivityTimer);
+    salirDeSala();
+    toast('Sala cerrada por inactividad.',3500);
+  },INACTIVITY_MS);
 }
 
 function initSala(){
@@ -876,6 +938,7 @@ async function initGame(){
     if(_salaCode){
       fetch(SB+'/rest/v1/tor_rooms?code=eq.'+_salaCode,{method:'PATCH',headers:Object.assign({},h(),{'Prefer':'return=minimal'}),body:JSON.stringify({status:'playing',current_game_id:game.id})}).catch(function(){});
     }
+    resetSalaInactivityTimer();
   }catch(err){toast('Error al iniciar. Intenta de nuevo.');console.error(err);}
   finally{btn.disabled=false;btn.textContent='Iniciar Juego';}
 }
@@ -1021,6 +1084,7 @@ async function nextTurn(){
   sbPatch('tor_games?id=eq.'+game.id,{current_card:c,current_player_index:nextIdx,round:round}).catch(function(){});
   showCard(c);
   resetInactivityTimer();
+  resetSalaInactivityTimer();
 }
 
 async function checkXXXAccess(){
@@ -1056,10 +1120,13 @@ function openEndConfirmOverlay(){document.getElementById('endConfirmOverlay').cl
 function closeEndConfirmOverlay(){document.getElementById('endConfirmOverlay').classList.add('hidden');}
 
 function endGame(silent){
+  var wasGuest=(_salaCode&&!_salaIsHost);
+  var lastGameId=game?game.id:null;
   if(game){
     _trackCardStat(); // guardar duración de la última carta
     sbPatch('tor_games?id=eq.'+game.id,{status:'ended'}).catch(function(){});
-    if(_salaCode){
+    if(_salaCode&&_salaIsHost){
+      // Host: sala vuelve a estado "waiting" (no cerrada — puede iniciar nuevo juego)
       fetch(SB+'/rest/v1/tor_rooms?code=eq.'+_salaCode,{method:'PATCH',headers:Object.assign({},h(),{'Prefer':'return=minimal'}),body:JSON.stringify({status:'waiting',current_game_id:null})}).catch(function(){});
     }
   }
@@ -1067,10 +1134,12 @@ function endGame(silent){
   game=null;_disclaimerAccepted=false;
   closeEndConfirmOverlay();
   if(!silent)document.getElementById('feedbackOverlay').classList.remove('hidden');
-  show('screen-welcome');
-  if(_salaCode&&!_salaIsHost){
-    _salaLastGameId=game?game.id:_salaLastGameId;
+  if(wasGuest){
+    // Guest: ir a pantalla de espera y seguir esperando nuevo juego
+    if(lastGameId)_salaLastGameId=lastGameId;
     startSalaPolling();
+  }else{
+    show('screen-welcome');
   }
 }
 
@@ -1238,6 +1307,8 @@ document.addEventListener('vorNotifPrompt',function(){
   var p=new URLSearchParams(window.location.search);
   var gameId=p.get('id');
   initSala();
+
+  // Enlace directo a juego (legacy ?id=)
   if(gameId){
     try{
       var rows=await sbGet('tor_games','?id=eq.'+gameId+'&select=*');
@@ -1250,8 +1321,28 @@ document.addEventListener('vorNotifPrompt',function(){
       }
     }catch(e){}
   }
+
+  // Guest llegó por link de sala (?sala=CODE) o tiene sala guardada
+  if(_salaCode&&!_salaIsHost){
+    try{
+      // Ver si hay juego activo en este momento
+      var activeRows=await sbGet('tor_games','?room_code=eq.'+_salaCode+'&status=eq.playing&order=created_at.desc&limit=1&select=*');
+      if(activeRows&&activeRows.length){
+        var found=activeRows[0];
+        _salaLastGameId=found.id;
+        game=found;resetPools();await loadCardPool(game.level,game.mode);
+        startRealtime();startPolling();
+        if(game.current_card)showCard(game.current_card);
+        else{var c2=pickCardForTurn(0);if(c2){game.current_card=c2;showCard(c2);}}
+        return;
+      }
+    }catch(e){}
+    // Sin juego activo → pantalla de espera + polling
+    startSalaPolling();
+    return;
+  }
+
   show('screen-welcome');
-  if(_salaCode&&!_salaIsHost)startSalaPolling();
 })();
 </script>
 <script>
