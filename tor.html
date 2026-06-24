@@ -771,13 +771,11 @@ async function submitPagoXXX(){
     });
     var result=await verR.json();
     document.getElementById('xxxViewAdquirir').style.display='none';
-    if(result.fully_validated){
+    if(result.request_id||result.code||result.fully_validated){
+      // Acceso inmediato para esta sesión — admin revisa después
       _xxxPhone=phone;
       document.getElementById('xxxViewAprobado').style.display='block';
       unlockPaidLevels();
-    } else if(result.code||result.request_id){
-      // En revisión manual — acceso pendiente de aprobación
-      document.getElementById('xxxViewConfirm').style.display='block';
     } else {
       errEl.textContent=result.message||'Error al procesar. Intenta de nuevo.';
       errEl.style.display='block';
