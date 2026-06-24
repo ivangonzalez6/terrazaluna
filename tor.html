@@ -1067,10 +1067,6 @@ async function nextTurn(){
 
   var card=pickRandomCard();
   if(!card){
-    // Reintentar con otro tipo si uno de los pools está vacío
-    card=pickRandomCard();
-  }
-  if(!card){
     toast('No hay más cartas disponibles');
     document.getElementById('btnSiguiente').disabled=false;
     return;

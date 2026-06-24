@@ -188,6 +188,14 @@ tr:hover td{background:var(--bg3);}
 .section{display:none;}
 .section.active{display:block;}
 
+/* modal close + empty state helpers */
+.modal-header{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;}
+.modal-close{background:transparent;border:1px solid var(--line);border-radius:8px;width:32px;height:32px;flex-shrink:0;cursor:pointer;color:var(--faint);font-size:15px;line-height:1;transition:all .15s;}
+.modal-close:hover{border-color:var(--danger-border);color:var(--danger);}
+.empty-state{text-align:center;padding:48px;color:var(--faint);}
+.empty-state.hidden{display:none;}
+.empty-sub{font-size:12px;color:var(--faint);margin-top:6px;}
+
 /* ── ANALYTICS ── */
 .charts-grid{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-bottom:18px;}
 .charts-grid.full{grid-template-columns:1fr;}
@@ -710,11 +718,11 @@ tr:hover td{background:var(--bg3);}
 
       <div class="stats-grid" style="margin-bottom:24px">
         <div class="stat-card">
-          <div class="stat-num" id="push-cnt-devices">—</div>
+          <div class="stat-val" id="push-cnt-devices">—</div>
           <div class="stat-label">Dispositivos suscritos</div>
         </div>
         <div class="stat-card">
-          <div class="stat-num" id="push-last-sent">—</div>
+          <div class="stat-val" id="push-last-sent">—</div>
           <div class="stat-label">Última notificación</div>
         </div>
       </div>
@@ -1877,7 +1885,6 @@ function openAddModal(type){
   addType=type;
   document.getElementById('ma-title').textContent='Nueva '+(type==='pregunta'?'pregunta':'reto');
   document.getElementById('ma-sub').textContent='Se añade al mazo';
-  document.getElementById('ma-sub').textContent='';
   document.getElementById('ma-text').value='';
   document.getElementById('ma-level').value='familiar';
   document.getElementById('ma-source').value='oficial';
@@ -2415,7 +2422,7 @@ function openPartidaDetail(gameId){
       html+='<div class="co-player-chip">';
       html+='<div class="co-player-avatar" style="background:'+(p.color||col(pi))+'">'+ini(p.name)+'</div>';
       html+='<div><div class="co-player-name">'+esc(p.name||'—')+'</div>';
-      html+=(regUser?'<div style="font-size:10px;color:var(--ok)">✓ Registrado</div>':'<div style="font-size:10px;color:var(--faint)">Sin cuenta</div>');
+      html+=(regUser?'<div style="font-size:10px;color:var(--green)">✓ Registrado</div>':'<div style="font-size:10px;color:var(--faint)">Sin cuenta</div>');
       html+='</div></div>';
     });
   } else {html+='<div style="color:var(--faint);font-size:13px">Sin jugadores registrados</div>';}
@@ -2588,9 +2595,10 @@ function filterCodigos(){
   var q=(document.getElementById('search-codigos').value||'').toLowerCase();
   var st=document.getElementById('filter-codigos-status').value;
   filteredCodigos=allCodigos.filter(function(c){
-    if(q&&!(c.code||'').toLowerCase().includes(q)&&!(c.phone||'').includes(q))return false;
-    if(st==='activo'&&c.used)return false;
-    if(st==='usado'&&!c.used)return false;
+    if(q&&!(c.code||'').toLowerCase().includes(q)&&!(c.phone||'').includes(q)&&!((c.label||'').toLowerCase().includes(q)))return false;
+    if(st==='expirado'){if(!c.expires_at||new Date(c.expires_at)>=new Date())return false;}
+    else if(st==='activo'&&c.used)return false;
+    else if(st==='usado'&&!c.used)return false;
     return true;
   });
   renderCodigos();
@@ -2617,6 +2625,9 @@ function renderCodigos(){
       ? '<span style="font-size:11px;font-weight:700;color:#c0392b;">✗ Bloqueado</span>'
       : '<span style="font-size:11px;font-weight:700;color:#2d7a2d;">✓ Activo</span>';
     var exp=c.expires_at?fmt(c.expires_at):'Sin vencimiento';
+    var etiqueta=c.label
+      ? '<span style="font-size:12px;color:var(--dim);">'+esc(c.label)+'</span>'
+      : '<span style="color:var(--faint);font-size:12px;">—</span>';
     var phoneLink=c.phone
       ? '<a href="https://wa.me/52'+esc(c.phone)+'" target="_blank" style="color:inherit;text-decoration:none;">📱 '+esc(c.phone)+'</a>'
       : '—';
@@ -2625,9 +2636,10 @@ function renderCodigos(){
       : '';
     return '<tr>'
       +'<td style="font-family:\'Cormorant Garamond\',serif;font-size:16px;font-weight:700;letter-spacing:.15em;color:var(--gold);">'+esc(c.code)+'</td>'
-      +'<td>'+estado+'</td>'
+      +'<td>'+etiqueta+'</td>'
       +'<td class="td-phone">'+phoneLink+'</td>'
       +'<td style="font-size:11px;color:var(--dim);">'+exp+'</td>'
+      +'<td>'+estado+'</td>'
       +'<td style="font-size:11px;color:var(--dim);">'+fmt(c.created_at)+'</td>'
       +'<td class="td-actions">'+acciones+'</td>'
       +'</tr>';
@@ -2639,6 +2651,296 @@ async function bloquearCodigo(id){
   var ok=await sbPatch('tor_unlock_codes',id,{used:true});
   if(ok){toast('Código bloqueado');loadCodigos();}
   else{toast('Error al bloquear');}
+}
+
+// ════════════════════════════════════════════
+// FUNCIONES RESTAURADAS (config, push, engagement, IA, códigos, auto-refresh)
+// ════════════════════════════════════════════
+
+// ── AUTO-REFRESH ──
+var _autoRefreshTimer=null;
+async function refreshAll(){
+  if(_isRefreshing)return;
+  _isRefreshing=true;
+  try{
+    await Promise.all([loadPartidas(),loadParticipants(),loadSeen(),loadPreguntas(),loadRetos()]);
+    await loadUsuarios();
+    renderStats();
+    var active=document.querySelector('.section.active');
+    var id=active?active.id:'';
+    if(id==='section-pagos')loadPagos();
+    else if(id==='section-codigos')loadCodigos();
+    else if(id==='section-analytics')renderAnalytics();
+    else if(id==='section-lealtad'){loadLoyaltyClients().then(renderLealtad);}
+    else if(id==='section-marketing')loadMarketing();
+    else if(id==='section-feedback')loadFeedback();
+    else if(id==='section-push')loadPushDevices();
+  }catch(e){}
+  _isRefreshing=false;
+}
+function startAutoRefresh(){stopAutoRefresh();_autoRefreshTimer=setInterval(refreshAll,60000);}
+function stopAutoRefresh(){if(_autoRefreshTimer){clearInterval(_autoRefreshTimer);_autoRefreshTimer=null;}}
+
+// ── CONFIGURACIÓN DE PRECIOS (XXX) ──
+async function loadConfigAdmin(){
+  try{
+    var rows=await sbGet('tor_config','?select=key,value');
+    var map={};(rows||[]).forEach(function(r){map[r.key]=r.value;});
+    document.getElementById('cfg-precio').value=map.precio_xxx||'';
+    document.getElementById('cfg-banco').value=map.banco||'';
+    document.getElementById('cfg-clabe').value=map.clabe||'';
+    document.getElementById('cfg-cuenta').value=map.cuenta||'';
+    document.getElementById('cfg-beneficiario').value=map.beneficiario||'';
+  }catch(e){}
+  updateCfgPreview();
+}
+function updateCfgPreview(){
+  document.getElementById('cfg-prev-precio').textContent='$'+(document.getElementById('cfg-precio').value||'—')+' MXN';
+  document.getElementById('cfg-prev-banco').textContent=document.getElementById('cfg-banco').value||'—';
+  document.getElementById('cfg-prev-clabe').textContent=document.getElementById('cfg-clabe').value||'—';
+  document.getElementById('cfg-prev-cuenta').textContent=document.getElementById('cfg-cuenta').value||'—';
+  document.getElementById('cfg-prev-bene').textContent=document.getElementById('cfg-beneficiario').value||'—';
+}
+async function saveConfig(){
+  var err=document.getElementById('cfg-error'),okEl=document.getElementById('cfg-success');
+  err.style.display='none';okEl.style.display='none';
+  var precio=document.getElementById('cfg-precio').value.trim();
+  if(precio===''||isNaN(Number(precio))||Number(precio)<0){err.textContent='Ingresa un precio válido.';err.style.display='block';return;}
+  var pairs=[['precio_xxx',precio],['banco',document.getElementById('cfg-banco').value.trim()],['clabe',document.getElementById('cfg-clabe').value.trim()],['cuenta',document.getElementById('cfg-cuenta').value.trim()],['beneficiario',document.getElementById('cfg-beneficiario').value.trim()]];
+  var btn=document.getElementById('cfg-save-btn');btn.disabled=true;var orig=btn.textContent;btn.textContent='Guardando…';
+  try{
+    for(var i=0;i<pairs.length;i++){
+      var r=await fetch(SB+'/rest/v1/tor_config?key=eq.'+encodeURIComponent(pairs[i][0]),{method:'PATCH',headers:Object.assign({},h(),{'Prefer':'return=minimal'}),body:JSON.stringify({value:pairs[i][1]})});
+      if(!r.ok){throw new Error(await r.text());}
+    }
+    okEl.style.display='block';toast('Configuración guardada');
+    setTimeout(function(){okEl.style.display='none';},3000);
+  }catch(e){err.textContent='Error al guardar: '+(e.message||e);err.style.display='block';}
+  btn.disabled=false;btn.textContent=orig;
+}
+
+// ── NOTIFICACIONES PUSH ──
+var allPushDevices=[];
+async function loadPushDevices(){
+  var loading=document.getElementById('loading-push'),empty=document.getElementById('empty-push');
+  if(loading)loading.style.display='block';
+  if(empty)empty.classList.add('hidden');
+  try{
+    var rows=await sbGet('push_subscriptions','?order=created_at.desc&select=*');
+    allPushDevices=rows||[];
+    document.getElementById('push-cnt-devices').textContent=allPushDevices.length;
+    document.getElementById('cnt-push').textContent=allPushDevices.length;
+    try{var s=await sbGet('tor_settings','?key=eq.last_push_sent&select=value');if(s&&s.length)document.getElementById('push-last-sent').textContent=fmtShort(s[0].value);}catch(_){}
+    renderPushDevices();
+    if(loading)loading.style.display='none';
+  }catch(e){if(loading)loading.textContent='Error al cargar dispositivos';}
+}
+function renderPushDevices(){
+  var tb=document.getElementById('tbody-push-devices'),empty=document.getElementById('empty-push');
+  if(!allPushDevices.length){tb.innerHTML='';if(empty)empty.classList.remove('hidden');return;}
+  if(empty)empty.classList.add('hidden');
+  tb.innerHTML=allPushDevices.map(function(d){
+    var ep=(d.endpoint||'').replace(/^https?:\/\//,'').slice(0,42)+'…';
+    return '<tr><td style="font-size:11px;color:var(--dim);font-family:monospace" title="'+esc(d.endpoint||'')+'">'+esc(ep)+'</td>'+
+      '<td style="font-size:11px;color:var(--faint)">'+fmt(d.created_at)+'</td>'+
+      '<td><button class="btn-delete" onclick="deletePushDevice(\''+esc(d.id)+'\')">Eliminar</button></td></tr>';
+  }).join('');
+}
+async function deletePushDevice(id){
+  if(!confirm('¿Eliminar este dispositivo?'))return;
+  try{
+    await fetch(SB+'/rest/v1/push_subscriptions?id=eq.'+encodeURIComponent(id),{method:'DELETE',headers:h()});
+    allPushDevices=allPushDevices.filter(function(d){return d.id!==id;});
+    document.getElementById('push-cnt-devices').textContent=allPushDevices.length;
+    document.getElementById('cnt-push').textContent=allPushDevices.length;
+    renderPushDevices();toast('Dispositivo eliminado');
+  }catch(e){toast('Error al eliminar');}
+}
+async function sendPushNotification(){
+  var title=document.getElementById('push-title').value.trim()||'Terraza Luna';
+  var body=document.getElementById('push-body').value.trim();
+  var url=document.getElementById('push-url').value.trim()||'/tor';
+  var res=document.getElementById('push-result'),btn=document.getElementById('push-send-btn');
+  if(!body){toast('Escribe un mensaje');return;}
+  btn.disabled=true;var orig=btn.textContent;btn.textContent='Enviando…';res.style.display='none';
+  try{
+    var r=await fetch(SB+'/functions/v1/send-push',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({title:title,body:body,url:url})});
+    var data=await r.json();
+    if(!r.ok)throw new Error(data.error||'Error del servidor');
+    res.style.display='block';res.style.background='var(--green-bg)';res.style.color='var(--green)';
+    res.textContent='✓ Enviado a '+(data.sent||0)+' de '+(data.total||0)+' dispositivos'+(data.expired_removed?(' · '+data.expired_removed+' expirados eliminados'):'');
+    toast('Notificación enviada');
+    var now=new Date().toISOString();
+    document.getElementById('push-last-sent').textContent=fmtShort(now);
+    fetch(SB+'/rest/v1/tor_settings?key=eq.last_push_sent',{method:'PATCH',headers:Object.assign({},h(),{'Prefer':'return=representation'}),body:JSON.stringify({value:now})}).then(function(rr){return rr.json();}).then(function(u){if(!u||!u.length){fetch(SB+'/rest/v1/tor_settings',{method:'POST',headers:Object.assign({},h(),{'Prefer':'return=minimal'}),body:JSON.stringify({key:'last_push_sent',value:now})});}}).catch(function(){});
+    if(data.expired_removed)loadPushDevices();
+  }catch(e){res.style.display='block';res.style.background='var(--danger-bg)';res.style.color='var(--danger)';res.textContent='Error: '+(e.message||e);}
+  btn.disabled=false;btn.textContent=orig;
+}
+
+// ── ENGAGEMENT DE CARTAS ──
+var allEngagement=[];
+async function loadEngagement(){
+  var tb=document.getElementById('eng-tbody');
+  tb.innerHTML='<tr><td colspan="8" style="text-align:center;padding:40px;color:var(--faint)">Cargando…</td></tr>';
+  try{
+    var rows=await sbGet('tor_card_engagement','?select=*');
+    allEngagement=rows||[];
+    filterEngagement();
+  }catch(e){tb.innerHTML='<tr><td colspan="8" style="text-align:center;padding:40px;color:var(--danger)">Error al cargar engagement</td></tr>';}
+}
+function filterEngagement(){
+  var lv=document.getElementById('eng-filter-level').value;
+  var md=document.getElementById('eng-filter-mode').value;
+  var tp=document.getElementById('eng-filter-type').value;
+  var sort=document.getElementById('eng-filter-sort').value;
+  var list=allEngagement.filter(function(c){
+    if(lv&&c.level!==lv)return false;
+    if(md&&c.mode!==md)return false;
+    if(tp&&c.card_type!==tp)return false;
+    return true;
+  });
+  list.sort(function(a,b){var av=Number(a.avg_duration)||0,bv=Number(b.avg_duration)||0;return sort==='asc'?av-bv:bv-av;});
+  renderEngagement(list);
+}
+function renderEngagement(list){
+  var tb=document.getElementById('eng-tbody'),empty=document.getElementById('eng-empty'),stats=document.getElementById('eng-stats');
+  var totalShown=allEngagement.reduce(function(a,c){return a+(Number(c.veces_mostrada)||0);},0);
+  var withData=allEngagement.filter(function(c){return Number(c.veces_mostrada)>0;});
+  var avgAll=withData.length?(withData.reduce(function(a,c){return a+(Number(c.avg_duration)||0);},0)/withData.length):0;
+  stats.innerHTML=statCard(allEngagement.length,'Cartas con datos')+statCard(totalShown,'Veces mostradas')+statCard(avgAll.toFixed(1)+'s','Tiempo promedio');
+  if(!list.length){tb.innerHTML='';if(empty){empty.classList.remove('hidden');empty.style.display='block';}return;}
+  if(empty){empty.classList.add('hidden');empty.style.display='none';}
+  tb.innerHTML=list.map(function(c){
+    var tipo=c.card_type==='pregunta'?'<span class="pill pill-truth">Pregunta</span>':'<span class="pill pill-dare">Reto</span>';
+    var avg=(Number(c.avg_duration)||0).toFixed(1)+'s';
+    var pct=Math.round(Number(c.pct_descartada)||0);
+    var pctColor=pct>50?'#c0392b':pct>25?'#b7791f':'#2d7a2d';
+    return '<tr><td class="td-text">'+esc(c.text||'')+'</td>'+
+      '<td>'+tipo+'</td>'+
+      '<td>'+levelPill(c.level)+'</td>'+
+      '<td style="font-size:11px;color:var(--dim)">'+esc(c.mode==='distancia'?'Distancia':'Presencial')+'</td>'+
+      '<td><span class="pill pill-count">'+(c.veces_mostrada||0)+'</span></td>'+
+      '<td style="font-family:\'Cormorant Garamond\',serif;font-size:18px;font-weight:700;color:var(--gold)">'+avg+'</td>'+
+      '<td style="font-weight:700;color:'+pctColor+'">'+pct+'%</td>'+
+      '<td><button class="btn-edit" onclick="openGenerateAI(\''+c.card_type+'\',\''+(c.level||'familiar')+'\',\''+(c.mode||'presencial')+'\')">✨ Similar</button></td></tr>';
+  }).join('');
+}
+
+// ── GENERAR CON CLAUDE IA ──
+var _genResults=[], _genSamples=[];
+function openGenerateAI(type,level,mode){
+  document.getElementById('gen-ai-type').value=type||'pregunta';
+  document.getElementById('gen-ai-level').value=level||'familiar';
+  document.getElementById('gen-ai-mode').value=mode||'presencial';
+  document.getElementById('gen-ai-count').value=20;
+  document.getElementById('gen-ai-error').style.display='none';
+  resetGenerateAI();
+  _genSamples=allEngagement.filter(function(c){return c.card_type===(type||'pregunta')&&(!level||c.level===level);}).sort(function(a,b){return (Number(b.avg_duration)||0)-(Number(a.avg_duration)||0);}).slice(0,8).map(function(c){return c.text;});
+  document.getElementById('gen-ai-samples').innerHTML=_genSamples.length?_genSamples.map(function(s){return '• '+esc(s);}).join('<br>'):'<span style="color:var(--faint)">Sin ejemplos previos — se generará contenido base para este nivel.</span>';
+  openModal('modal-generate-ai');
+}
+async function runGenerateAI(){
+  var type=document.getElementById('gen-ai-type').value;
+  var level=document.getElementById('gen-ai-level').value;
+  var mode=document.getElementById('gen-ai-mode').value;
+  var count=parseInt(document.getElementById('gen-ai-count').value)||20;
+  var err=document.getElementById('gen-ai-error'),btn=document.getElementById('gen-ai-btn');
+  err.style.display='none';btn.disabled=true;var orig=btn.textContent;btn.textContent='Generando…';
+  try{
+    var r=await fetch(SB+'/functions/v1/generate-similar',{method:'POST',headers:{'apikey':SK,'Authorization':'Bearer '+SK,'Content-Type':'application/json'},body:JSON.stringify({card_type:type,level:level,mode:mode,samples:_genSamples,count:count})});
+    var data=await r.json();
+    if(!r.ok)throw new Error(data.error||'Error del servidor');
+    _genResults=(data.generated||[]).map(function(t){return {text:t,checked:true};});
+    if(!_genResults.length)throw new Error('No se generó contenido. Intenta de nuevo.');
+    renderGenList();
+    document.getElementById('gen-ai-form').style.display='none';
+    document.getElementById('gen-ai-results').style.display='block';
+  }catch(e){err.textContent='Error: '+(e.message||e);err.style.display='block';}
+  btn.disabled=false;btn.textContent=orig;
+}
+function renderGenList(){
+  document.getElementById('gen-ai-list').innerHTML=_genResults.map(function(it,i){
+    return '<label style="display:flex;align-items:flex-start;gap:8px;background:var(--bg3);border:1px solid var(--line);border-radius:8px;padding:8px 10px;cursor:pointer">'+
+      '<input type="checkbox" '+(it.checked?'checked':'')+' onchange="_genResults['+i+'].checked=this.checked" style="margin-top:3px">'+
+      '<span style="font-size:13px;line-height:1.5;color:var(--ink)">'+esc(it.text)+'</span></label>';
+  }).join('');
+}
+function selectAllGenerated(val){_genResults.forEach(function(it){it.checked=val;});renderGenList();}
+async function insertGenerated(){
+  var chosen=_genResults.filter(function(it){return it.checked;});
+  var err=document.getElementById('gen-ai-insert-error');err.style.display='none';
+  if(!chosen.length){err.textContent='Selecciona al menos un ítem.';err.style.display='block';return;}
+  var type=document.getElementById('gen-ai-type').value;
+  var level=document.getElementById('gen-ai-level').value;
+  var mode=document.getElementById('gen-ai-mode').value;
+  var btn=document.getElementById('gen-ai-insert-btn');btn.disabled=true;var orig=btn.textContent;btn.textContent='Insertando…';
+  var table=type==='pregunta'?'tor_questions':'tor_dares';
+  var rows=chosen.map(function(it){var b={text:it.text,level:level,source:'oficial'};if(type==='reto')b.mode=mode;return b;});
+  try{
+    var res=await sbPost(table,rows);
+    if(res&&res.length){
+      if(type==='pregunta'){allPreguntas=res.concat(allPreguntas);filteredPreguntas=[...allPreguntas];renderPreguntas();renderStatsPreguntas();document.getElementById('cnt-preguntas').textContent=allPreguntas.length;}
+      else{allRetos=res.concat(allRetos);filteredRetos=[...allRetos];renderRetos();renderStatsRetos();document.getElementById('cnt-retos').textContent=allRetos.length;}
+      renderStats();closeModal('modal-generate-ai');
+      toast(res.length+' '+(type==='pregunta'?'preguntas':'retos')+' insertados');
+    }else{throw new Error('No se pudo insertar');}
+  }catch(e){err.textContent='Error: '+(e.message||e);err.style.display='block';}
+  btn.disabled=false;btn.textContent=orig;
+}
+function resetGenerateAI(){
+  _genResults=[];
+  document.getElementById('gen-ai-results').style.display='none';
+  document.getElementById('gen-ai-form').style.display='block';
+  var ie=document.getElementById('gen-ai-insert-error');if(ie)ie.style.display='none';
+}
+
+// ── GENERAR CÓDIGOS DE ACCESO ──
+var _codigosGenerados=[];
+function _genCode(){var c='ABCDEFGHJKMNPQRSTUVWXYZ23456789',r='';for(var i=0;i<6;i++)r+=c[Math.floor(Math.random()*c.length)];return r;}
+function abrirModalGenerarCodigos(){
+  resetModalCodigos();
+  document.getElementById('gcCantidad').value=1;
+  document.getElementById('gcEtiqueta').value='';
+  document.getElementById('gcError').style.display='none';
+  openModal('modal-generar-codigos');
+}
+async function generarCodigosLote(){
+  var cant=parseInt(document.getElementById('gcCantidad').value)||0;
+  var horas=parseInt(document.getElementById('gcDuracion').value)||24;
+  var etiqueta=document.getElementById('gcEtiqueta').value.trim();
+  var err=document.getElementById('gcError');err.style.display='none';
+  if(cant<1||cant>100){err.textContent='Cantidad entre 1 y 100.';err.style.display='block';return;}
+  var btn=document.getElementById('gcBtn');btn.disabled=true;var orig=btn.textContent;btn.textContent='Generando…';
+  var expires=new Date(Date.now()+horas*3600*1000).toISOString();
+  var rows=[];for(var i=0;i<cant;i++){rows.push({code:_genCode(),expires_at:expires,used:false,multi_use:false,label:etiqueta||null});}
+  try{
+    var res=await sbPost('tor_unlock_codes',rows);
+    if(res&&res.length){
+      _codigosGenerados=res.map(function(c){return c.code;});
+      document.getElementById('gcResultLabel').textContent='Códigos generados ('+res.length+'):';
+      document.getElementById('gcListaCodigos').innerHTML=res.map(function(c){
+        return '<div style="display:flex;align-items:center;justify-content:space-between;padding:8px 10px;border-bottom:1px solid var(--line)">'+
+          '<span style="font-family:\'Cormorant Garamond\',serif;font-size:18px;font-weight:700;letter-spacing:.2em;color:var(--gold)">'+esc(c.code)+'</span>'+
+          '<button onclick="(navigator.clipboard&&navigator.clipboard.writeText(\''+esc(c.code)+'\'));toast(\'Copiado\')" style="font-size:10px;background:var(--bg2);border:1px solid var(--line2);border-radius:6px;padding:4px 8px;cursor:pointer;color:var(--dim)">Copiar</button></div>';
+      }).join('');
+      document.getElementById('gcForm').style.display='none';
+      document.getElementById('gcResultado').style.display='block';
+      loadCodigos();
+    }else{throw new Error('No se pudieron generar');}
+  }catch(e){err.textContent='Error: '+(e.message||e);err.style.display='block';}
+  btn.disabled=false;btn.textContent=orig;
+}
+function copiarTodosCodigos(){
+  if(!_codigosGenerados.length)return;
+  var txt=_codigosGenerados.join('\n');
+  if(navigator.clipboard)navigator.clipboard.writeText(txt).then(function(){toast('Todos los códigos copiados');}).catch(function(){toast('No se pudo copiar');});
+  else toast('No se pudo copiar');
+}
+function resetModalCodigos(){
+  _codigosGenerados=[];
+  var f=document.getElementById('gcForm');if(f)f.style.display='block';
+  var r=document.getElementById('gcResultado');if(r)r.style.display='none';
 }
 </script>
 </body>
