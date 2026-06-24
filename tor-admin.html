@@ -309,6 +309,11 @@ tr:hover td{background:var(--bg3);}
         <div class="nav-item-label">Retos</div>
         <div class="nav-item-count" id="cnt-retos">—</div>
       </div>
+      <div class="nav-item" id="nav-comunidad" onclick="showSection('comunidad')">
+        <div class="nav-item-icon">✍️</div>
+        <div class="nav-item-label">Comunidad</div>
+        <div class="nav-item-count" id="cnt-comunidad">—</div>
+      </div>
       <div class="nav-item" id="nav-partidas" onclick="showSection('partidas')">
         <div class="nav-item-icon">🎮</div>
         <div class="nav-item-label">Partidas</div>
@@ -501,6 +506,50 @@ tr:hover td{background:var(--bg3);}
         <div id="empty-retos" class="empty hidden"><div class="empty-icon">⚡</div><div class="empty-text">Sin retos</div></div>
       </div>
       <div class="pagination" id="pag-retos"></div>
+    </div>
+
+    <!-- ── COMUNIDAD ── -->
+    <div class="section" id="section-comunidad">
+      <div class="page-header">
+        <div class="page-label">Moderación</div>
+        <div class="page-title">Cartas de comunidad</div>
+        <div class="page-sub">Cartas escritas por usuarios durante el juego — aprueba para publicarlas, rechaza para eliminarlas</div>
+      </div>
+      <div class="stats-grid" id="stats-comunidad"></div>
+      <div class="toolbar">
+        <select class="filter-select" id="filter-comunidad-type" onchange="filterComunidad()">
+          <option value="">Todo tipo</option>
+          <option value="truth">Preguntas</option>
+          <option value="dare">Retos</option>
+        </select>
+        <select class="filter-select" id="filter-comunidad-level" onchange="filterComunidad()">
+          <option value="">Todos los niveles</option>
+          <option value="familiar">Familiar</option>
+          <option value="light">Light</option>
+          <option value="hot">Hot</option>
+          <option value="extremo">Extremo</option>
+        </select>
+        <button onclick="aprobarTodas()" style="margin-left:auto;background:var(--green-bg);border:1px solid var(--green-border);color:var(--green);border-radius:8px;padding:8px 16px;font-size:12px;font-weight:700;cursor:pointer;font-family:'Inter Tight',sans-serif;letter-spacing:.04em;">✓ Aprobar todas</button>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th style="width:55%">Carta</th>
+              <th>Tipo</th>
+              <th>Nivel</th>
+              <th>Fecha</th>
+              <th style="width:130px;text-align:center">Acción</th>
+            </tr>
+          </thead>
+          <tbody id="tbody-comunidad"></tbody>
+        </table>
+        <div id="loading-comunidad" class="loading">Cargando cartas de comunidad…</div>
+        <div id="empty-comunidad" class="empty hidden">
+          <div class="empty-icon">✍️</div>
+          <div class="empty-text">Sin cartas pendientes</div>
+        </div>
+      </div>
     </div>
 
     <!-- ── PARTIDAS ── -->
@@ -1499,11 +1548,139 @@ function showSection(name){
   if(name==='codigos') loadCodigos();
   if(name==='engagement') loadEngagement();
   if(name==='config') loadConfigAdmin();
+  if(name==='comunidad') loadComunidad();
+}
+
+// ── COMUNIDAD ──
+var allComunidad=[], filteredComunidad=[];
+
+async function loadComunidad(){
+  try{
+    var rows=await sbGet('tor_cards_community','?order=created_at.desc&select=*&limit=1000');
+    allComunidad=rows||[];
+    document.getElementById('cnt-comunidad').textContent=allComunidad.length||'0';
+    filteredComunidad=[...allComunidad];
+    var sg=document.getElementById('stats-comunidad');
+    if(sg){
+      var pregs=allComunidad.filter(c=>c.type==='truth').length;
+      var retos=allComunidad.filter(c=>c.type==='dare').length;
+      sg.innerHTML=
+        '<div class="stat-card"><div class="stat-val">'+allComunidad.length+'</div><div class="stat-label">Total pendientes</div></div>'+
+        '<div class="stat-card"><div class="stat-val">'+pregs+'</div><div class="stat-label">Preguntas</div></div>'+
+        '<div class="stat-card"><div class="stat-val">'+retos+'</div><div class="stat-label">Retos</div></div>';
+    }
+    renderComunidad();
+    document.getElementById('loading-comunidad').style.display='none';
+  }catch(e){
+    var el=document.getElementById('loading-comunidad');
+    if(el)el.textContent='Error al cargar.';
+  }
+}
+
+function filterComunidad(){
+  var type=document.getElementById('filter-comunidad-type').value;
+  var level=document.getElementById('filter-comunidad-level').value;
+  filteredComunidad=allComunidad.filter(c=>{
+    if(type&&c.type!==type)return false;
+    if(level&&c.level!==level)return false;
+    return true;
+  });
+  renderComunidad();
+}
+
+function renderComunidad(){
+  var tb=document.getElementById('tbody-comunidad');
+  var empty=document.getElementById('empty-comunidad');
+  if(!filteredComunidad.length){tb.innerHTML='';empty.classList.remove('hidden');return;}
+  empty.classList.add('hidden');
+  tb.innerHTML=filteredComunidad.map(function(c){
+    var typePill=c.type==='truth'
+      ?'<span class="pill" style="background:rgba(59,130,246,.1);color:#1d4ed8;border:1px solid rgba(59,130,246,.2)">Pregunta</span>'
+      :'<span class="pill" style="background:rgba(234,88,12,.1);color:#9a3412;border:1px solid rgba(234,88,12,.2)">Reto</span>';
+    return '<tr>'+
+      '<td style="font-size:14px;line-height:1.5;max-width:0">'+esc(c.text||'')+'</td>'+
+      '<td>'+typePill+'</td>'+
+      '<td>'+levelPill(c.level)+'</td>'+
+      '<td style="white-space:nowrap;font-size:12px;color:var(--faint)">'+fmtShort(c.created_at)+'</td>'+
+      '<td style="text-align:center;white-space:nowrap">'+
+        '<button onclick="aprobarCarta(\''+c.id+'\',\''+esc(c.type)+'\',\''+esc(c.level||'familiar')+'\',this)" style="background:var(--green-bg);border:1px solid var(--green-border);color:var(--green);border-radius:6px;padding:5px 10px;font-size:11px;font-weight:700;cursor:pointer;margin-right:4px;font-family:\'Inter Tight\',sans-serif;">✓ Aprobar</button>'+
+        '<button onclick="rechazarCarta(\''+c.id+'\',this)" style="background:var(--danger-bg);border:1px solid var(--danger-border);color:var(--danger);border-radius:6px;padding:5px 10px;font-size:11px;font-weight:700;cursor:pointer;font-family:\'Inter Tight\',sans-serif;">✕ Rechazar</button>'+
+      '</td>'+
+    '</tr>';
+  }).join('');
+}
+
+async function aprobarCarta(id, type, level, btn){
+  if(btn){btn.disabled=true;btn.textContent='Aprobando…';}
+  try{
+    var tabla=type==='truth'?'tor_questions':'tor_dares';
+    var card=allComunidad.find(c=>String(c.id)===String(id));
+    if(!card)return;
+    // 1. Insertar en tabla oficial con tags vacíos (se llenarán automáticamente)
+    await sbPost(tabla,{text:card.text,level:level||'familiar',source:'comunidad',approved:true,mode:'presencial',tags:[]});
+    // 2. Eliminar de comunidad pendiente
+    await fetch(SB+'/rest/v1/tor_cards_community?id=eq.'+id,{method:'DELETE',headers:h()});
+    // 3. Disparar etiquetado automático (fire-and-forget)
+    fetch(SB+'/functions/v1/tag-cards',{
+      method:'POST',
+      headers:{'Content-Type':'application/json','Authorization':'Bearer '+SK},
+      body:JSON.stringify({table:tabla,limit:10})
+    }).then(function(r){return r.json();}).then(function(d){
+      if(d&&d.tagged>0)toast('✓ Carta publicada y etiquetada con IA');
+    }).catch(function(){});
+    // Actualizar UI inmediatamente sin esperar el tag
+    allComunidad=allComunidad.filter(c=>String(c.id)!==String(id));
+    filteredComunidad=filteredComunidad.filter(c=>String(c.id)!==String(id));
+    document.getElementById('cnt-comunidad').textContent=allComunidad.length;
+    renderComunidad();
+    toast('✓ Carta aprobada — etiquetando con IA…');
+  }catch(e){toast('Error al aprobar');if(btn){btn.disabled=false;btn.textContent='✓ Aprobar';}}
+}
+
+async function rechazarCarta(id, btn){
+  if(btn){btn.disabled=true;btn.textContent='...';}
+  try{
+    await fetch(SB+'/rest/v1/tor_cards_community?id=eq.'+id,{method:'DELETE',headers:h()});
+    allComunidad=allComunidad.filter(c=>String(c.id)!==String(id));
+    filteredComunidad=filteredComunidad.filter(c=>String(c.id)!==String(id));
+    document.getElementById('cnt-comunidad').textContent=allComunidad.length;
+    renderComunidad();
+    toast('Carta rechazada y eliminada');
+  }catch(e){toast('Error al rechazar');if(btn){btn.disabled=false;btn.textContent='✕ Rechazar';}}
+}
+
+async function aprobarTodas(){
+  if(!filteredComunidad.length)return;
+  if(!confirm('¿Aprobar todas las '+filteredComunidad.length+' cartas visibles?'))return;
+  var ids=[...filteredComunidad.map(c=>c.id)];
+  var ok=0,err=0;
+  var tablasUsadas=new Set();
+  for(var i=0;i<ids.length;i++){
+    var card=allComunidad.find(c=>String(c.id)===String(ids[i]));
+    if(!card)continue;
+    try{
+      var tabla=card.type==='truth'?'tor_questions':'tor_dares';
+      await sbPost(tabla,{text:card.text,level:card.level||'familiar',source:'comunidad',approved:true,mode:'presencial',tags:[]});
+      await fetch(SB+'/rest/v1/tor_cards_community?id=eq.'+ids[i],{method:'DELETE',headers:h()});
+      tablasUsadas.add(tabla);
+      ok++;
+    }catch(e){err++;}
+  }
+  await loadComunidad();
+  // Etiquetado automático de las tablas donde se insertaron cartas
+  tablasUsadas.forEach(function(tabla){
+    fetch(SB+'/functions/v1/tag-cards',{
+      method:'POST',
+      headers:{'Content-Type':'application/json','Authorization':'Bearer '+SK},
+      body:JSON.stringify({table:tabla,limit:50})
+    }).catch(function(){});
+  });
+  toast(ok+' cartas aprobadas'+(err?' ('+err+' errores)':'')+' — etiquetando con IA…');
 }
 
 // ── LOAD ALL DATA ──
 async function loadAll(){
-  await Promise.all([loadPreguntas(),loadRetos(),loadPartidas(),loadMarketing(),loadPhotoDuration(),loadFeedback(),loadLoyaltyClients(),loadPagos(),loadCodigos()]);
+  await Promise.all([loadPreguntas(),loadRetos(),loadPartidas(),loadMarketing(),loadPhotoDuration(),loadFeedback(),loadLoyaltyClients(),loadPagos(),loadCodigos(),loadComunidad()]);
   await Promise.all([loadParticipants(),loadSeen()]);
   await loadUsuarios();
   renderStats();

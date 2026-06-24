@@ -693,6 +693,7 @@ var _salaPollInterval=null;
 var _salaLastGameId=null;
 var _guestWaitTimer=null;     // timeout 15min para guest en sala-waiting
 var _salaInactivityTimer=null; // timeout 15min del host para cerrar sala
+var _cardQueue=[];             // cola de cartas escritas por usuarios durante el juego
 
 function genSalaCode(){
   var c='ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
@@ -1094,12 +1095,16 @@ async function nextTurn(){
   var players=game.players||[];
   var nextIdx=((game.current_player_index||0)+1)%players.length;
   var round=nextIdx===0?(game.round||1)+1:(game.round||1);
-  // Calcular turno antes de actualizar game para que pickCardForTurn use los valores nuevos
   var nextTurnNum=((round-1)*players.length)+nextIdx;
   game.current_player_index=nextIdx;game.round=round;
-  // Solo el host reordena (él empuja la carta a Supabase, los guests la reciben)
-  if(!_salaCode||_salaIsHost)_maybeReorderPool(nextTurnNum);
-  var c=pickCardForTurn(nextTurnNum);
+  // Revisar cola de cartas de comunidad primero
+  var c=null;
+  if(_cardQueue.length>0){
+    c=_cardQueue.shift();
+  } else {
+    if(!_salaCode||_salaIsHost)_maybeReorderPool(nextTurnNum);
+    c=pickCardForTurn(nextTurnNum);
+  }
   if(!c){toast('¡Se acabaron las cartas!');return;}
   game.current_card=c;
   sbPatch('tor_games?id=eq.'+game.id,{current_card:c,current_player_index:nextIdx,round:round}).catch(function(){});
@@ -1152,7 +1157,7 @@ function endGame(silent){
     }
   }
   stopRealtime();stopPolling();
-  game=null;_disclaimerAccepted=false;
+  game=null;_disclaimerAccepted=false;_cardQueue=[];
   closeEndConfirmOverlay();
   if(!silent)document.getElementById('feedbackOverlay').classList.remove('hidden');
   if(wasGuest){
@@ -1180,13 +1185,25 @@ function setCardType(type){
 async function confirmAddCard(){
   var txt=document.getElementById('newCardText').value.trim();
   if(!txt){toast('Escribe algo');return;}
-  var card={text:txt,type:selectedCardType,level:game?game.level:'familiar',source:'juego',approved:false};
+  var card={text:txt,type:selectedCardType,level:game?game.level:'familiar',source:'comunidad',approved:false};
   try{
-    await sbPost('tor_cards_community',card);
-    if(selectedCardType==='truth')allQComm.push(card);else allDComm.push(card);
+    var saved=await sbPost('tor_cards_community',card);
+    var savedId=(Array.isArray(saved)?saved[0]:saved)?.id||('comm_'+Date.now());
+    var localCard=Object.assign({},card,{id:savedId,tags:[]});
+    // Agregar a la cola local de este dispositivo
+    _cardQueue.push(localCard);
+    // Broadcast a todos los demás dispositivos en la sala
+    if(_ws&&_ws.readyState===1){
+      _ws.send(JSON.stringify({
+        topic:'realtime:public:tor_games',
+        event:'broadcast',
+        payload:{event:'card_queued',payload:{card:localCard}},
+        ref:'cq_'+Date.now()
+      }));
+    }
     document.getElementById('newCardText').value='';
     closeOverlay('addCardOverlay');
-    toast('¡Carta agregada!');
+    toast('¡Carta agregada! Aparecerá en el siguiente turno.');
   }catch(e){toast('Error al guardar');}
 }
 
@@ -1232,7 +1249,7 @@ function startRealtime(){
         event:'phx_join',
         payload:{
           config:{
-            broadcast:{self:false},
+            broadcast:{self:false,ack:false},
             presence:{key:''},
             postgres_changes:[{event:'UPDATE',schema:'public',table:'tor_games',filter:'id=eq.'+game.id}]
           }
@@ -1243,6 +1260,11 @@ function startRealtime(){
     _ws.onmessage=function(e){
       try{
         var m=JSON.parse(e.data);
+        // Broadcast de carta de comunidad
+        if(m.event==='broadcast'&&m.payload&&m.payload.event==='card_queued'&&m.payload.payload&&m.payload.payload.card){
+          _cardQueue.push(m.payload.payload.card);
+          return;
+        }
         // Formato Supabase Realtime: payload.data.record
         var rec=null;
         if(m.event==='postgres_changes'&&m.payload&&m.payload.data&&m.payload.data.record){
