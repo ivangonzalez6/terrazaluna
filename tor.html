@@ -400,10 +400,30 @@ textarea{resize:none;line-height:1.5;}
       <div style="background:var(--bg3);border:1px solid var(--line2);border-radius:12px;padding:14px 16px;margin-bottom:14px;font-size:13px;line-height:1.8;color:var(--ink);">
         <div style="font-weight:600;margin-bottom:6px;font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--dim);">Instrucciones de pago</div>
         <div>💳 <strong>Transfiere <span id="pago-precio">$100 MXN</span></strong> a:</div>
-        <div style="margin:6px 0 4px;padding:10px 12px;background:var(--gold-pale);border-radius:8px;font-family:'Cormorant Garamond',serif;font-size:15px;letter-spacing:.04em;">
-          Banco: <span id="pago-banco">BBVA</span> &nbsp;·&nbsp; CLABE: <span id="pago-clabe">012 650 01503672852 7</span><br>
-          Cuenta: <span id="pago-cuenta">150 367 2852</span><br>
-          <span style="font-size:12px;font-family:'Inter Tight',sans-serif;color:var(--dim);">Beneficiario: <span id="pago-beneficiario">Terraza Luna</span></span>
+        <div style="margin:6px 0 4px;padding:10px 12px;background:var(--gold-pale);border-radius:8px;font-size:13px;font-family:'Inter Tight',sans-serif;">
+          <div style="margin-bottom:4px;color:var(--dim);font-size:11px;letter-spacing:.06em;text-transform:uppercase;">Banco</div>
+          <div style="font-weight:600;margin-bottom:10px;color:var(--ink);font-size:14px;" id="pago-banco">BBVA</div>
+          <div id="pago-clabe-row" style="margin-bottom:8px;">
+            <div style="color:var(--dim);font-size:11px;letter-spacing:.06em;text-transform:uppercase;margin-bottom:2px;">CLABE</div>
+            <div style="display:flex;align-items:center;gap:8px;">
+              <span id="pago-clabe" style="font-family:'Cormorant Garamond',serif;font-size:16px;letter-spacing:.08em;color:var(--ink);flex:1;">012 650 01503672852 7</span>
+              <button onclick="copiarDato('pago-clabe','clabe-btn')" id="clabe-btn" style="flex-shrink:0;padding:5px 11px;border:1px solid var(--gold);border-radius:6px;background:transparent;color:var(--gold);font-size:11px;font-weight:600;cursor:pointer;letter-spacing:.04em;transition:all .2s;">Copiar</button>
+            </div>
+          </div>
+          <div id="pago-cuenta-row" style="margin-bottom:10px;">
+            <div style="color:var(--dim);font-size:11px;letter-spacing:.06em;text-transform:uppercase;margin-bottom:2px;">Tarjeta</div>
+            <div style="display:flex;align-items:center;gap:8px;">
+              <span id="pago-cuenta" style="font-family:'Cormorant Garamond',serif;font-size:16px;letter-spacing:.08em;color:var(--ink);flex:1;">4152 3143 0098 7511</span>
+              <button onclick="copiarDato('pago-cuenta','cuenta-btn')" id="cuenta-btn" style="flex-shrink:0;padding:5px 11px;border:1px solid var(--gold);border-radius:6px;background:transparent;color:var(--gold);font-size:11px;font-weight:600;cursor:pointer;letter-spacing:.04em;transition:all .2s;">Copiar</button>
+            </div>
+          </div>
+          <div>
+            <div style="color:var(--dim);font-size:11px;letter-spacing:.06em;text-transform:uppercase;margin-bottom:2px;">Beneficiario</div>
+            <div style="display:flex;align-items:center;gap:8px;">
+              <span id="pago-beneficiario" style="color:var(--ink);font-weight:500;font-size:13px;flex:1;">Ivan González Domínguez</span>
+              <button onclick="copiarDato('pago-beneficiario','benef-btn')" id="benef-btn" style="flex-shrink:0;padding:5px 11px;border:1px solid var(--gold);border-radius:6px;background:transparent;color:var(--gold);font-size:11px;font-weight:600;cursor:pointer;letter-spacing:.04em;transition:all .2s;">Copiar</button>
+            </div>
+          </div>
         </div>
         <div style="font-size:12px;color:var(--dim);">📌 Concepto: <strong>Acceso + tu nombre</strong></div>
       </div>
@@ -1165,11 +1185,45 @@ async function loadXXXPricing(){
     if(info&&info[0]&&info[0].value){
       var v=info[0].value;
       if(v.banco)document.getElementById('pago-banco').textContent=v.banco;
-      if(v.clabe)document.getElementById('pago-clabe').textContent=v.clabe;
-      if(v.cuenta)document.getElementById('pago-cuenta').textContent=v.cuenta;
       if(v.beneficiario)document.getElementById('pago-beneficiario').textContent=v.beneficiario;
+      var clabeRow=document.getElementById('pago-clabe-row');
+      var cuentaRow=document.getElementById('pago-cuenta-row');
+      if(v.clabe){
+        document.getElementById('pago-clabe').textContent=v.clabe;
+        if(clabeRow)clabeRow.style.display='block';
+      } else {
+        if(clabeRow)clabeRow.style.display='none';
+      }
+      if(v.cuenta){
+        document.getElementById('pago-cuenta').textContent=v.cuenta.replace(/(\d{4})(?=\d)/g,'$1 ');
+        if(cuentaRow)cuentaRow.style.display='block';
+      } else {
+        if(cuentaRow)cuentaRow.style.display='none';
+      }
     }
   }catch(e){}
+}
+function copiarDato(spanId,btnId){
+  var el=document.getElementById(spanId);
+  var btn=document.getElementById(btnId);
+  if(!el||!btn)return;
+  var txt=el.textContent.replace(/\s/g,'');
+  if(!txt)return;
+  navigator.clipboard.writeText(txt).then(function(){
+    var orig=btn.textContent;
+    btn.textContent='✓ Copiado';
+    btn.style.background='var(--gold)';
+    btn.style.color='#000';
+    setTimeout(function(){btn.textContent=orig;btn.style.background='transparent';btn.style.color='var(--gold)';},2000);
+  }).catch(function(){
+    // Fallback para navegadores sin clipboard API
+    var ta=document.createElement('textarea');
+    ta.value=txt;ta.style.position='fixed';ta.style.opacity='0';
+    document.body.appendChild(ta);ta.select();document.execCommand('copy');document.body.removeChild(ta);
+    var orig=btn.textContent;
+    btn.textContent='✓ Copiado';btn.style.background='var(--gold)';btn.style.color='#000';
+    setTimeout(function(){btn.textContent=orig;btn.style.background='transparent';btn.style.color='var(--gold)';},2000);
+  });
 }
 function xxxFileSelected(inp){
   var info=document.getElementById('xxxFileInfo');
@@ -1180,7 +1234,7 @@ function xxxFileSelected(inp){
     if(label)label.style.borderColor='var(--gold)';
   }
 }
-// Wrapper: submitPagoXXX usa los IDs del HTML real
+// Wrapper: submitPagoXXX — valida con apiCEP+Banxico antes de dar acceso
 var _submitPagoXXX_original=submitPagoXXX;
 submitPagoXXX=async function(){
   var fileInput=document.getElementById('xxxFileInput');
@@ -1192,22 +1246,43 @@ submitPagoXXX=async function(){
   if(!phone||phone.replace(/\D/g,'').length<10){if(errEl){errEl.textContent='Ingresa tu número de teléfono.';errEl.style.display='block';}return;}
   if(!file){if(errEl){errEl.textContent='Selecciona el comprobante de pago.';errEl.style.display='block';}return;}
   var btn=document.getElementById('btnSubmitPago');
-  if(btn){btn.disabled=true;btn.textContent='Enviando…';}
+  if(btn){btn.disabled=true;btn.textContent='Verificando con Banxico…';}
   try{
+    // 1. Subir imagen
     var ext=file.name.split('.').pop().toLowerCase();
     var fname='comp_'+Date.now()+'.'+ext;
     var upRes=await fetch(SB+'/storage/v1/object/comprobantes/'+fname,{method:'POST',headers:{'apikey':SK,'Authorization':'Bearer '+SK,'Content-Type':file.type},body:file});
-    var imgUrl=upRes.ok?(SB+'/storage/v1/object/public/comprobantes/'+fname):null;
-    var reqRes=await sbPost('tor_unlock_requests',{phone:phone.replace(/\D/g,''),status:'pendiente',comprobante_url:imgUrl});
-    var reqId=Array.isArray(reqRes)?reqRes[0]?.id:reqRes?.id;
-    if(imgUrl&&reqId){
-      fetch(SB+'/functions/v1/validate-receipt',{method:'POST',headers:{'apikey':SK,'Authorization':'Bearer '+SK,'Content-Type':'application/json'},body:JSON.stringify({request_id:reqId,image_url:imgUrl,phone:phone.replace(/\D/g,'')})}).catch(function(){});
+    if(!upRes.ok){throw new Error('Error al subir imagen');}
+    var imgUrl=SB+'/storage/v1/object/public/comprobantes/'+fname;
+
+    // 2. Llamar a validate-receipt y ESPERAR respuesta (apiCEP + fallback Claude)
+    var valRes=await fetch(SB+'/functions/v1/validate-receipt',{
+      method:'POST',
+      headers:{'apikey':SK,'Authorization':'Bearer '+SK,'Content-Type':'application/json'},
+      body:JSON.stringify({phone:phone.replace(/\D/g,''),image_url:imgUrl})
+    });
+    var valData=await valRes.json();
+    var verdict=valData.verdict||'revision_manual';
+    var code=valData.code||null;
+
+    if(verdict==='rechazado'){
+      // Pago no encontrado en Banxico — no dar acceso
+      if(errEl){errEl.textContent='Pago no encontrado o monto incorrecto. Verifica tu comprobante.';errEl.style.display='block';}
+      return;
     }
+
+    // Aprobado (Banxico) o revisión manual (Claude Vision) → dar acceso
     _xxxPhone=phone.replace(/\D/g,'');
+    if(code){_xxxCodeId=code;} // guardar código para revocación futura
     unlockPaidLevels();
     closeXXXModal();
     if(selectedLevel&&LOCKED_LEVELS.includes(selectedLevel))goToPlayers();
-    toast('¡Acceso concedido! Comprobante enviado para revisión.');
+
+    if(verdict==='aprobado'){
+      toast('✓ Pago verificado con Banxico. ¡Acceso activado!');
+    }else{
+      toast('Comprobante recibido. Acceso temporal mientras lo revisamos.');
+    }
   }catch(e){if(errEl){errEl.textContent='Error al enviar. Intenta de nuevo.';errEl.style.display='block';}}
   finally{if(btn){btn.disabled=false;btn.textContent='Enviar comprobante';}}
 };
