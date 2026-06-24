@@ -792,7 +792,7 @@ tr:hover td{background:var(--bg3);}
             Cuenta: <span id="cfg-prev-cuenta" style="font-weight:600">—</span><br>
             <span style="font-size:12px;color:var(--faint)">Beneficiario: <span id="cfg-prev-bene">—</span></span>
           </div>
-          <div style="font-size:12px;color:var(--faint)">📌 Concepto: Acceso + tu nombre</div>
+          <div style="font-size:12px;color:var(--faint)">📌 Concepto: <span id="cfg-prev-concepto">—</span></div>
         </div>
       </div>
 
@@ -836,6 +836,14 @@ tr:hover td{background:var(--bg3);}
           <input id="cfg-beneficiario" type="text" placeholder="Terraza Luna"
             style="width:100%;box-sizing:border-box;background:var(--bg3);border:1px solid var(--line2);border-radius:10px;color:var(--ink);font-size:14px;padding:10px 14px;font-family:'Inter Tight',sans-serif;"
             oninput="updateCfgPreview()">
+        </div>
+
+        <div>
+          <label style="display:block;font-size:10px;letter-spacing:.2em;text-transform:uppercase;color:var(--faint);font-weight:700;margin-bottom:6px;">Concepto de pago</label>
+          <input id="cfg-concepto" type="text" placeholder="Tu whatsapp"
+            style="width:100%;box-sizing:border-box;background:var(--bg3);border:1px solid var(--line2);border-radius:10px;color:var(--ink);font-size:14px;padding:10px 14px;font-family:'Inter Tight',sans-serif;"
+            oninput="updateCfgPreview()">
+          <div style="font-size:11px;color:var(--faint);margin-top:4px;">Instrucción que se muestra al usuario para el campo "Concepto" de su transferencia</div>
         </div>
 
         <div id="cfg-error" style="color:#c0392b;font-size:12px;display:none;"></div>
@@ -2913,6 +2921,7 @@ async function loadConfigAdmin(){
       if(map.clabe!=null)document.getElementById('cfg-clabe').value=map.clabe;
       if(map.cuenta!=null)document.getElementById('cfg-cuenta').value=map.cuenta;
       if(map.beneficiario!=null)document.getElementById('cfg-beneficiario').value=map.beneficiario;
+      if(map.concepto!=null)document.getElementById('cfg-concepto').value=map.concepto;
     }
   }catch(e){}
   updateCfgPreview();
@@ -2925,6 +2934,7 @@ function updateCfgPreview(){
   document.getElementById('cfg-prev-clabe').textContent=(document.getElementById('cfg-clabe').value||'—');
   document.getElementById('cfg-prev-cuenta').textContent=(document.getElementById('cfg-cuenta').value||'—');
   document.getElementById('cfg-prev-bene').textContent=(document.getElementById('cfg-beneficiario').value||'—');
+  document.getElementById('cfg-prev-concepto').textContent=(document.getElementById('cfg-concepto').value||'—');
 }
 
 async function upsertConfig(key,value){
@@ -2948,12 +2958,14 @@ async function saveConfig(){
   var btn=document.getElementById('cfg-save-btn');
   btn.disabled=true;btn.textContent='Guardando…';
   try{
+    var concepto=(document.getElementById('cfg-concepto').value||'').trim();
     var results=await Promise.all([
       upsertConfig('precio_xxx',precio),
       upsertConfig('banco',banco),
       upsertConfig('clabe',clabe),
       upsertConfig('cuenta',cuenta),
-      upsertConfig('beneficiario',beneficiario)
+      upsertConfig('beneficiario',beneficiario),
+      upsertConfig('concepto',concepto)
     ]);
     var r1=results[0],r2=true; // solo verificar precio
     if(r1&&!r1.ok)throw new Error('save');
