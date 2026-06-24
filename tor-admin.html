@@ -913,6 +913,7 @@ tr:hover td{background:var(--bg3);}
           <option value="expirado">Expirados</option>
         </select>
         <button class="btn-primary" onclick="abrirModalGenerarCodigos()" style="white-space:nowrap;">＋ Generar códigos</button>
+        <button class="btn-secondary" onclick="restaurarCodigos()" style="white-space:nowrap;font-size:11px;" title="Mostrar códigos ocultos">↩ Restaurar ocultos</button>
       </div>
       <table class="data-table">
         <thead><tr>
@@ -2550,14 +2551,14 @@ function renderPagos(){
 }
 
 async function aprobarPago(requestId, code){
-  var ok = await sbPatch('tor_unlock_requests', requestId, {status:'aprobado', updated_at: new Date().toISOString()});
+  var ok = await sbPatch('tor_unlock_requests', requestId, {status:'aprobado'});
   if(ok){ toast('✓ Pago verificado — código '+code+' activado'); loadPagos(); }
   else { toast('Error al actualizar'); }
 }
 
 async function rechazarPago(requestId, code){
   if(!confirm('¿Rechazar este pago? El código '+code+' quedará bloqueado.')) return;
-  var ok = await sbPatch('tor_unlock_requests', requestId, {status:'rechazado', updated_at: new Date().toISOString()});
+  var ok = await sbPatch('tor_unlock_requests', requestId, {status:'rechazado'});
   if(ok){
     if(code){
       await fetch(SB+'/rest/v1/tor_unlock_codes?code=eq.'+encodeURIComponent(code), {
@@ -2573,6 +2574,7 @@ async function rechazarPago(requestId, code){
 
 // ── CÓDIGOS ──
 var allCodigos=[], filteredCodigos=[];
+var _codigosOcultos=JSON.parse(localStorage.getItem('tor_codigos_ocultos')||'[]');
 
 async function loadCodigos(){
   document.getElementById('loading-codigos').style.display='block';
@@ -2595,6 +2597,7 @@ function filterCodigos(){
   var q=(document.getElementById('search-codigos').value||'').toLowerCase();
   var st=document.getElementById('filter-codigos-status').value;
   filteredCodigos=allCodigos.filter(function(c){
+    if(_codigosOcultos.indexOf(c.id)!==-1)return false;
     if(q&&!(c.code||'').toLowerCase().includes(q)&&!(c.phone||'').includes(q)&&!((c.label||'').toLowerCase().includes(q)))return false;
     if(st==='expirado'){if(!c.expires_at||new Date(c.expires_at)>=new Date())return false;}
     else if(st==='activo'&&c.used)return false;
@@ -2631,9 +2634,10 @@ function renderCodigos(){
     var phoneLink=c.phone
       ? '<a href="https://wa.me/52'+esc(c.phone)+'" target="_blank" style="color:inherit;text-decoration:none;">📱 '+esc(c.phone)+'</a>'
       : '—';
-    var acciones=!c.used
-      ? '<button class="btn-delete" onclick="bloquearCodigo(\''+esc(c.id)+'\')">✗ Bloquear</button>'
-      : '';
+    var acciones=(!c.used
+      ? '<button class="btn-delete" onclick="bloquearCodigo(\''+esc(c.id)+'\')">✗ Bloquear</button> '
+      : '')
+      + '<button class="btn-secondary" style="font-size:10px;padding:3px 8px;border-radius:6px;" onclick="ocultarCodigo(\''+esc(c.id)+'\')">🗑 Quitar</button>';
     return '<tr>'
       +'<td style="font-family:\'Cormorant Garamond\',serif;font-size:16px;font-weight:700;letter-spacing:.15em;color:var(--gold);">'+esc(c.code)+'</td>'
       +'<td>'+etiqueta+'</td>'
@@ -2651,6 +2655,23 @@ async function bloquearCodigo(id){
   var ok=await sbPatch('tor_unlock_codes',id,{used:true});
   if(ok){toast('Código bloqueado');loadCodigos();}
   else{toast('Error al bloquear');}
+}
+
+function ocultarCodigo(id){
+  if(_codigosOcultos.indexOf(id)===-1){
+    _codigosOcultos.push(id);
+    localStorage.setItem('tor_codigos_ocultos',JSON.stringify(_codigosOcultos));
+  }
+  filterCodigos();
+  toast('Código quitado de la tabla (la info se conserva en BD)');
+}
+
+function restaurarCodigos(){
+  if(!_codigosOcultos.length){toast('No hay códigos ocultos');return;}
+  _codigosOcultos=[];
+  localStorage.setItem('tor_codigos_ocultos','[]');
+  filterCodigos();
+  toast('Todos los códigos restaurados');
 }
 
 // ════════════════════════════════════════════
