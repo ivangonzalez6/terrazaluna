@@ -1056,8 +1056,12 @@ async function checkXXXAccess(){
           el.innerHTML='<div style="font-size:40px;margin-bottom:16px;">🚫</div>'
             +'<div style="font-family:\'Cormorant Garamond\',serif;font-size:28px;color:#f0e4c4;font-weight:700;margin-bottom:12px;">Acceso revocado</div>'
             +'<div style="font-size:15px;color:#aaa;line-height:1.6;max-width:300px;">Tu pago fue rechazado y el acceso a este número fue revocado. Contacta a Terraza Luna para más información.</div>'
-            +'<button onclick="this.parentElement.remove();show(\'home\');" style="margin-top:28px;padding:12px 28px;border-radius:10px;border:1px solid rgba(212,175,55,.4);background:rgba(212,175,55,.1);color:#c9a35b;font-size:13px;font-weight:600;cursor:pointer;font-family:\'Inter Tight\',sans-serif;letter-spacing:.06em;text-transform:uppercase;">Cerrar</button>';
+            +'<button id="btnCerrarRevocacion" style="margin-top:28px;padding:12px 28px;border-radius:10px;border:1px solid rgba(212,175,55,.4);background:rgba(212,175,55,.1);color:#c9a35b;font-size:13px;font-weight:600;cursor:pointer;font-family:\'Inter Tight\',sans-serif;letter-spacing:.06em;text-transform:uppercase;">Cerrar</button>';
           document.body.appendChild(el);
+          document.getElementById('btnCerrarRevocacion').addEventListener('click',function(){
+            el.remove();
+            show('home');
+          });
         },100);
         return false;
     }
