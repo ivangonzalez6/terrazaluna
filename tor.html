@@ -915,8 +915,11 @@ function showCard(card){
 
 async function nextTurn(){
   if(!game)return;
-  await checkXXXAccess();
-  if(!_xxxUnlocked&&['hot','extremo','mixto','xxx'].includes(game.level)){endGame(true);return;}
+  var isGuest=(_salaCode&&!_salaIsHost);
+  if(!isGuest){
+    await checkXXXAccess();
+    if(!_xxxUnlocked&&['hot','extremo','mixto','xxx'].includes(game.level)){endGame(true);return;}
+  }
   var players=game.players||[];
   var nextIdx=((game.current_player_index||0)+1)%players.length;
   var round=nextIdx===0?(game.round||1)+1:(game.round||1);
