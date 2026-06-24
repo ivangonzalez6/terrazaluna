@@ -483,6 +483,11 @@ textarea{resize:none;line-height:1.5;}
       <div id="xxxSubmitError" style="color:#c0392b;font-size:12px;margin-bottom:8px;display:none;"></div>
 
       <button class="btn btn-gold" id="btnSubmitPago" onclick="submitPagoXXX()" style="width:100%;margin-bottom:10px;">Enviar comprobante</button>
+      <div style="text-align:center;margin-bottom:10px;">
+        <a href="https://wa.me/527761148786" target="_blank" style="font-size:11px;color:var(--faint);text-decoration:none;line-height:1.6;">
+          ¿Problemas con tu pago? Comunícate por<br><span style="color:#25D366;font-weight:600;">WhatsApp 776 114 8786</span>
+        </a>
+      </div>
       <button class="overlay-close" onclick="showXXXCodigo()">← Volver / Ya tengo acceso</button>
     </div>
 
@@ -1210,7 +1215,7 @@ function openInviteOverlay(){
 function copyLink(){navigator.clipboard.writeText(getSalaUrl()).then(function(){toast('¡Link de sala copiado!');});}
 function shareGame(){
   var url=getSalaUrl();
-  var msg='¿Juegas Verdad o Reto conmigo? 🎲 '+url;
+  var msg='¿Te atreverías a jugar Verdad o Reto conmigo? 🙈😈 '+url;
   if(navigator.share)navigator.share({title:'Verdad o Reto',text:msg,url:url}).catch(function(){});
   else window.open('https://wa.me/?text='+encodeURIComponent(msg),'_blank');
 }
@@ -1221,18 +1226,38 @@ function startRealtime(){
   var url=SB.replace('https','wss')+'/realtime/v1/websocket?apikey='+SK+'&vsn=1.0.0';
   try{
     _ws=new WebSocket(url);
-    _ws.onopen=function(){_ws.send(JSON.stringify({topic:'realtime:tor_games:id=eq.'+game.id,event:'phx_join',payload:{},ref:'1'}));};
+    _ws.onopen=function(){
+      _ws.send(JSON.stringify({
+        topic:'realtime:public:tor_games',
+        event:'phx_join',
+        payload:{
+          config:{
+            broadcast:{self:false},
+            presence:{key:''},
+            postgres_changes:[{event:'UPDATE',schema:'public',table:'tor_games',filter:'id=eq.'+game.id}]
+          }
+        },
+        ref:'1'
+      }));
+    };
     _ws.onmessage=function(e){
       try{
         var m=JSON.parse(e.data);
-        if(m.event==='postgres_changes'&&m.payload&&m.payload.record){
-          var rec=m.payload.record;
-          if(!game||rec.id!==game.id)return;
-          if(rec.status==='ended'){endGame(true);return;}
-          if(rec.current_card&&JSON.stringify(rec.current_card)!==JSON.stringify(game.current_card)){
-            game.current_card=rec.current_card;game.current_player_index=rec.current_player_index||0;game.round=rec.round||1;
-            showCard(rec.current_card);
-          }
+        // Formato Supabase Realtime: payload.data.record
+        var rec=null;
+        if(m.event==='postgres_changes'&&m.payload&&m.payload.data&&m.payload.data.record){
+          rec=m.payload.data.record;
+        }
+        // Formato alternativo legacy: payload.record
+        else if(m.event==='UPDATE'&&m.payload&&m.payload.record){
+          rec=m.payload.record;
+        }
+        if(!rec)return;
+        if(!game||rec.id!==game.id)return;
+        if(rec.status==='ended'){endGame(true);return;}
+        if(rec.current_card&&JSON.stringify(rec.current_card)!==JSON.stringify(game.current_card)){
+          game.current_card=rec.current_card;game.current_player_index=rec.current_player_index||0;game.round=rec.round||1;
+          showCard(rec.current_card);
         }
       }catch(er){}
     };
