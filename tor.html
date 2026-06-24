@@ -1358,8 +1358,14 @@ submitPagoXXX=async function(){
     var code=valData.code||null;
 
     if(verdict==='rechazado'){
-      // Pago no encontrado en Banxico — no dar acceso
-      if(errEl){errEl.textContent='Pago no encontrado o monto incorrecto. Verifica tu comprobante.';errEl.style.display='block';}
+      var code=valData.code||'';
+      var msg='Comprobante no válido. Verifica que el monto y la cuenta sean correctos.';
+      if(code==='wrong_date')msg='La fecha del comprobante no corresponde a hoy.';
+      else if(code==='wrong_amount')msg='El monto es insuficiente. El acceso cuesta $50 MXN.';
+      else if(code==='not_receipt')msg='La imagen no parece ser un comprobante de transferencia.';
+      else if(code==='duplicate')msg='Este comprobante ya fue utilizado anteriormente.';
+      else if(code==='rate_limit')msg='Demasiados intentos. Espera unos minutos.';
+      if(errEl){errEl.textContent=msg;errEl.style.display='block';}
       return;
     }
 
