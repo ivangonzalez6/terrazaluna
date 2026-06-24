@@ -2905,15 +2905,14 @@ function copiarTodosCodigos(){
 // ── CONFIGURACIÓN ──
 async function loadConfigAdmin(){
   try{
-    var precio=await sbGet('tor_config','?key=eq.precio_xxx&select=value&limit=1');
-    if(precio&&precio[0]&&precio[0].value!=null)document.getElementById('cfg-precio').value=precio[0].value;
-    var info=await sbGet('tor_config','?key=eq.pago_info&select=value&limit=1');
-    if(info&&info[0]&&info[0].value){
-      var v=info[0].value;
-      if(v.banco!=null)document.getElementById('cfg-banco').value=v.banco;
-      if(v.clabe!=null)document.getElementById('cfg-clabe').value=v.clabe;
-      if(v.cuenta!=null)document.getElementById('cfg-cuenta').value=v.cuenta;
-      if(v.beneficiario!=null)document.getElementById('cfg-beneficiario').value=v.beneficiario;
+    var rows=await sbGet('tor_config','?key=in.(precio_xxx,banco,clabe,cuenta,beneficiario)&select=key,value');
+    if(Array.isArray(rows)){
+      var map={};rows.forEach(function(r){map[r.key]=r.value;});
+      if(map.precio_xxx!=null)document.getElementById('cfg-precio').value=map.precio_xxx;
+      if(map.banco!=null)document.getElementById('cfg-banco').value=map.banco;
+      if(map.clabe!=null)document.getElementById('cfg-clabe').value=map.clabe;
+      if(map.cuenta!=null)document.getElementById('cfg-cuenta').value=map.cuenta;
+      if(map.beneficiario!=null)document.getElementById('cfg-beneficiario').value=map.beneficiario;
     }
   }catch(e){}
   updateCfgPreview();
@@ -2942,18 +2941,22 @@ async function saveConfig(){
   err.style.display='none';ok.style.display='none';
   var precio=parseInt(document.getElementById('cfg-precio').value,10);
   if(isNaN(precio)||precio<0){err.textContent='Ingresa un precio válido.';err.style.display='block';return;}
-  var pagoInfo={
-    banco:(document.getElementById('cfg-banco').value||'').trim(),
-    clabe:(document.getElementById('cfg-clabe').value||'').trim(),
-    cuenta:(document.getElementById('cfg-cuenta').value||'').trim(),
-    beneficiario:(document.getElementById('cfg-beneficiario').value||'').trim()
-  };
+  var banco=(document.getElementById('cfg-banco').value||'').trim();
+  var clabe=(document.getElementById('cfg-clabe').value||'').trim();
+  var cuenta=(document.getElementById('cfg-cuenta').value||'').trim();
+  var beneficiario=(document.getElementById('cfg-beneficiario').value||'').trim();
   var btn=document.getElementById('cfg-save-btn');
   btn.disabled=true;btn.textContent='Guardando…';
   try{
-    var r1=await upsertConfig('precio_xxx',precio);
-    var r2=await upsertConfig('pago_info',pagoInfo);
-    if((r1&&!r1.ok)||(r2&&!r2.ok))throw new Error('save');
+    var results=await Promise.all([
+      upsertConfig('precio_xxx',precio),
+      upsertConfig('banco',banco),
+      upsertConfig('clabe',clabe),
+      upsertConfig('cuenta',cuenta),
+      upsertConfig('beneficiario',beneficiario)
+    ]);
+    var r1=results[0],r2=true; // solo verificar precio
+    if(r1&&!r1.ok)throw new Error('save');
     ok.style.display='block';
     toast('✓ Configuración guardada');
     setTimeout(function(){ok.style.display='none';},3000);
