@@ -3794,14 +3794,21 @@ async function runGenerateAI(){
   var btn=document.getElementById('gen-ai-btn');
   btn.disabled=true;btn.textContent='Generando…';
   try{
-    var res=await fetch(SB+'/functions/v1/generate-cards',{
+    // Obtener las cartas más populares de ese tipo/nivel como muestra de referencia
+    var tabla=type==='reto'?'tor_dares':'tor_questions';
+    var sampleRows=await sbGet('tor_card_engagement',
+      '?card_type=eq.'+type+'&level=eq.'+level+'&select=text,veces_mostrada&order=veces_mostrada.desc&limit=8'
+    ).catch(function(){return [];});
+    var samples=(Array.isArray(sampleRows)?sampleRows:[]).map(function(r){return r.text||'';}).filter(Boolean);
+
+    var res=await fetch(SB+'/functions/v1/generate-similar',{
       method:'POST',
       headers:{'apikey':SK,'Authorization':'Bearer '+SK,'Content-Type':'application/json'},
-      body:JSON.stringify({type:type,level:level,mode:mode,count:count})
+      body:JSON.stringify({card_type:type,level:level,mode:mode,count:count,samples:samples})
     });
     var data={};try{data=await res.json();}catch(_){}
     if(!res.ok)throw new Error(data.error||('error '+res.status));
-    var cards=data.cards||data.items||[];
+    var cards=data.cards||data.generated||data.items||[];
     if(!cards.length)throw new Error('No se generó contenido. Intenta de nuevo.');
     _generatedCards=cards.map(function(c){return {text:(typeof c==='string'?c:(c.text||'')),selected:true};}).filter(function(c){return c.text;});
     renderGeneratedAI();
