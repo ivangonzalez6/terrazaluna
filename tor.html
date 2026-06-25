@@ -1213,7 +1213,240 @@ function setCardType(type){
   document.getElementById('tabDare').classList.toggle('active',type==='dare');
 }
 
+
+// ── XXX MODAL ──
+function showView(viewId){
+  ['xxxViewCodigo','xxxViewAdquirir','xxxViewConfirm','xxxViewAprobado','xxxViewRechazado'].forEach(function(id){
+    var el=document.getElementById(id);if(el)el.style.display=id===viewId?'':'none';
+  });
+}
+function showXXXAdquirir(){showView('xxxViewAdquirir');loadPaymentConfig();}
+function showXXXCodigo(){showView('xxxViewCodigo');}
+function openXXXModal(){
+  showView('xxxViewCodigo');
+  var e=document.getElementById('codeXXXError');if(e)e.style.display='none';
+  var i=document.getElementById('inputCodigoXXX');if(i)i.value='';
+  document.getElementById('codeXXXOverlay').classList.remove('hidden');
+  loadPaymentConfig();
+}
+
+async function loadPaymentConfig(){
+  try{
+    var rows=await sbGet('tor_config','?select=*&limit=1');
+    if(!rows||!rows.length)return;
+    var c=rows[0];
+    var s=function(id,v){var el=document.getElementById(id);if(el&&v)el.textContent=v;};
+    if(c.precio)s('pago-precio','$'+c.precio+' MXN');
+    s('pago-banco',c.banco);s('pago-clabe',c.clabe);s('pago-cuenta',c.cuenta);
+    s('pago-beneficiario',c.beneficiario);s('pago-concepto',c.concepto);
+  }catch(e){}
+}
+
+async function validateCodigoXXX(){
+  var errEl=document.getElementById('codeXXXError');
+  var inp=document.getElementById('inputCodigoXXX');
+  errEl.style.display='none';
+  var val=(inp.value||'').trim().replace(/\s/g,'');
+  if(!val){errEl.textContent='Ingresa tu teléfono o código';errEl.style.display='block';return;}
+  inp.disabled=true;
+  try{
+    if(/^\d{7,15}$/.test(val)){
+      // Teléfono: buscar aprobado en tor_unlock_requests
+      var rows=await sbGet('tor_unlock_requests','?phone=eq.'+val+'&status=eq.aprobado&select=id&limit=1');
+      if(rows&&rows.length){
+        _xxxUnlocked=true;_xxxPhone=val;
+        closeOverlay('codeXXXOverlay');
+        document.dispatchEvent(new Event('vorNotifPrompt'));
+        initGame();
+      }else{errEl.textContent='Número no registrado o pendiente de aprobación.';errEl.style.display='block';}
+    }else{
+      // Código alfanumérico
+      var res=await fetch(SB+'/functions/v1/validate-code',{
+        method:'POST',
+        headers:{'Content-Type':'application/json','apikey':SK},
+        body:JSON.stringify({code:val.toUpperCase()})
+      });
+      var data=await res.json();
+      if(data.valid){
+        _xxxUnlocked=true;
+        if(data.phone)_xxxPhone=data.phone;
+        if(data.code_id)_xxxCodeId=data.code_id;
+        closeOverlay('codeXXXOverlay');
+        document.dispatchEvent(new Event('vorNotifPrompt'));
+        initGame();
+      }else{errEl.textContent='Código inválido, ya usado o expirado.';errEl.style.display='block';}
+    }
+  }catch(e){errEl.textContent='Error de conexión.';errEl.style.display='block';}
+  finally{inp.disabled=false;}
+}
+
+// ── PAGO XXX ──
+var _xxxFile=null;
+function xxxFileSelected(input){
+  _xxxFile=input.files[0]||null;
+  var info=document.getElementById('xxxFileInfo');
+  var label=document.getElementById('xxxFileLabel');
+  if(_xxxFile){
+    info.textContent='📎 '+_xxxFile.name;info.style.display='block';
+    if(label)label.style.borderColor='var(--gold)';
+  }else{info.style.display='none';}
+}
+
+async function submitPagoXXX(){
+  var errEl=document.getElementById('xxxSubmitError');errEl.style.display='none';
+  var phone=(document.getElementById('xxxPhone').value||'').trim().replace(/\s/g,'');
+  if(!phone||phone.length<10){errEl.textContent='Ingresa tu número de WhatsApp (10 dígitos)';errEl.style.display='block';return;}
+  if(!_xxxFile){errEl.textContent='Sube una foto del comprobante de pago';errEl.style.display='block';return;}
+  var btn=document.getElementById('btnSubmitPago');
+  btn.disabled=true;btn.textContent='Enviando…';
+  try{
+    var fd=new FormData();
+    fd.append('phone',phone);
+    fd.append('file',_xxxFile);
+    var concepto=document.getElementById('pago-concepto');
+    fd.append('concepto',concepto?concepto.textContent:'Verdad o Reto XXX');
+    var res=await fetch(SB+'/functions/v1/validate-receipt',{
+      method:'POST',
+      headers:{'apikey':SK,'Authorization':'Bearer '+SK},
+      body:fd
+    });
+    var data=await res.json();
+    if(data.status==='aprobado'||data.approved||data.status==='ok'){
+      _xxxUnlocked=true;_xxxPhone=phone;
+      var sub=document.getElementById('xxxAprobadoSub');
+      if(sub)sub.textContent='Tu número '+phone+' quedó registrado. Ya puedes jugar el nivel XXX.';
+      showView('xxxViewAprobado');
+    }else if(data.status==='pendiente'||data.pending){
+      showView('xxxViewConfirm');
+    }else if(data.status==='rechazado'){
+      var msg=document.getElementById('xxxRechazadoMsg');
+      if(msg)msg.textContent=data.reason||'No pudimos validar tu comprobante.';
+      showView('xxxViewRechazado');
+    }else{
+      errEl.textContent=data.error||'Error al procesar. Intenta de nuevo.';errEl.style.display='block';
+    }
+  }catch(e){errEl.textContent='Error de conexión. Intenta de nuevo.';errEl.style.display='block';}
+  finally{btn.disabled=false;btn.textContent='Enviar comprobante';}
+}
+
+function procederDesdeAprobado(){
+  closeOverlay('codeXXXOverlay');
+  document.dispatchEvent(new Event('vorNotifPrompt'));
+  initGame();
+}
+
+function copiarDato(elId,btnId){
+  var txt=(document.getElementById(elId)||{}).textContent||'';
+  if(!txt)return;
+  navigator.clipboard.writeText(txt.trim()).then(function(){
+    var btn=document.getElementById(btnId);
+    if(btn){var o=btn.textContent;btn.textContent='✓';setTimeout(function(){btn.textContent=o;},1500);}
+  }).catch(function(){});
+}
+
+// ── DISCLAIMER XXX ──
+function confirmXXXDisclaimer(){
+  var all=['chk1','chk2','chk3','chk4'].every(function(id){var el=document.getElementById(id);return el&&el.checked;});
+  if(!all){toast('Confirma todas las casillas para continuar');return;}
+  _disclaimerAccepted=true;
+  document.getElementById('xxxDisclaimerOverlay').classList.add('hidden');
+  initGame();
+}
+function cancelXXXDisclaimer(){
+  document.getElementById('xxxDisclaimerOverlay').classList.add('hidden');
+  show('screen-level');
+}
+
+// ── OVERLAYS EN JUEGO ──
+function openAddPlayerOverlay(){
+  var inp=document.getElementById('newPlayerName');if(inp)inp.value='';
+  document.getElementById('addPlayerOverlay').classList.remove('hidden');
+}
+function openAddCardOverlay(){
+  var ta=document.getElementById('newCardText');if(ta)ta.value='';
+  selectedCardType='truth';
+  document.getElementById('tabTruth').classList.add('active');
+  document.getElementById('tabDare').classList.remove('active');
+  document.getElementById('addCardOverlay').classList.remove('hidden');
+}
+
+async function confirmAddPlayer(){
+  var inp=document.getElementById('newPlayerName');
+  var name=(inp?inp.value:'').trim();
+  if(!name){toast('Escribe un nombre');return;}
+  if(!game||!game.players){toast('No hay juego activo');return;}
+  var players=game.players.slice();
+  players.push({name:name,color:col(players.length)});
+  game.players=players;
+  await sbPatch('tor_games?id=eq.'+game.id,{players:players});
+  closeOverlay('addPlayerOverlay');
+  toast(name+' se unió 🎉');
+}
+
 async function confirmAddCard(){
-  var txt=document.getElementById('newCardText').value.trim();
+  var txt=(document.getElementById('newCardText').value||'').trim();
   if(!txt){toast('Escribe algo');return;}
-  var card={text:txt,type:selectedCar
+  var card={text:txt,type:selectedCardType,level:game?game.level:'familiar',added_by_phone:_xxxPhone||null};
+  try{
+    var rows=await sbPost('tor_cards_community',card);
+    if(rows&&rows[0]){
+      closeOverlay('addCardOverlay');
+      toast('¡Carta agregada! Se jugará pronto 🃏');
+      document.getElementById('newCardText').value='';
+      if(allCombined&&allCombined.length>0){
+        var offset=3+Math.floor(Math.random()*3);
+        var insertAt=Math.min((_turnCount||0)+offset,allCombined.length);
+        allCombined.splice(insertAt,0,Object.assign({},rows[0],{source:'comunidad',_communityCard:true}));
+      }
+    }else{toast('Error al guardar');}
+  }catch(e){toast('Error de conexión');}
+}
+
+// ── PUSH SUBSCRIPTIONS ──
+var _VAPID_KEY='BLrMdK06AbTTyrWpJzTkc-SwukmKw0sWQgj_vHcKGWgDIPFP14szlv38kRTvRcvgtmq6qBCGo95GMKpsMI55JdQ';
+function _b64ToUint8(b){var p='='.repeat((4-b.length%4)%4);var s=(b+p).replace(/-/g,'+').replace(/_/g,'/');var r=atob(s);return Uint8Array.from([...r].map(function(c){return c.charCodeAt(0);}));}
+var _swReg=null;
+async function _regPush(){
+  if(!_swReg||!('PushManager' in window)||Notification.permission!=='granted')return;
+  try{
+    var sub=await _swReg.pushManager.getSubscription();
+    if(!sub)sub=await _swReg.pushManager.subscribe({userVisibleOnly:true,applicationServerKey:_b64ToUint8(_VAPID_KEY)});
+    var j=sub.toJSON();
+    await fetch(SB+'/rest/v1/push_subscriptions',{
+      method:'POST',
+      headers:Object.assign({},h(),{'Prefer':'resolution=merge-duplicates,return=minimal'}),
+      body:JSON.stringify({endpoint:j.endpoint,p256dh:j.keys.p256dh,auth:j.keys.auth,user_agent:navigator.userAgent||''})
+    });
+  }catch(e){}
+}
+
+document.addEventListener('vorNotifPrompt',function(){
+  if(!('Notification' in window)||Notification.permission!=='default')return;
+  setTimeout(function(){Notification.requestPermission().then(function(perm){if(perm==='granted')_regPush();});},2000);
+});
+
+// ── INIT ──
+(async function(){
+  if('serviceWorker' in navigator){
+    try{_swReg=await navigator.serviceWorker.register('/sw-vor.js');}catch(e){}
+    if('Notification' in window&&Notification.permission==='granted')_regPush();
+  }
+  var p=new URLSearchParams(window.location.search);
+  var gameId=p.get('id');
+  initSala();
+  if(gameId){
+    try{
+      var rows=await sbGet('tor_games','?id=eq.'+gameId+'&select=*');
+      if(rows&&rows.length&&rows[0].status==='playing'){
+        game=rows[0];resetPools();await loadCardPool(game.level,game.mode);
+        startRealtime();startPolling();
+        if(game.current_card)showCard(game.current_card);
+        else{var c=pickCardForTurn(0);if(c){game.current_card=c;showCard(c);}}
+        return;
+      }
+    }catch(e){}
+  }
+})();
+</script>
+</body>
+</html>
