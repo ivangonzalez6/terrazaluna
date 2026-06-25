@@ -937,10 +937,11 @@ tr:hover td{background:var(--bg3);}
               <th>Teléfono</th>
               <th>Código</th>
               <th>Monto</th>
-              <th>Fecha</th>
+              <th>Fecha comprobante</th>
               <th>Veredicto IA</th>
               <th>Estado</th>
-              <th>Enviado</th>
+              <th>Solicitud</th>
+              <th>Aprobado / Rechazado</th>
               <th>Acciones</th>
             </tr>
           </thead>
@@ -1631,6 +1632,7 @@ function ini(n){return String(n||'').trim().substring(0,2).toUpperCase()||'?';}
 function col(i){return COLORS[i%COLORS.length];}
 function fmt(dt){if(!dt)return'—';var d=new Date(dt);return d.toLocaleDateString('es-MX',{day:'2-digit',month:'short',year:'numeric'});}
 function fmtShort(dt){if(!dt)return'—';var d=new Date(dt);return d.toLocaleDateString('es-MX',{day:'2-digit',month:'short'});}
+function fmtDT(dt){if(!dt)return'—';var d=new Date(dt);return d.toLocaleDateString('es-MX',{day:'2-digit',month:'short',year:'numeric'})+' '+d.toLocaleTimeString('es-MX',{hour:'2-digit',minute:'2-digit'});}
 function levelPill(l){var lbl=LEVEL_LABELS[l]||l||'—';var cls=LEVEL_CLASS[l]||'pill-familiar';return '<span class="pill '+cls+'">'+esc(lbl)+'</span>';}
 function sourcePill(s){return s==='comunidad'?'<span class="pill pill-comunidad">Comunidad</span>':'<span class="pill pill-oficial">Oficial</span>';}
 
@@ -3057,7 +3059,8 @@ function renderPagos(){
       +'<td style="font-size:11px;">'+(p.date_detected||'—')+'</td>'
       +'<td><span style="font-size:11px;font-weight:700;color:'+vc+'">'+vl+'</span></td>'
       +'<td><span style="font-size:11px;font-weight:700;color:'+sc+'">'+sl+'</span></td>'
-      +'<td style="font-size:11px;color:var(--dim);">'+fmtShort(p.created_at)+'</td>'
+      +'<td style="font-size:11px;color:var(--dim);white-space:nowrap;">'+fmtDT(p.created_at)+'</td>'
+      +'<td style="font-size:11px;color:var(--dim);white-space:nowrap;">'+(p.status!=='pendiente'?fmtDT(p.updated_at):'—')+'</td>'
       +'<td class="td-actions">'+acciones+'</td>'
       +'</tr>';
   }).join('');
@@ -3171,14 +3174,14 @@ function renderCodigos(){
     var phoneGames=c.phone&&_gamesByPhone[c.phone]?_gamesByPhone[c.phone]:null;
     var useCount=c.use_count||0;
     var partidas=phoneGames?phoneGames.count:0;
-    var lastUsed=c.last_used_at?fmtShort(c.last_used_at):(phoneGames&&phoneGames.last?fmtShort(phoneGames.last):'—');
+    var lastUsed=c.last_used_at?fmtDT(c.last_used_at):(phoneGames&&phoneGames.last?fmtDT(phoneGames.last):'—');
     return '<tr>'
       +'<td><span style="font-family:\'Cormorant Garamond\',serif;font-size:15px;font-weight:700;letter-spacing:.15em;color:var(--gold);">'+code+'</span>'
         +(c.multi_use?'<span style="font-size:9px;margin-left:6px;padding:1px 5px;border-radius:6px;background:rgba(212,168,83,.15);color:#d4a853;font-weight:700;">MULTI</span>':'')
       +'</td>'
       +'<td style="font-size:12px;color:var(--dim);">'+(c.label?esc(c.label):'—')+'</td>'
       +'<td style="font-size:12px;">'+(c.phone?'📱 '+esc(c.phone):'—')+'</td>'
-      +'<td style="font-size:11px;color:var(--dim);">'+(c.expires_at?fmtShort(c.expires_at):'—')+'</td>'
+      +'<td style="font-size:11px;color:var(--dim);white-space:nowrap;">'+(c.expires_at?fmtDT(c.expires_at):'—')+'</td>'
       +'<td><span style="font-size:11px;font-weight:700;color:'+color+'">'+estado+'</span></td>'
       +'<td style="text-align:center;">'
         +'<span style="font-size:14px;font-weight:700;color:var(--gold);">'+useCount+'</span>'
@@ -3221,7 +3224,7 @@ function renderUsoTelefonos(){
         +'<td style="font-weight:600;">📱 '+esc(e.phone)+'</td>'
         +'<td>'+codigoCell+'</td>'
         +'<td style="text-align:center;font-size:16px;font-weight:700;color:var(--gold);">'+e.count+'</td>'
-        +'<td style="font-size:11px;color:var(--dim);">'+(e.last?fmtShort(e.last):'—')+'</td>'
+        +'<td style="font-size:11px;color:var(--dim);white-space:nowrap;">'+(e.last?fmtDT(e.last):'—')+'</td>'
         +'<td style="display:flex;flex-wrap:wrap;gap:4px;padding:8px 12px;">'+niveles+'</td>'
         +'</tr>';
     }).join('')
