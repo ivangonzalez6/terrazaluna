@@ -4064,4 +4064,20 @@ async function insertGenerated(){
 var _autoRefreshTimer=null;
 function startAutoRefresh(){
   stopAutoRefresh();
-  _autoRefreshTimer=se
+  _autoRefreshTimer=setInterval(function(){
+    if(_isRefreshing)return;
+    var active=document.querySelector('.section.active');
+    var name=active?active.id.replace('section-',''):'';
+    loadPagos();
+    loadCodigos();
+    if(name==='usuarios')loadUsuarios();
+    else if(name==='partidas')loadPartidas();
+    else if(name==='push')loadPushDevices();
+  },45000);
+}
+function stopAutoRefresh(){
+  if(_autoRefreshTimer){clearInterval(_autoRefreshTimer);_autoRefreshTimer=null;}
+}
+</script>
+</body>
+</html>
