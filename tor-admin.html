@@ -3662,7 +3662,12 @@ function renderEngagement(rows){
     var avgS=parseFloat(r.avg_duration||0).toFixed(1);
     var pct=r.pct_descartada!=null?Math.round(parseFloat(r.pct_descartada))+'%':(r.fast_pct!=null?Math.round(r.fast_pct)+'%':'—');
     return '<tr>'
-      +'<td style="font-size:13px;">'+esc(r.text||r.card_text||'—')+'</td>'
+      +'<td style="font-size:13px;line-height:1.5">'
+        +esc(r.text||r.card_text||'—')
+        +(r.tags&&r.tags.length?'<div style="margin-top:4px;display:flex;flex-wrap:wrap;gap:3px">'
+          +r.tags.map(function(t){return'<span style="font-size:9px;padding:2px 6px;border-radius:20px;background:rgba(212,168,83,.1);border:1px solid rgba(212,168,83,.2);color:#d4a853;font-weight:600;letter-spacing:.04em">'+esc(t)+'</span>';}).join('')
+          +'</div>':'')
+      +'</td>'
       +'<td>'+(ct==='reto'?'⚡ Reto':'❓ Pregunta')+'</td>'
       +'<td>'+esc(LEVEL_LABELS[r.level]||r.level||'—')+'</td>'
       +'<td style="font-size:12px;">'+(r.mode==='distancia'?'Distancia':'Presencial')+'</td>'

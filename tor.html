@@ -649,18 +649,16 @@ function unlockPaidLevels(){
 }
 
 function resetInactivityTimer(){
-  if(!_xxxUnlocked)return;
+  if(!game)return;
   clearTimeout(_inactivityTimer);
   _inactivityTimer=setTimeout(function(){
-    if(!_xxxUnlocked)return;
-    _xxxUnlocked=false;
-    _xxxPhone=null;
-    if(game){
-      sbPatch('tor_games?id=eq.'+game.id,{status:'ended'}).catch(function(){});
-      game=null;
-    }
+    if(!game)return;
+    sbPatch('tor_games?id=eq.'+game.id,{status:'ended'}).catch(function(){});
+    if(_xxxUnlocked){_xxxUnlocked=false;_xxxPhone=null;}
+    game=null;_disclaimerAccepted=false;
+    stopRealtime();stopPolling();_cardQueue=[];
     show('screen-welcome');
-    toast('Sesión cerrada por inactividad. Ingresa tu número para continuar.',4000);
+    toast('Sesión cerrada por inactividad.',3500);
   },INACTIVITY_MS);
 }
 
