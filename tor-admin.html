@@ -812,7 +812,7 @@ tr:hover td{background:var(--bg3);}
         <div style="font-size:12px;font-weight:600;color:var(--ink);margin-bottom:12px">Dispositivos suscritos</div>
         <div class="table-wrap">
           <table>
-            <thead><tr><th>Endpoint (resumen)</th><th>Registrado</th><th></th></tr></thead>
+            <thead><tr><th>Dispositivo</th><th>Endpoint (resumen)</th><th>Registrado</th><th></th></tr></thead>
             <tbody id="tbody-push-devices"></tbody>
           </table>
           <div id="loading-push" class="loading">Cargando…</div>
@@ -3432,7 +3432,7 @@ async function loadPushDevices(){
   document.getElementById('empty-push').classList.add('hidden');
   document.getElementById('tbody-push-devices').innerHTML='';
   try{
-    var rows=await sbGet('tor_push_subscriptions','?order=created_at.desc&select=*');
+    var rows=await sbGet('push_subscriptions','?order=created_at.desc&select=*');
     _pushDevices=Array.isArray(rows)?rows:[];
   }catch(e){_pushDevices=[];}
   document.getElementById('push-cnt-devices').textContent=_pushDevices.length;
@@ -3452,15 +3452,23 @@ function renderPushDevices(){
   tb.innerHTML=_pushDevices.map(function(d){
     var ep=d.endpoint||'';
     var short=ep?esc(ep.substring(0,42))+'…':'—';
-    return '<tr><td style="font-size:11px;font-family:monospace;color:var(--dim);">'+short+'</td>'
-      +'<td style="font-size:11px;color:var(--dim);">'+fmtShort(d.created_at)+'</td>'
+    var ua=d.user_agent||'';
+    var device=ua.includes('iPhone')||ua.includes('iPad')?'🍎 iPhone/iPad'
+              :ua.includes('Android')?'🤖 Android'
+              :ua.includes('Windows')?'🖥 Windows'
+              :ua.includes('Mac')?'💻 Mac'
+              :'📱 Dispositivo';
+    return '<tr>'
+      +'<td style="font-size:12px;">'+esc(device)+'</td>'
+      +'<td style="font-size:11px;font-family:monospace;color:var(--dim);">'+short+'</td>'
+      +'<td style="font-size:11px;color:var(--dim);">'+fmtDT(d.created_at)+'</td>'
       +'<td class="td-actions"><button class="btn-delete" onclick="eliminarPushDevice(\''+esc(d.id)+'\')">🗑</button></td></tr>';
   }).join('');
 }
 
 async function eliminarPushDevice(id){
   if(!confirm('¿Eliminar este dispositivo suscrito?'))return;
-  var ok=await sbDelete('tor_push_subscriptions',id);
+  var ok=await sbDelete('push_subscriptions',id);
   if(ok){toast('Dispositivo eliminado');loadPushDevices();}
   else{toast('Error al eliminar');}
 }
@@ -4056,15 +4064,4 @@ async function insertGenerated(){
 var _autoRefreshTimer=null;
 function startAutoRefresh(){
   stopAutoRefresh();
-  _autoRefreshTimer=setInterval(function(){
-    if(_isRefreshing)return;
-    var active=document.querySelector('.section.active');
-    var name=active?active.id.replace('section-',''):'';
-    loadPagos();
-    loadCodigos();
-    if(name==='usuarios')loadUsuarios();
-    else if(name==='partidas')loadPartidas();
-    else if(name==='push')loadPushDevices();
-  },45000);
-}
-function stopAutoRefr
+  _autoRefreshTimer=se
