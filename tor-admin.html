@@ -1860,7 +1860,7 @@ async function aprobarTodas(){
     if(!card)continue;
     try{
       var tabla=card.type==='truth'?'tor_questions':'tor_dares';
-      await sbPost(tabla,{text:card.text,level:card.level||'familiar',source:'comunidad',approved:true,mode:'presencial',tags:[]});
+      await sbPost(tabla,{text:card.text,level:card.level||'familiar',source:'comunidad',approved:true,mode:card.mode||'ambos',tags:[]});
       await fetch(SB+'/rest/v1/tor_cards_community?id=eq.'+ids[i],{method:'DELETE',headers:h()});
       tablasUsadas.add(tabla);
       ok++;
@@ -2202,7 +2202,7 @@ function filterPreguntas(){
   filteredPreguntas=allPreguntas.filter(p=>
     (p.text||'').toLowerCase().includes(q)&&
     (!lv||p.level===lv)&&
-    (!mode||p.mode===mode)&&
+    (!mode||(p.mode===mode||p.mode==='ambos'))&&
     (!src||p.source===src)
   );
   pregPage=0;
@@ -2242,7 +2242,7 @@ function filterRetos(){
   filteredRetos=allRetos.filter(d=>
     (d.text||'').toLowerCase().includes(q)&&
     (!lv||d.level===lv)&&
-    (!mode||d.mode===mode)&&
+    (!mode||(d.mode===mode||d.mode==='ambos'))&&
     (!src||d.source===src)
   );
   retosPage=0;
@@ -2258,8 +2258,8 @@ function renderRetos(){
   empty.classList.add('hidden');
   tb.innerHTML=slice.map(d=>{
     var addedBy=d.added_by_phone?('<span style="font-size:12px;color:var(--dim)">'+esc(getUserName(d.added_by_phone))+'</span>'):'<span style="color:var(--faint);font-size:12px">—</span>';
-    var modeLabel=d.mode==='distancia'?'A distancia':'Presencial';
-    var modeClass=d.mode==='distancia'?'pill-light':'pill-familiar';
+    var modeLabel=d.mode==='distancia'?'🌐 Distancia':d.mode==='ambos'?'↔ Ambos':'🏠 Presencial';
+    var modeClass=d.mode==='distancia'?'pill-light':d.mode==='ambos'?'pill-comunidad':'pill-familiar';
     return '<tr>'+
       '<td class="td-text">'+esc(d.text)+'</td>'+
       '<td>'+levelPill(d.level)+'</td>'+
@@ -4067,9 +4067,4 @@ function startAutoRefresh(){
     else if(name==='push')loadPushDevices();
   },45000);
 }
-function stopAutoRefresh(){
-  if(_autoRefreshTimer){clearInterval(_autoRefreshTimer);_autoRefreshTimer=null;}
-}
-</script>
-</body>
-</html>
+function stopAutoRefr
