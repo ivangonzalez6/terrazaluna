@@ -979,7 +979,8 @@ tr:hover td{background:var(--bg3);}
           <th>Teléfono</th>
           <th>Expira</th>
           <th>Estado</th>
-          <th>Creado</th>
+          <th style="text-align:center;">Usos · Partidas</th>
+          <th>Último uso</th>
           <th>Acciones</th>
         </tr></thead>
         <tbody id="tbody-codigos"></tbody>
@@ -988,6 +989,17 @@ tr:hover td{background:var(--bg3);}
       <div id="empty-codigos" class="empty hidden">
         <div class="empty-icon">🎟️</div>
         <div class="empty-text">No hay códigos generados aún</div>
+      </div>
+
+      <!-- ── USO POR TELÉFONO ── -->
+      <div style="margin-top:28px;">
+        <div style="display:flex;align-items:center;gap:12px;margin-bottom:14px;">
+          <div style="font-size:10px;letter-spacing:.2em;text-transform:uppercase;color:var(--gold);font-weight:700;white-space:nowrap;">Actividad por teléfono</div>
+          <div style="flex:1;height:1px;background:var(--line);"></div>
+        </div>
+        <div id="uso-telefonos-wrap">
+          <div style="color:var(--faint);font-size:12px;">Cargando…</div>
+        </div>
       </div>
     </div>
     <!-- ── ENGAGEMENT ── -->
@@ -3084,19 +3096,33 @@ async function eliminarPago(requestId, code){
 }
 
 // ── CÓDIGOS ──
-var allCodigos=[], filteredCodigos=[];
+var allCodigos=[], filteredCodigos=[], _gamesByPhone={};
 
 async function loadCodigos(){
   document.getElementById('loading-codigos').style.display='block';
   document.getElementById('empty-codigos').classList.add('hidden');
   document.getElementById('tbody-codigos').innerHTML='';
   try{
-    var rows=await sbGet('tor_unlock_codes','?order=created_at.desc&select=*');
+    var [rows, gameRows]=await Promise.all([
+      sbGet('tor_unlock_codes','?order=created_at.desc&select=*'),
+      sbGet('tor_games','?unlocked_by=not.is.null&select=unlocked_by,created_at,level,status').catch(function(){return[];})
+    ]);
     allCodigos=rows||[];
+    // Agrupar juegos por teléfono/desbloqueante
+    _gamesByPhone={};
+    (gameRows||[]).forEach(function(g){
+      var k=g.unlocked_by;
+      if(!k)return;
+      if(!_gamesByPhone[k])_gamesByPhone[k]={count:0,last:null,levels:[]};
+      _gamesByPhone[k].count++;
+      if(!_gamesByPhone[k].last||g.created_at>_gamesByPhone[k].last)_gamesByPhone[k].last=g.created_at;
+      _gamesByPhone[k].levels.push(g.level);
+    });
     var activos=allCodigos.filter(function(c){return !c.used;}).length;
     document.getElementById('cnt-codigos').textContent=activos||allCodigos.length;
     filterCodigos();
     renderStatsCodigos();
+    renderUsoTelefonos();
     document.getElementById('loading-codigos').style.display='none';
   }catch(e){
     document.getElementById('loading-codigos').textContent='Error al cargar códigos';
@@ -3120,8 +3146,10 @@ function renderStatsCodigos(){
   var total=allCodigos.length;
   var activos=allCodigos.filter(function(c){return !c.used;}).length;
   var usados=allCodigos.filter(function(c){return c.used;}).length;
+  var totalUsos=allCodigos.reduce(function(a,c){return a+(c.use_count||0);},0);
+  var telefonos=Object.keys(_gamesByPhone).length;
   var el=document.getElementById('stats-codigos');
-  if(el) el.innerHTML=statCard(total,'Total')+statCard(activos,'Activos')+statCard(usados,'Usados/Bloqueados');
+  if(el) el.innerHTML=statCard(total,'Códigos totales')+statCard(activos,'Activos')+statCard(totalUsos,'Veces usados')+statCard(telefonos,'Teléfonos únicos');
 }
 
 function renderCodigos(){
@@ -3140,19 +3168,64 @@ function renderCodigos(){
     else if(expirado){estado='Expirado';color='#b7791f';}
     else{estado='Activo';color='#2d7a2d';}
     var code=esc(c.code||'');
+    var phoneGames=c.phone&&_gamesByPhone[c.phone]?_gamesByPhone[c.phone]:null;
+    var useCount=c.use_count||0;
+    var partidas=phoneGames?phoneGames.count:0;
+    var lastUsed=c.last_used_at?fmtShort(c.last_used_at):(phoneGames&&phoneGames.last?fmtShort(phoneGames.last):'—');
     return '<tr>'
-      +'<td><span style="font-family:\'Cormorant Garamond\',serif;font-size:15px;font-weight:700;letter-spacing:.15em;color:var(--gold);">'+code+'</span></td>'
+      +'<td><span style="font-family:\'Cormorant Garamond\',serif;font-size:15px;font-weight:700;letter-spacing:.15em;color:var(--gold);">'+code+'</span>'
+        +(c.multi_use?'<span style="font-size:9px;margin-left:6px;padding:1px 5px;border-radius:6px;background:rgba(212,168,83,.15);color:#d4a853;font-weight:700;">MULTI</span>':'')
+      +'</td>'
       +'<td style="font-size:12px;color:var(--dim);">'+(c.label?esc(c.label):'—')+'</td>'
       +'<td style="font-size:12px;">'+(c.phone?'📱 '+esc(c.phone):'—')+'</td>'
       +'<td style="font-size:11px;color:var(--dim);">'+(c.expires_at?fmtShort(c.expires_at):'—')+'</td>'
       +'<td><span style="font-size:11px;font-weight:700;color:'+color+'">'+estado+'</span></td>'
-      +'<td style="font-size:11px;color:var(--dim);">'+fmtShort(c.created_at)+'</td>'
+      +'<td style="text-align:center;">'
+        +'<span style="font-size:14px;font-weight:700;color:var(--gold);">'+useCount+'</span>'
+        +(partidas>0?'<div style="font-size:10px;color:var(--faint);">'+partidas+' partida'+(partidas>1?'s':'')+'</div>':'')
+      +'</td>'
+      +'<td style="font-size:11px;color:var(--dim);">'+lastUsed+'</td>'
       +'<td class="td-actions">'
         +'<button class="btn-view" onclick="copiarCodigo(\''+code+'\')">📋 Copiar</button> '
         +'<button class="btn-delete" onclick="eliminarCodigo(\''+esc(c.id)+'\',\''+code+'\')">🗑</button>'
       +'</td>'
       +'</tr>';
   }).join('');
+}
+
+function renderUsoTelefonos(){
+  var el=document.getElementById('uso-telefonos-wrap');
+  if(!el)return;
+  var entries=Object.keys(_gamesByPhone).map(function(phone){
+    var g=_gamesByPhone[phone];
+    // Buscar si tiene código asociado
+    var codigo=allCodigos.find(function(c){return c.phone===phone;});
+    return {phone:phone,count:g.count,last:g.last,levels:g.levels,codigo:codigo};
+  }).sort(function(a,b){return b.count-a.count;});
+  if(!entries.length){
+    el.innerHTML='<div style="color:var(--faint);font-size:12px;padding:12px 0;">Sin datos aún — los teléfonos aparecen aquí al iniciar partidas</div>';
+    return;
+  }
+  el.innerHTML='<table class="data-table"><thead><tr>'
+    +'<th>Teléfono</th><th>Código asociado</th><th style="text-align:center;">Partidas</th><th>Último acceso</th><th>Niveles jugados</th>'
+    +'</tr></thead><tbody>'
+    +entries.map(function(e){
+      var niveles=[...new Set(e.levels)].map(function(l){
+        return '<span style="font-size:9px;padding:2px 6px;border-radius:10px;background:rgba(212,168,83,.1);border:1px solid rgba(212,168,83,.2);color:#d4a853;font-weight:600;">'+esc(LEVEL_LABELS[l]||l)+'</span>';
+      }).join(' ');
+      var codigoCell=e.codigo
+        ?'<span style="font-family:\'Cormorant Garamond\',serif;font-weight:700;letter-spacing:.1em;color:var(--gold);">'+esc(e.codigo.code)+'</span>'
+          +(e.codigo.label?'<div style="font-size:10px;color:var(--faint);">'+esc(e.codigo.label)+'</div>':'')
+        :'<span style="color:var(--faint);font-size:11px;">Pago directo</span>';
+      return '<tr>'
+        +'<td style="font-weight:600;">📱 '+esc(e.phone)+'</td>'
+        +'<td>'+codigoCell+'</td>'
+        +'<td style="text-align:center;font-size:16px;font-weight:700;color:var(--gold);">'+e.count+'</td>'
+        +'<td style="font-size:11px;color:var(--dim);">'+(e.last?fmtShort(e.last):'—')+'</td>'
+        +'<td style="display:flex;flex-wrap:wrap;gap:4px;padding:8px 12px;">'+niveles+'</td>'
+        +'</tr>';
+    }).join('')
+    +'</tbody></table>';
 }
 
 function copiarCodigo(code){

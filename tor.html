@@ -945,7 +945,7 @@ async function initGame(){
   var btn=document.getElementById('startGameBtn');
   btn.disabled=true;btn.textContent='Iniciando…';
   try{
-    var body={id:uid5(),level:selectedLevel,mode:selectedMode,players:players,status:'playing',current_card:null,current_player_index:0,round:1};
+    var body={id:uid5(),level:selectedLevel,mode:selectedMode,players:players,status:'playing',current_card:null,current_player_index:0,round:1,unlocked_by:_xxxPhone||null};
     var sala=await ensureSala();if(sala)body.room_code=sala;
     var data=await sbPost('tor_games',body);
     if(!data||data.error)throw new Error('Error');
