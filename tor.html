@@ -968,9 +968,13 @@ async function loadCardPool(level,mode){
   var lvls=(level==='mixto')?['familiar','light','hot','extremo']:[level];
   for(var i=0;i<lvls.length;i++){
     var l=lvls[i];
+    // Filtrar por modo: presencial → presencial+ambos, distancia → distancia+ambos
+    var modeFilter=mode==='distancia'
+      ?'&or=(mode.eq.distancia,mode.eq.ambos)'
+      :'&or=(mode.eq.presencial,mode.eq.ambos)';
     // order=id garantiza el mismo orden en todos los dispositivos
-    var qr=await sbGet('tor_questions','?level=eq.'+l+'&select=id,text,tags&order=id');
-    var dr=await sbGet('tor_dares','?level=eq.'+l+'&select=id,text,tags&order=id');
+    var qr=await sbGet('tor_questions','?level=eq.'+l+modeFilter+'&select=id,text,tags,mode&order=id');
+    var dr=await sbGet('tor_dares','?level=eq.'+l+modeFilter+'&select=id,text,tags,mode&order=id');
     if(Array.isArray(qr))allQ=allQ.concat(qr.map(function(c){return Object.assign({},c,{type:'truth'});}));
     if(Array.isArray(dr))allD=allD.concat(dr.map(function(c){return Object.assign({},c,{type:'dare'});}));
   }

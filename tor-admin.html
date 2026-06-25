@@ -1618,13 +1618,21 @@ function closeModal(id){document.getElementById(id).classList.add('hidden');}
 function openModal(id){document.getElementById(id).classList.remove('hidden');}
 
 // ── PIN ──
+const SESSION_KEY='tor_admin_session';
+const SESSION_TTL=24*60*60*1000; // 24h
+
+function _doLogin(){
+  document.getElementById('pin-screen').classList.add('hidden');
+  document.getElementById('app').classList.remove('hidden');
+  loadAll();
+  startAutoRefresh();
+}
+
 function checkPin(){
   var v=document.getElementById('pinInput').value.trim();
   if(v===ADMIN_PIN){
-    document.getElementById('pin-screen').classList.add('hidden');
-    document.getElementById('app').classList.remove('hidden');
-    loadAll();
-    startAutoRefresh();
+    try{localStorage.setItem(SESSION_KEY,JSON.stringify({ts:Date.now()}));}catch(e){}
+    _doLogin();
   } else {
     document.getElementById('pinInput').classList.add('error');
     document.getElementById('pinErr').textContent='PIN incorrecto';
@@ -1633,10 +1641,26 @@ function checkPin(){
 }
 function logout(){
   stopAutoRefresh();
+  try{localStorage.removeItem(SESSION_KEY);}catch(e){}
   document.getElementById('app').classList.add('hidden');
   document.getElementById('pin-screen').classList.remove('hidden');
   document.getElementById('pinInput').value='';
 }
+
+// Auto-login si hay sesión válida en localStorage
+(function(){
+  try{
+    var raw=localStorage.getItem(SESSION_KEY);
+    if(raw){
+      var s=JSON.parse(raw);
+      if(s&&s.ts&&(Date.now()-s.ts)<SESSION_TTL){
+        _doLogin();
+        return;
+      }
+      localStorage.removeItem(SESSION_KEY);
+    }
+  }catch(e){}
+})();
 
 // ── NAVIGATION ──
 function showSection(name){
@@ -3624,7 +3648,7 @@ function filterEngagement(){
   var sort=document.getElementById('eng-filter-sort').value;
   var rows=_engagementRows.filter(function(r){
     if(lvl&&r.level!==lvl)return false;
-    if(mode&&r.mode!==mode)return false;
+    if(mode&&r.card_mode!==mode)return false;
     // card_type en la vista, pero filtramos igual
     var ct=r.card_type||r.type||'';
     if(type&&ct!==type)return false;
@@ -3670,13 +3694,13 @@ function renderEngagement(rows){
       +'</td>'
       +'<td>'+(ct==='reto'?'⚡ Reto':'❓ Pregunta')+'</td>'
       +'<td>'+esc(LEVEL_LABELS[r.level]||r.level||'—')+'</td>'
-      +'<td style="font-size:12px;">'+(r.mode==='distancia'?'Distancia':'Presencial')+'</td>'
+      +'<td style="font-size:12px;">'+(r.card_mode==='distancia'?'🌐 Distancia':r.card_mode==='ambos'?'↔ Ambos':'🏠 Presencial')+'</td>'
       +'<td>'+shown+'</td>'
       +'<td style="font-weight:700;color:var(--gold)">'+avgS+'s</td>'
       +'<td>'+pct+'</td>'
       +'<td class="td-actions" style="white-space:nowrap">'
-      +'<button class="btn-view" onclick="openGenerateAI(\''+esc(ct)+'\',\''+esc(r.level||'familiar')+'\',\''+esc(r.mode||'presencial')+'\')">✨</button> '
-      +'<button class="btn-view" style="background:var(--bg3);border-color:var(--line)" onclick="editEngCard(\''+esc(r.card_id)+'\',\''+esc(ct)+'\',\''+esc(r.level||'familiar')+'\',\''+esc(r.mode||'presencial')+'\',this)" title="Editar">✏️</button> '
+      +'<button class="btn-view" onclick="openGenerateAI(\''+esc(ct)+'\',\''+esc(r.level||'familiar')+'\',\''+esc(r.card_mode||'ambos')+'\')">✨</button> '
+      +'<button class="btn-view" style="background:var(--bg3);border-color:var(--line)" onclick="editEngCard(\''+esc(r.card_id)+'\',\''+esc(ct)+'\',\''+esc(r.level||'familiar')+'\',\''+esc(r.card_mode||'ambos')+'\',this)" title="Editar">✏️</button> '
       +'<button class="btn-view" style="background:var(--danger-bg);border-color:var(--danger-border);color:var(--danger)" onclick="deleteEngCard(\''+esc(r.card_id)+'\',\''+esc(ct)+'\',this)" title="Eliminar">🗑️</button>'
       +'</td>'
       +'</tr>';
@@ -3719,7 +3743,7 @@ async function saveEngEdit(){
     if(!r.ok)throw new Error(await r.text());
     // Actualizar en memoria para refrescar la tabla sin recargar
     var row=_engagementRows.find(function(x){return String(x.card_id)===String(_engEditId);});
-    if(row){row.text=text;row.level=level;row.mode=mode;}
+    if(row){row.text=text;row.level=level;row.card_mode=mode;}
     filterEngagement();
     closeModal('modal-edit-eng');
     toast('✓ Carta actualizada');
