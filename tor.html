@@ -1097,10 +1097,11 @@ async function nextTurn(){
   var round=nextIdx===0?(game.round||1)+1:(game.round||1);
   var nextTurnNum=((round-1)*players.length)+nextIdx;
   game.current_player_index=nextIdx;game.round=round;
-  // Revisar cola de cartas de comunidad primero
+  // Revisar si hay carta de comunidad programada para este turno
   var c=null;
-  if(_cardQueue.length>0){
-    c=_cardQueue.shift();
+  var queuedIdx=_cardQueue.findIndex(function(item){return item.targetTurn===nextTurnNum;});
+  if(queuedIdx>=0){
+    c=_cardQueue.splice(queuedIdx,1)[0].card;
   } else {
     if(!_salaCode||_salaIsHost)_maybeReorderPool(nextTurnNum);
     c=pickCardForTurn(nextTurnNum);
@@ -1190,14 +1191,19 @@ async function confirmAddCard(){
     var saved=await sbPost('tor_cards_community',card);
     var savedId=(Array.isArray(saved)?saved[0]:saved)?.id||('comm_'+Date.now());
     var localCard=Object.assign({},card,{id:savedId,tags:[]});
+    // Calcular turno aleatorio futuro (3–8 turnos adelante)
+    var players=game?game.players||[]:[];
+    var currTurn=game?(((game.round||1)-1)*players.length+(game.current_player_index||0)):0;
+    var randomOffset=Math.floor(Math.random()*6)+3;
+    var targetTurn=currTurn+randomOffset;
     // Agregar a la cola local de este dispositivo
-    _cardQueue.push(localCard);
+    _cardQueue.push({card:localCard,targetTurn:targetTurn});
     // Broadcast a todos los demás dispositivos en la sala
     if(_ws&&_ws.readyState===1){
       _ws.send(JSON.stringify({
         topic:'realtime:public:tor_games',
         event:'broadcast',
-        payload:{event:'card_queued',payload:{card:localCard}},
+        payload:{event:'card_queued',payload:{card:localCard,targetTurn:targetTurn}},
         ref:'cq_'+Date.now()
       }));
     }
@@ -1263,7 +1269,7 @@ function startRealtime(){
         var m=JSON.parse(e.data);
         // Broadcast de carta de comunidad
         if(m.event==='broadcast'&&m.payload&&m.payload.event==='card_queued'&&m.payload.payload&&m.payload.payload.card){
-          _cardQueue.push(m.payload.payload.card);
+          _cardQueue.push({card:m.payload.payload.card,targetTurn:m.payload.payload.targetTurn||0});
           return;
         }
         // Formato Supabase Realtime: payload.data.record
@@ -1279,6 +1285,7 @@ function startRealtime(){
         if(!game||rec.id!==game.id)return;
         if(rec.status==='ended'){endGame(true);return;}
         if(rec.current_card&&JSON.stringify(rec.current_card)!==JSON.stringify(game.current_card)){
+          if(rec.current_card.id)_cardQueue=_cardQueue.filter(function(item){return item.card.id!==rec.current_card.id;});
           game.current_card=rec.current_card;game.current_player_index=rec.current_player_index||0;game.round=rec.round||1;
           showCard(rec.current_card);
         }
@@ -1319,6 +1326,8 @@ function startPolling(){
       if(r.status==='ended'){if(game&&game.id===gid)endGame(true);return;}
       if(r.current_card&&JSON.stringify(r.current_card)!==JSON.stringify(game&&game.current_card)){
         if(game&&game.id===gid){
+          // Limpiar carta de la cola si ya fue elegida por otro dispositivo
+          if(r.current_card.id)_cardQueue=_cardQueue.filter(function(item){return item.card.id!==r.current_card.id;});
           game.current_card=r.current_card;
           game.current_player_index=r.current_player_index||0;
           game.round=r.round||1;

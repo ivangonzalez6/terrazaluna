@@ -1481,6 +1481,45 @@ tr:hover td{background:var(--bg3);}
   </div>
 </div>
 
+<div class="modal-overlay hidden" id="modal-edit-eng">
+  <div class="modal" style="max-width:520px">
+    <div class="modal-header">
+      <div class="modal-title">Editar carta</div>
+      <div class="modal-sub" id="eng-edit-meta" style="font-size:11px;color:var(--faint);margin-top:2px;"></div>
+    </div>
+    <div class="modal-body" style="display:flex;flex-direction:column;gap:14px">
+      <div>
+        <label style="font-size:11px;font-weight:700;color:var(--faint);letter-spacing:.06em;text-transform:uppercase;display:block;margin-bottom:6px">Texto</label>
+        <textarea id="eng-edit-text" rows="4" style="width:100%;box-sizing:border-box;background:var(--bg3);border:1px solid var(--line);border-radius:10px;padding:10px 12px;font-size:14px;color:var(--text);font-family:inherit;resize:vertical;line-height:1.5"></textarea>
+      </div>
+      <div style="display:flex;gap:10px">
+        <div style="flex:1">
+          <label style="font-size:11px;font-weight:700;color:var(--faint);letter-spacing:.06em;text-transform:uppercase;display:block;margin-bottom:6px">Nivel</label>
+          <select id="eng-edit-level" style="width:100%;background:var(--bg3);border:1px solid var(--line);border-radius:8px;padding:8px 10px;font-size:13px;color:var(--text);font-family:inherit">
+            <option value="familiar">Familiar</option>
+            <option value="light">Light</option>
+            <option value="hot">Hot</option>
+            <option value="extremo">Extremo</option>
+            <option value="xxx">XXX</option>
+          </select>
+        </div>
+        <div style="flex:1">
+          <label style="font-size:11px;font-weight:700;color:var(--faint);letter-spacing:.06em;text-transform:uppercase;display:block;margin-bottom:6px">Modo</label>
+          <select id="eng-edit-mode" style="width:100%;background:var(--bg3);border:1px solid var(--line);border-radius:8px;padding:8px 10px;font-size:13px;color:var(--text);font-family:inherit">
+            <option value="presencial">Presencial</option>
+            <option value="distancia">Distancia</option>
+            <option value="ambos">Ambos</option>
+          </select>
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-secondary" onclick="closeModal('modal-edit-eng')">Cancelar</button>
+      <button class="btn-primary" onclick="saveEngEdit()">Guardar</button>
+    </div>
+  </div>
+</div>
+
 <div class="modal-overlay hidden" id="modal-edit-comunidad">
   <div class="modal" style="max-width:500px">
     <div class="modal-header">
@@ -3630,9 +3669,70 @@ function renderEngagement(rows){
       +'<td>'+shown+'</td>'
       +'<td style="font-weight:700;color:var(--gold)">'+avgS+'s</td>'
       +'<td>'+pct+'</td>'
-      +'<td class="td-actions"><button class="btn-view" onclick="openGenerateAI(\''+esc(ct)+'\',\''+esc(r.level||'familiar')+'\',\''+esc(r.mode||'presencial')+'\')">✨ Similar</button></td>'
+      +'<td class="td-actions" style="white-space:nowrap">'
+      +'<button class="btn-view" onclick="openGenerateAI(\''+esc(ct)+'\',\''+esc(r.level||'familiar')+'\',\''+esc(r.mode||'presencial')+'\')">✨</button> '
+      +'<button class="btn-view" style="background:var(--bg3);border-color:var(--line)" onclick="editEngCard(\''+esc(r.card_id)+'\',\''+esc(ct)+'\',\''+esc(r.level||'familiar')+'\',\''+esc(r.mode||'presencial')+'\',this)" title="Editar">✏️</button> '
+      +'<button class="btn-view" style="background:var(--danger-bg);border-color:var(--danger-border);color:var(--danger)" onclick="deleteEngCard(\''+esc(r.card_id)+'\',\''+esc(ct)+'\',this)" title="Eliminar">🗑️</button>'
+      +'</td>'
       +'</tr>';
   }).join('');
+}
+
+// ── ENGAGEMENT EDIT/DELETE ──
+var _engEditId=null, _engEditType=null;
+async function editEngCard(cardId, cardType, level, mode, btn){
+  _engEditId=cardId;
+  _engEditType=cardType;
+  var tabla=cardType==='reto'?'tor_dares':'tor_questions';
+  if(btn){btn.disabled=true;}
+  try{
+    var rows=await sbGet(tabla,'?id=eq.'+cardId+'&select=text,level,mode&limit=1');
+    if(!rows||!rows.length)throw new Error('not found');
+    document.getElementById('eng-edit-text').value=rows[0].text||'';
+    document.getElementById('eng-edit-level').value=rows[0].level||level||'familiar';
+    document.getElementById('eng-edit-mode').value=rows[0].mode||mode||'presencial';
+    document.getElementById('eng-edit-meta').textContent=(cardType==='reto'?'⚡ Reto':'❓ Pregunta')+' · '+esc(LEVEL_LABELS[level]||level);
+    openModal('modal-edit-eng');
+  }catch(e){toast('Error al cargar carta');}
+  if(btn){btn.disabled=false;}
+}
+async function saveEngEdit(){
+  if(!_engEditId||!_engEditType)return;
+  var text=document.getElementById('eng-edit-text').value.trim();
+  if(!text){toast('El texto no puede estar vacío');return;}
+  var level=document.getElementById('eng-edit-level').value;
+  var mode=document.getElementById('eng-edit-mode').value;
+  var tabla=_engEditType==='reto'?'tor_dares':'tor_questions';
+  var btn=document.querySelector('#modal-edit-eng .btn-primary');
+  if(btn){btn.disabled=true;btn.textContent='Guardando…';}
+  try{
+    var r=await fetch(SB+'/rest/v1/'+tabla+'?id=eq.'+_engEditId,{
+      method:'PATCH',
+      headers:Object.assign({},h(),{'Prefer':'return=minimal'}),
+      body:JSON.stringify({text,level,mode})
+    });
+    if(!r.ok)throw new Error(await r.text());
+    // Actualizar en memoria para refrescar la tabla sin recargar
+    var row=_engagementRows.find(function(x){return String(x.card_id)===String(_engEditId);});
+    if(row){row.text=text;row.level=level;row.mode=mode;}
+    filterEngagement();
+    closeModal('modal-edit-eng');
+    toast('✓ Carta actualizada');
+  }catch(e){toast('Error al guardar');}
+  if(btn){btn.disabled=false;btn.textContent='Guardar';}
+}
+async function deleteEngCard(cardId, cardType, btn){
+  if(!confirm('¿Eliminar esta carta permanentemente?'))return;
+  var tabla=cardType==='reto'?'tor_dares':'tor_questions';
+  if(btn){btn.disabled=true;}
+  try{
+    var r=await fetch(SB+'/rest/v1/'+tabla+'?id=eq.'+cardId,{method:'DELETE',headers:h()});
+    if(!r.ok)throw new Error(await r.text());
+    _engagementRows=_engagementRows.filter(function(x){return String(x.card_id)!==String(cardId);});
+    filterEngagement();
+    toast('✓ Carta eliminada');
+  }catch(e){toast('Error al eliminar');}
+  if(btn){btn.disabled=false;}
 }
 
 // ── GENERAR CON IA ──
