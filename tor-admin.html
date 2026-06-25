@@ -1072,6 +1072,18 @@ tr:hover td{background:var(--bg3);}
         </div>
       </div>
 
+      <!-- ── PANEL DE TAGS ── -->
+      <div style="margin-top:20px;background:var(--bg2);border:1px solid var(--line);border-radius:16px;padding:20px;">
+        <div style="display:flex;align-items:center;gap:12px;margin-bottom:18px;">
+          <div style="font-size:10px;letter-spacing:.2em;text-transform:uppercase;color:var(--gold);font-weight:700;white-space:nowrap;">Tendencia semántica de tags</div>
+          <div style="flex:1;height:1px;background:var(--line);"></div>
+          <div style="font-size:10px;color:var(--faint);">Basado en tiempo de engagement promedio por sesión</div>
+        </div>
+        <div id="eng-tags-global" style="display:flex;flex-direction:column;gap:8px;margin-bottom:20px;"></div>
+        <div style="font-size:10px;letter-spacing:.15em;text-transform:uppercase;color:var(--gold);font-weight:700;margin-bottom:12px;">Juegos activos ahora</div>
+        <div id="eng-tags-live" style="display:flex;flex-direction:column;gap:10px;"></div>
+      </div>
+
       <!-- Divider: card engagement -->
       <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px;">
         <div style="font-size:10px;letter-spacing:.2em;text-transform:uppercase;color:var(--gold);font-weight:700;white-space:nowrap;">Engagement de cartas</div>
@@ -3490,7 +3502,7 @@ async function loadEngagement(){
   // Cargar todo en paralelo
   var [cardRows, gameRows, feedRows] = await Promise.all([
     sbGet('tor_card_engagement','?select=*').catch(function(){return [];}),
-    sbGet('tor_games','?select=id,level,mode,round,players,created_at&created_at=gte.'+desde+'&order=created_at.asc').catch(function(){return [];}),
+    sbGet('tor_games','?select=id,level,mode,round,players,status,created_at,tag_scores,recent_tags&created_at=gte.'+desde+'&order=created_at.asc').catch(function(){return [];}),
     sbGet('tor_feedback','?select=text,created_at&order=created_at.desc').catch(function(){return [];})
   ]);
 
@@ -3500,6 +3512,7 @@ async function loadEngagement(){
 
   renderEngagementSesiones(games, dias);
   renderEngagementFeedback(feedbacks);
+  renderEngagementTags(games);
   filterEngagement();
 }
 
@@ -3613,6 +3626,100 @@ function renderEngagementSesiones(games, dias){
     return '<div style="display:flex;justify-content:space-between;padding:3px 0;border-bottom:1px solid var(--line);">'
       +'<span style="color:var(--ink);font-weight:600;">'+esc(LEVEL_LABELS[l]||l)+'</span>'
       +'<span>'+aj+' jug · '+ar+' rondas</span></div>';
+  }).join('');
+}
+
+// ── TAGS SEMÁNTICOS ──
+var ALL_TAGS=['humor','vulnerable','romántico','picante','vergüenza','físico','reflexivo','nostálgico','social','creativo'];
+var TAG_COLORS={humor:'#FFD93D',vulnerable:'#4D96FF',romántico:'#FF6B9D',picante:'#FF6B6B',vergüenza:'#C77DFF',físico:'#6BCB77',reflexivo:'#4ECDC4',nostálgico:'#F4A261',social:'#d4a853',creativo:'#A8DADC'};
+
+function renderEngagementTags(games){
+  _renderTagsGlobal(games);
+  _renderTagsLive(games);
+}
+
+function _renderTagsGlobal(games){
+  var el=document.getElementById('eng-tags-global');
+  if(!el)return;
+  // Agregar tag_scores de todos los juegos del período
+  var totals={};   // tag → suma de avg engagement
+  var counts={};   // tag → nº de juegos que tuvieron ese tag
+  games.forEach(function(g){
+    var ts=g.tag_scores;
+    if(!ts||typeof ts!=='object')return;
+    Object.keys(ts).forEach(function(tag){
+      var s=ts[tag];
+      if(!s||!s.count)return;
+      var avg=s.total/s.count;
+      totals[tag]=(totals[tag]||0)+avg;
+      counts[tag]=(counts[tag]||0)+1;
+    });
+  });
+  // Calcular promedio ponderado por tag
+  var scores=ALL_TAGS.map(function(tag){
+    return {tag:tag, score:counts[tag]?totals[tag]/counts[tag]:0, games:counts[tag]||0};
+  }).sort(function(a,b){return b.score-a.score;});
+  var maxScore=scores[0]?scores[0].score:1;
+  if(!maxScore)maxScore=1;
+  if(!scores.some(function(s){return s.score>0;})){
+    el.innerHTML='<div style="color:var(--faint);font-size:12px;text-align:center;padding:16px 0;">Aún no hay datos — los tags se acumulan durante las partidas</div>';
+    return;
+  }
+  el.innerHTML=scores.map(function(s){
+    var pct=Math.round((s.score/maxScore)*100);
+    var color=TAG_COLORS[s.tag]||'#d4a853';
+    var label=s.score>0?Math.round(s.score)+'s avg · '+s.games+' sesiones':'sin datos';
+    return '<div style="display:flex;align-items:center;gap:10px;">'
+      +'<div style="width:90px;font-size:11px;font-weight:600;color:var(--ink);text-align:right;flex-shrink:0;">'+s.tag+'</div>'
+      +'<div style="flex:1;height:16px;background:var(--bg3);border-radius:8px;overflow:hidden;">'
+        +'<div style="height:100%;width:'+pct+'%;background:'+color+';border-radius:8px;transition:width .4s ease;opacity:'+(s.score>0?'0.85':'0.2')+';"></div>'
+      +'</div>'
+      +'<div style="width:130px;font-size:10px;color:var(--faint);flex-shrink:0;">'+label+'</div>'
+    +'</div>';
+  }).join('');
+}
+
+function _renderTagsLive(games){
+  var el=document.getElementById('eng-tags-live');
+  if(!el)return;
+  var live=games.filter(function(g){return g.status==='playing'&&g.tag_scores&&Object.keys(g.tag_scores).length>0;});
+  if(!live.length){
+    el.innerHTML='<div style="color:var(--faint);font-size:12px;">No hay partidas activas con datos de tags en este momento</div>';
+    return;
+  }
+  el.innerHTML=live.map(function(g){
+    var ts=g.tag_scores||{};
+    var rt=(g.recent_tags||[]);
+    // Tags recientes (en ventana de diversidad = suprimidos temporalmente)
+    var suppressedSet={};
+    rt.forEach(function(tags){(tags||[]).forEach(function(t){suppressedSet[t]=(suppressedSet[t]||0)+1;});});
+    // Ordenar tags por score
+    var sorted=ALL_TAGS.map(function(tag){
+      var s=ts[tag];
+      return {tag:tag,score:s&&s.count?(s.total/s.count):0,suppressed:suppressedSet[tag]||0};
+    }).filter(function(s){return s.score>0;}).sort(function(a,b){return b.score-a.score;});
+    var players=g.players?g.players.join(', '):'—';
+    var level=LEVEL_LABELS[g.level]||g.level||'—';
+    return '<div style="background:var(--bg3);border:1px solid var(--line);border-radius:12px;padding:14px;">'
+      +'<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">'
+        +'<div style="font-size:11px;font-weight:700;color:var(--ink);">'+esc(players)+'</div>'
+        +'<span style="font-size:10px;padding:2px 8px;border-radius:10px;background:rgba(107,203,119,.15);color:#6BCB77;font-weight:700;">● Jugando · '+esc(level)+'</span>'
+      +'</div>'
+      +'<div style="display:flex;flex-wrap:wrap;gap:6px;">'
+      +sorted.map(function(s){
+        var color=TAG_COLORS[s.tag]||'#d4a853';
+        var sup=s.suppressed>1;
+        var opacity=sup?'0.4':'1';
+        var title=sup?'Suprimido temporalmente (diversidad)':'Activo';
+        return '<span title="'+title+'" style="font-size:10px;padding:3px 9px;border-radius:20px;font-weight:700;letter-spacing:.03em;'
+          +'background:'+color+'22;border:1.5px solid '+(sup?'transparent':color)+';color:'+color+';opacity:'+opacity+';'
+          +(sup?'text-decoration:line-through;':'')
+          +'">'
+          +esc(s.tag)+' '+Math.round(s.score)+'s'
+          +'</span>';
+      }).join('')
+      +'</div>'
+    +'</div>';
   }).join('');
 }
 
@@ -3794,11 +3901,20 @@ async function runGenerateAI(){
   var btn=document.getElementById('gen-ai-btn');
   btn.disabled=true;btn.textContent='Generando…';
   try{
-    // Obtener las cartas más populares de ese tipo/nivel como muestra de referencia
-    var tabla=type==='reto'?'tor_dares':'tor_questions';
+    // Obtener las cartas de MAYOR CALIDAD (alto engagement, bajo descarte) como muestra
+    // Criterio: avg_duration >= 12s (leyeron y jugaron), pct_descartada <= 30%, min 2 vistas
     var sampleRows=await sbGet('tor_card_engagement',
-      '?card_type=eq.'+type+'&level=eq.'+level+'&select=text,veces_mostrada&order=veces_mostrada.desc&limit=8'
+      '?card_type=eq.'+type+'&level=eq.'+level
+      +'&avg_duration=gte.12&pct_descartada=lte.30&veces_mostrada=gte.2'
+      +'&select=text,avg_duration,pct_descartada&order=avg_duration.desc&limit=8'
     ).catch(function(){return [];});
+    // Fallback: si no hay suficientes con filtro estricto, relajar criterios
+    if(!sampleRows||sampleRows.length<3){
+      sampleRows=await sbGet('tor_card_engagement',
+        '?card_type=eq.'+type+'&level=eq.'+level
+        +'&select=text,avg_duration&order=avg_duration.desc&limit=8'
+      ).catch(function(){return [];});
+    }
     var samples=(Array.isArray(sampleRows)?sampleRows:[]).map(function(r){return r.text||'';}).filter(Boolean);
 
     var res=await fetch(SB+'/functions/v1/generate-similar',{

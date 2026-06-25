@@ -677,6 +677,7 @@ var _cardShownAt=null; // timestamp cuando se mostró la carta actual
 var _trackedCard=null; // carta actual siendo trackeada
 var _sessionTagScores={}; // tag → {total: N, count: N} — preferencias semánticas de la sesión
 var _tagReorderTurn=0;   // último turno en que se reordenó el pool
+var _recentCardTags=[];  // tags de las últimas 5 cartas para penalizar repetición
 var _config={}; // configuración dinámica desde tor_config
 
 // ── SALAS (transparente — el usuario nunca las ve) ──
@@ -828,7 +829,7 @@ function uid5(){var c='ABCDEFGHJKMNPQRSTUVWXYZ23456789';var r='';for(var i=0;i<5
 function ini(n){return String(n||'').trim().substring(0,2).toUpperCase()||'?';}
 function col(i){return COLORS[i%COLORS.length];}
 function shuffle(arr){for(var i=arr.length-1;i>0;i--){var j=Math.floor(Math.random()*(i+1));var t=arr[i];arr[i]=arr[j];arr[j]=t;}return arr;}
-function resetPools(){allQ=[];allD=[];allQComm=[];allDComm=[];allCombined=[];usedQIdx=[];usedDIdx=[];usedQCommIdx=[];usedDCommIdx=[];commQDone=false;commDDone=false;_sessionTagScores={};_tagReorderTurn=0;}
+function resetPools(){allQ=[];allD=[];allQComm=[];allDComm=[];allCombined=[];usedQIdx=[];usedDIdx=[];usedQCommIdx=[];usedDCommIdx=[];commQDone=false;commDDone=false;_sessionTagScores={};_tagReorderTurn=0;_recentCardTags=[];}
 function gameUrl(){var base=window.location.origin+window.location.pathname;return game?base+'?id='+game.id:base;}
 function closeOverlay(id,e){if(e&&e.target!==document.getElementById(id))return;document.getElementById(id).classList.add('hidden');}
 
@@ -1048,8 +1049,13 @@ function _trackCardStat(){
 }
 
 // ── Recomendación semántica por tags ──
+var _DIVERSITY_WINDOW=5; // cuántas cartas recientes revisar para diversidad
 function _updateTagScores(card, durSec){
   if(!card||!card.tags||!card.tags.length)return;
+  // Registrar tags recientes para factor de diversidad
+  _recentCardTags.push(card.tags.slice());
+  if(_recentCardTags.length>_DIVERSITY_WINDOW)_recentCardTags.shift();
+  // Acumular scores de engagement por tag
   card.tags.forEach(function(tag){
     if(!_sessionTagScores[tag])_sessionTagScores[tag]={total:0,count:0};
     _sessionTagScores[tag].total+=durSec;
@@ -1060,12 +1066,27 @@ function _tagScore(card){
   if(!card||!card.tags||!card.tags.length)return 0;
   var keys=Object.keys(_sessionTagScores);
   if(!keys.length)return 0;
+  // Score base: promedio de engagement por tag de la carta
   var score=0;
   card.tags.forEach(function(tag){
     var s=_sessionTagScores[tag];
     if(s&&s.count>0)score+=(s.total/s.count);
   });
-  return score/card.tags.length;
+  score=score/card.tags.length;
+  // Penalización por diversidad: reducir score si los tags aparecieron mucho recientemente
+  if(_recentCardTags.length>0){
+    var recentCounts={};
+    _recentCardTags.forEach(function(tags){
+      tags.forEach(function(t){recentCounts[t]=(recentCounts[t]||0)+1;});
+    });
+    var overlap=0;
+    card.tags.forEach(function(tag){if(recentCounts[tag])overlap+=recentCounts[tag];});
+    var maxOverlap=card.tags.length*_recentCardTags.length;
+    // Penalidad: hasta 55% de reducción si hay solapamiento total
+    var penalty=maxOverlap>0?Math.min(0.55,(overlap/maxOverlap)*0.75):0;
+    score=score*(1-penalty);
+  }
+  return score;
 }
 function _maybeReorderPool(nextTurnNum){
   // Solo reordenar si hay suficientes datos y no se hizo ya recientemente
@@ -1085,6 +1106,13 @@ function _maybeReorderPool(nextTurnNum){
     return sb-sa;
   });
   allCombined=played.concat(remaining);
+  // Persistir preferencias de tags en la DB para visibilidad en admin
+  if(game&&game.id){
+    sbPatch('tor_games?id=eq.'+game.id,{
+      tag_scores:_sessionTagScores,
+      recent_tags:_recentCardTags
+    }).catch(function(){});
+  }
 }
 
 async function nextTurn(){
