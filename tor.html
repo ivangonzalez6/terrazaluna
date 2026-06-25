@@ -1446,7 +1446,178 @@ document.addEventListener('vorNotifPrompt',function(){
       }
     }catch(e){}
   }
+
+  // Guest llegó por link de sala (?sala=CODE) o tiene sala guardada
+  if(_salaCode&&!_salaIsHost){
+    try{
+      // Ver si hay juego activo en este momento
+      var activeRows=await sbGet('tor_games','?room_code=eq.'+_salaCode+'&status=eq.playing&order=created_at.desc&limit=1&select=*');
+      if(activeRows&&activeRows.length){
+        var found=activeRows[0];
+        _salaLastGameId=found.id;
+        game=found;resetPools();await loadCardPool(game.level,game.mode);
+        startRealtime();startPolling();
+        if(game.current_card)showCard(game.current_card);
+        else{var c2=pickCardForTurn(0);if(c2){game.current_card=c2;showCard(c2);}}
+        return;
+      }
+    }catch(e){}
+    // Sin juego activo → pantalla de espera + polling
+    startSalaPolling();
+    return;
+  }
+
+  show('screen-welcome');
 })();
 </script>
+<script>
+// ── Funciones del modal XXX (inyectadas por separado) ──
+function showXXXCodigo(){
+  ['xxxViewAdquirir','xxxViewConfirm','xxxViewAprobado','xxxViewRechazado'].forEach(function(id){var e=document.getElementById(id);if(e)e.style.display='none';});
+  var v=document.getElementById('xxxViewCodigo');if(v)v.style.display='block';
+}
+function showXXXAdquirir(){
+  ['xxxViewCodigo','xxxViewConfirm','xxxViewAprobado','xxxViewRechazado'].forEach(function(id){var e=document.getElementById(id);if(e)e.style.display='none';});
+  var v=document.getElementById('xxxViewAdquirir');if(v)v.style.display='block';
+  loadXXXPricing();
+}
+function showXXXView(id){
+  ['xxxViewCodigo','xxxViewAdquirir','xxxViewConfirm','xxxViewAprobado','xxxViewRechazado'].forEach(function(vid){var e=document.getElementById(vid);if(e)e.style.display='none';});
+  var v=document.getElementById(id);if(v)v.style.display='block';
+}
+async function loadXXXPricing(){
+  try{
+    var rows=await sbGet('tor_config','?key=in.(precio_xxx,banco,clabe,cuenta,beneficiario,concepto)&select=key,value');
+    if(!Array.isArray(rows))return;
+    var m={};rows.forEach(function(r){m[r.key]=r.value;});
+    if(m.precio_xxx){var pe=document.getElementById('pago-precio');if(pe)pe.textContent='$'+m.precio_xxx+' MXN';}
+    if(m.banco)document.getElementById('pago-banco').textContent=m.banco;
+    if(m.beneficiario)document.getElementById('pago-beneficiario').textContent=m.beneficiario;
+    if(m.concepto){var ce=document.getElementById('pago-concepto');if(ce)ce.textContent=m.concepto;}
+    var clabeRow=document.getElementById('pago-clabe-row');
+    var cuentaRow=document.getElementById('pago-cuenta-row');
+    if(m.clabe){
+      document.getElementById('pago-clabe').textContent=m.clabe;
+      if(clabeRow)clabeRow.style.display='block';
+    } else {
+      if(clabeRow)clabeRow.style.display='none';
+    }
+    if(m.cuenta){
+      document.getElementById('pago-cuenta').textContent=m.cuenta.replace(/(\d{4})(?=\d)/g,'$1 ');
+      if(cuentaRow)cuentaRow.style.display='block';
+    } else {
+      if(cuentaRow)cuentaRow.style.display='none';
+    }
+  }catch(e){}
+}
+function copiarDato(spanId,btnId){
+  var el=document.getElementById(spanId);
+  var btn=document.getElementById(btnId);
+  if(!el||!btn)return;
+  var txt=el.textContent.replace(/\s/g,'');
+  if(!txt)return;
+  navigator.clipboard.writeText(txt).then(function(){
+    var orig=btn.textContent;
+    btn.textContent='✓ Copiado';
+    btn.style.background='var(--gold)';
+    btn.style.color='#000';
+    setTimeout(function(){btn.textContent=orig;btn.style.background='transparent';btn.style.color='var(--gold)';},2000);
+  }).catch(function(){
+    var ta=document.createElement('textarea');
+    ta.value=txt;ta.style.position='fixed';ta.style.opacity='0';
+    document.body.appendChild(ta);ta.select();document.execCommand('copy');document.body.removeChild(ta);
+    var orig=btn.textContent;
+    btn.textContent='✓ Copiado';btn.style.background='var(--gold)';btn.style.color='#000';
+    setTimeout(function(){btn.textContent=orig;btn.style.background='transparent';btn.style.color='var(--gold)';},2000);
+  });
+}
+function xxxFileSelected(inp){
+  var info=document.getElementById('xxxFileInfo');
+  if(inp.files[0]){
+    info.textContent='✓ '+inp.files[0].name;
+    info.style.display='block';
+    var label=document.getElementById('xxxFileLabel');
+    if(label)label.style.borderColor='var(--gold)';
+  }
+}
+// Wrapper: submitPagoXXX — valida con apiCEP+Banxico antes de dar acceso
+var _submitPagoXXX_original=submitPagoXXX;
+submitPagoXXX=async function(){
+  var fileInput=document.getElementById('xxxFileInput');
+  var phoneInput=document.getElementById('xxxPhone');
+  var errEl=document.getElementById('xxxSubmitError');
+  if(errEl)errEl.style.display='none';
+  var phone=(phoneInput?phoneInput.value:'').trim();
+  var file=fileInput?fileInput.files[0]:null;
+  if(!phone||phone.replace(/\D/g,'').length<10){if(errEl){errEl.textContent='Ingresa tu número de teléfono.';errEl.style.display='block';}return;}
+  if(!file){if(errEl){errEl.textContent='Selecciona el comprobante de pago.';errEl.style.display='block';}return;}
+  var btn=document.getElementById('btnSubmitPago');
+  if(btn){btn.disabled=true;btn.textContent='Verificando con Banxico…';}
+  try{
+    var ext=file.name.split('.').pop().toLowerCase();
+    var fname='comp_'+Date.now()+'.'+ext;
+    var upRes=await fetch(SB+'/storage/v1/object/comprobantes/'+fname,{method:'POST',headers:{'apikey':SK,'Authorization':'Bearer '+SK,'Content-Type':file.type},body:file});
+    if(!upRes.ok){throw new Error('Error al subir imagen');}
+    var imgUrl=SB+'/storage/v1/object/public/comprobantes/'+fname;
+    var valRes=await fetch(SB+'/functions/v1/validate-receipt',{
+      method:'POST',
+      headers:{'apikey':SK,'Authorization':'Bearer '+SK,'Content-Type':'application/json'},
+      body:JSON.stringify({phone:phone.replace(/\D/g,''),image_url:imgUrl})
+    });
+    var valData=await valRes.json();
+    var verdict=valData.verdict||'revision_manual';
+    var code=valData.code||null;
+    if(verdict==='rechazado'){
+      var code=valData.code||'';
+      var msg='Comprobante no válido. Verifica que el monto y la cuenta sean correctos.';
+      if(code==='wrong_date')msg='La fecha del comprobante no corresponde a hoy.';
+      else if(code==='wrong_amount')msg='El monto es insuficiente. El acceso cuesta $50 MXN.';
+      else if(code==='not_receipt')msg='La imagen no parece ser un comprobante de transferencia.';
+      else if(code==='duplicate')msg='Este comprobante ya fue utilizado anteriormente.';
+      else if(code==='rate_limit')msg='Demasiados intentos. Espera unos minutos.';
+      if(errEl){errEl.textContent=msg;errEl.style.display='block';}
+      return;
+    }
+    _xxxPhone=phone.replace(/\D/g,'');
+    if(code){_xxxCodeId=code;}
+    unlockPaidLevels();
+    closeXXXModal();
+    if(selectedLevel&&LOCKED_LEVELS.includes(selectedLevel))goToPlayers();
+    if(verdict==='aprobado'){
+      toast('✓ Pago verificado con Banxico. ¡Acceso activado!');
+    }else{
+      toast('Comprobante recibido. Acceso temporal mientras lo revisamos.');
+    }
+  }catch(e){if(errEl){errEl.textContent='Error al enviar. Intenta de nuevo.';errEl.style.display='block';}}
+  finally{if(btn){btn.disabled=false;btn.textContent='Enviar comprobante';}}
+};
+
+function confirmXXXDisclaimer(){
+  var chks=['chk1','chk2','chk3','chk4'];
+  var allChecked=chks.every(function(id){var el=document.getElementById(id);return el&&el.checked;});
+  if(!allChecked){toast('Acepta todos los puntos para continuar');return;}
+  document.getElementById('xxxDisclaimerOverlay').classList.add('hidden');
+  _disclaimerAccepted=true;
+  initGame();
+}
+function cancelXXXDisclaimer(){
+  document.getElementById('xxxDisclaimerOverlay').classList.add('hidden');
+}
+
+function procederDesdeAprobado(){
+  closeXXXModal();
+  if(selectedLevel&&LOCKED_LEVELS.includes(selectedLevel))goToPlayers();
+}
+// handleLockedLevel: primero pide teléfono/código, disclaimer va antes de iniciar
+function handleLockedLevel(level){
+  _setLevel(level);
+  if(!_xxxUnlocked){
+    openXXXModal();
+  } else {
+    goToPlayers();
+  }
+}
+</script>
+
 </body>
 </html>
