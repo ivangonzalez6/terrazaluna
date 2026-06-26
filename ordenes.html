@@ -1142,8 +1142,8 @@ function loadHistory(){
 function insertHist(rec){return spost('/rest/v1/history',{id:rec.id,table_num:rec.table,table_note:rec.tableNote||'',opened_at:new Date(rec.openedAt).toISOString(),closed_at:new Date(rec.closedAt).toISOString(),total:rec.total,item_count:rec.itemCount,items:rec.items||[],persons:rec.persons||[],payment_method:rec.paymentMethod||'efectivo'});}
 function updateHist(id,total,note){return spatch('/rest/v1/history?id=eq.'+id,{total:total,edit_note:note});}
 async function insertFinanceMovements(rec){
-  // Usar fecha LOCAL del openedAt (primer producto) — evita desfase UTC en noche/madrugada
-  var openDt=new Date(rec.openedAt);
+  // Usar fecha LOCAL del closedAt (momento de cobro) — la venta pertenece al día en que se cobró
+  var openDt=new Date(rec.closedAt||rec.openedAt);
   var openDate=openDt.getFullYear()+'-'+String(openDt.getMonth()+1).padStart(2,'0')+'-'+String(openDt.getDate()).padStart(2,'0');
   var today=openDate;
   // Agrupar importe por método de pago
@@ -1202,8 +1202,8 @@ async function updateFinanceMovements(histId,newTotal,paymentMethod){
   var today=new Date().toISOString().split('T')[0];
   var histRec=appHistory.find(function(h){return h.id===histId;});
   if(histRec){
-    // Usar fecha local del openedAt, no del cierre
-    var refDt=new Date(histRec.openedAt||histRec.closedAt);
+    // Usar fecha local del closedAt (momento de cobro)
+    var refDt=new Date(histRec.closedAt||histRec.openedAt);
     today=refDt.getFullYear()+'-'+String(refDt.getMonth()+1).padStart(2,'0')+'-'+String(refDt.getDate()).padStart(2,'0');
   }
   var CARD_NET_FACTOR=1-0.035*1.16;
@@ -2283,7 +2283,7 @@ async function renderKitchen(){
 // ══ CAJA ══
 function pRange(p){var n=new Date(),s=new Date(n);if(p==='day')s.setHours(0,0,0,0);else if(p==='week'){var d=s.getDay();s.setDate(s.getDate()-(d===0?6:d-1));s.setHours(0,0,0,0);}else if(p==='month'){s.setDate(1);s.setHours(0,0,0,0);}else{s.setMonth(0,1);s.setHours(0,0,0,0);}return{from:s.getTime(),to:n.getTime()};}
 function pLabel(p){return{day:'Hoy',week:'Esta semana',month:'Este mes',year:'Este año'}[p];}
-function filtHist(p){var r=pRange(p);return appHistory.filter(function(h){return h.openedAt>=r.from&&h.openedAt<=r.to;});}
+function filtHist(p){var r=pRange(p);return appHistory.filter(function(h){var ts=h.closedAt||h.openedAt;return ts>=r.from&&ts<=r.to;});}
 function renderStats(){
   document.querySelectorAll('.per-tab').forEach(function(b){b.classList.toggle('active',b.getAttribute('data-period')===curPeriod);});
   var f=filtHist(curPeriod),tot=f.reduce(function(s,h){return s+h.total;},0);
@@ -2292,7 +2292,7 @@ function renderStats(){
   if(!f.length){list.innerHTML='<div class="empty"><div class="etit crescent">Sin registros</div><div class="esub">No hay cuentas en este período</div></div>';return;}
   var isDay=curPeriod==='day';
   f.forEach(function(h){
-    var d=new Date(h.openedAt),ds=d.toLocaleDateString('es-MX',{day:'2-digit',month:'short'})+' '+d.getHours().toString().padStart(2,'0')+':'+d.getMinutes().toString().padStart(2,'0');
+    var d=new Date(h.closedAt||h.openedAt),ds=d.toLocaleDateString('es-MX',{day:'2-digit',month:'short'})+' '+d.getHours().toString().padStart(2,'0')+':'+d.getMinutes().toString().padStart(2,'0');
     var el=document.createElement('div');el.className='hi';
     var CARD_NET=1-0.035*1.16;
     var isCard=h.paymentMethod==='tarjeta';
