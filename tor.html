@@ -948,8 +948,8 @@ async function initGame(){
     var body={id:uid5(),level:selectedLevel,mode:selectedMode,players:players,status:'playing',current_card:null,current_player_index:0,round:1,unlocked_by:_xxxPhone||null};
     var sala=await ensureSala();if(sala)body.room_code=sala;
     var data=await sbPost('tor_games',body);
-    if(!data||data.error)throw new Error('Error');
-    game=Array.isArray(data)?data[0]:data;
+    if(!data||data.message||!Array.isArray(data))throw new Error(data&&data.message?data.message:'Insert fallido');
+    game=data[0];
     resetPools();
     await loadCardPool(game.level,game.mode);
     startRealtime();startPolling();
@@ -960,7 +960,7 @@ async function initGame(){
       fetch(SB+'/rest/v1/tor_rooms?code=eq.'+_salaCode,{method:'PATCH',headers:Object.assign({},h(),{'Prefer':'return=minimal'}),body:JSON.stringify({status:'playing',current_game_id:game.id})}).catch(function(){});
     }
     resetSalaInactivityTimer();
-  }catch(err){toast('Error al iniciar. Intenta de nuevo.');console.error(err);}
+  }catch(err){toast('Error al iniciar: '+(err&&err.message?err.message:'desconocido'));console.error(err);}
   finally{btn.disabled=false;btn.textContent='Iniciar Juego';}
 }
 
@@ -1246,37 +1246,46 @@ async function validateCodigoXXX(){
   var errEl=document.getElementById('codeXXXError');
   var inp=document.getElementById('inputCodigoXXX');
   errEl.style.display='none';
-  var val=(inp.value||'').trim().replace(/\s/g,'');
-  if(!val){errEl.textContent='Ingresa tu teléfono o código';errEl.style.display='block';return;}
+  var raw=(inp.value||'').trim();
+  if(!raw){errEl.textContent='Ingresa tu teléfono o código';errEl.style.display='block';return;}
+  var onlyDigits=raw.replace(/\D/g,'');
+  var isPhone=onlyDigits.length>=10;
   inp.disabled=true;
   try{
-    if(/^\d{7,15}$/.test(val)){
-      // Teléfono: buscar aprobado en tor_unlock_requests
-      var rows=await sbGet('tor_unlock_requests','?phone=eq.'+val+'&status=eq.aprobado&select=id&limit=1');
-      if(rows&&rows.length){
-        _xxxUnlocked=true;_xxxPhone=val;
-        closeOverlay('codeXXXOverlay');
-        document.dispatchEvent(new Event('vorNotifPrompt'));
-        initGame();
-      }else{errEl.textContent='Número no registrado o pendiente de aprobación.';errEl.style.display='block';}
+    if(isPhone){
+      // 1. Verificar pago aprobado en tor_unlock_requests
+      var rows=await sbGet('tor_unlock_requests','?phone=eq.'+onlyDigits+'&status=eq.aprobado&select=id&limit=1');
+      if(Array.isArray(rows)&&rows.length){
+        _xxxPhone=onlyDigits;unlockPaidLevels();closeXXXModal();
+        if(selectedLevel&&LOCKED_LEVELS.includes(selectedLevel))goToPlayers();
+        toast('\u00a1Acceso concedido!');return;
+      }
+      // 2. Verificar como código numérico en tor_unlock_codes
+      var telCode=await sbGet('tor_unlock_codes','?code=eq.'+onlyDigits+'&select=id,expires_at,used,multi_use&limit=1');
+      if(Array.isArray(telCode)&&telCode.length){
+        var tc=telCode[0];
+        if(tc.expires_at&&new Date(tc.expires_at)<new Date()){errEl.textContent='Este acceso ha expirado.';errEl.style.display='block';return;}
+        if(!tc.multi_use&&tc.used){errEl.textContent='Este acceso ya fue utilizado.';errEl.style.display='block';return;}
+        _xxxCodeId=tc.id;unlockPaidLevels();closeXXXModal();
+        if(selectedLevel&&LOCKED_LEVELS.includes(selectedLevel))goToPlayers();
+        toast('\u00a1Acceso concedido!');return;
+      }
+      errEl.textContent='Número no registrado o pago no aprobado.';errEl.style.display='block';
     }else{
-      // Código alfanumérico
-      var res=await fetch(SB+'/functions/v1/validate-code',{
-        method:'POST',
-        headers:{'Content-Type':'application/json','apikey':SK},
-        body:JSON.stringify({code:val.toUpperCase()})
-      });
-      var data=await res.json();
-      if(data.valid){
-        _xxxUnlocked=true;
-        if(data.phone)_xxxPhone=data.phone;
-        if(data.code_id)_xxxCodeId=data.code_id;
-        closeOverlay('codeXXXOverlay');
-        document.dispatchEvent(new Event('vorNotifPrompt'));
-        initGame();
-      }else{errEl.textContent='Código inválido, ya usado o expirado.';errEl.style.display='block';}
+      // Código alfanumérico — consulta directa a tor_unlock_codes
+      var codeInput=raw.toUpperCase();
+      var codeRows=await sbGet('tor_unlock_codes','?code=eq.'+encodeURIComponent(codeInput)+'&select=id,expires_at,used,multi_use&limit=1');
+      if(Array.isArray(codeRows)&&codeRows.length){
+        var ce=codeRows[0];
+        if(ce.expires_at&&new Date(ce.expires_at)<new Date()){errEl.textContent='Este código ya expiró.';errEl.style.display='block';return;}
+        if(!ce.multi_use&&ce.used){errEl.textContent='Este código ya fue utilizado.';errEl.style.display='block';return;}
+        _xxxCodeId=ce.id;unlockPaidLevels();closeXXXModal();
+        if(selectedLevel&&LOCKED_LEVELS.includes(selectedLevel))goToPlayers();
+        toast('\u00a1Código válido!');return;
+      }
+      errEl.textContent='Código inválido o expirado.';errEl.style.display='block';
     }
-  }catch(e){errEl.textContent='Error de conexión.';errEl.style.display='block';}
+  }catch(e){errEl.textContent='Error: '+(e&&e.message?e.message:'desconocido');errEl.style.display='block';}
   finally{inp.disabled=false;}
 }
 
