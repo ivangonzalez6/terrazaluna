@@ -818,6 +818,7 @@ async function cleanupStaleGames(roomCode){
   var cutoff=new Date(Date.now()-2*60*60*1000).toISOString();
   try{
     await sbPatch('tor_games?room_code=eq.'+roomCode+'&status=eq.playing&created_at=lt.'+cutoff,{status:'ended'});
+    await sbPatch('tor_rooms?code=eq.'+roomCode+'&status=in.(playing,waiting)&created_at=lt.'+cutoff,{status:'closed',current_game_id:null});
   }catch(e){}
 }
 

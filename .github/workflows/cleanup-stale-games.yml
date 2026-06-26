@@ -9,20 +9,24 @@ jobs:
   cleanup:
     runs-on: ubuntu-latest
     steps:
-      - name: Cerrar juegos playing con más de 2 horas
+      - name: Cerrar juegos y salas con más de 2 horas inactivos
         run: |
+          ANON="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJpdWF4a3B5dWp5cGlpZ3hvbHd0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDgzNzUyMjYsImV4cCI6MjA2Mzk1MTIyNn0.GRlSo3F2E6NqJz7oCVvLqHtYfxPFDUK_O2wTiQIjDFQ"
+          BASE="https://biuaxkpyujypiigxolwt.supabase.co/rest/v1"
           CUTOFF=$(date -u -d '2 hours ago' +%Y-%m-%dT%H:%M:%SZ 2>/dev/null || date -u -v-2H +%Y-%m-%dT%H:%M:%SZ)
-          curl -s -X PATCH \
-            "https://biuaxkpyujypiigxolwt.supabase.co/rest/v1/tor_games?status=eq.playing&created_at=lt.${CUTOFF}" \
-            -H "apikey: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJpdWF4a3B5dWp5cGlpZ3hvbHd0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDgzNzUyMjYsImV4cCI6MjA2Mzk1MTIyNn0.GRlSo3F2E6NqJz7oCVvLqHtYfxPFDUK_O2wTiQIjDFQ" \
-            -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJpdWF4a3B5dWp5cGlpZ3hvbHd0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDgzNzUyMjYsImV4cCI6MjA2Mzk1MTIyNn0.GRlSo3F2E6NqJz7oCVvLqHtYfxPFDUK_O2wTiQIjDFQ" \
-            -H "Content-Type: application/json" \
-            -H "Prefer: return=representation" \
-            -d '{"status":"ended"}' | python3 -c "
+
+          # 1. Cerrar juegos stale
+          GAMES=$(curl -s -X PATCH \
+            "${BASE}/tor_games?status=eq.playing&created_at=lt.${CUTOFF}" \
+            -H "apikey: ${ANON}" -H "Authorization: Bearer ${ANON}" \
+            -H "Content-Type: application/json" -H "Prefer: return=representation" \
+            -d '{"status":"ended"}')
+          echo "$GAMES" | python3 -c "
 import sys,json
 data=json.load(sys.stdin)
-if isinstance(data,list):
-    print(f'Cerrados {len(data)} juego(s) stale')
-else:
-    print('Respuesta:',data)
+print(f'Juegos cerrados: {len(data) if isinstance(data,list) else data}')
 "
+
+          # 2. Cerrar salas stale (playing o waiting con más de 2h)
+          ROOMS=$(curl -s -X PATCH \
+            "${BASE}/tor_rooms
