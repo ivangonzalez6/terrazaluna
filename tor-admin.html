@@ -3171,7 +3171,7 @@ function renderCodigos(){
     else if(expirado){estado='Expirado';color='#b7791f';}
     else{estado='Activo';color='#2d7a2d';}
     var code=esc(c.code||'');
-    var phoneGames=c.phone&&_gamesByPhone[c.phone]?_gamesByPhone[c.phone]:null;
+    var phoneGames=_gamesByPhone[c.code]||_gamesByPhone[c.phone]||null;
     var useCount=c.use_count||0;
     var partidas=phoneGames?phoneGames.count:0;
     var lastUsed=c.last_used_at?fmtDT(c.last_used_at):(phoneGames&&phoneGames.last?fmtDT(phoneGames.last):'—');
@@ -4064,20 +4064,4 @@ async function insertGenerated(){
 var _autoRefreshTimer=null;
 function startAutoRefresh(){
   stopAutoRefresh();
-  _autoRefreshTimer=setInterval(function(){
-    if(_isRefreshing)return;
-    var active=document.querySelector('.section.active');
-    var name=active?active.id.replace('section-',''):'';
-    loadPagos();
-    loadCodigos();
-    if(name==='usuarios')loadUsuarios();
-    else if(name==='partidas')loadPartidas();
-    else if(name==='push')loadPushDevices();
-  },45000);
-}
-function stopAutoRefresh(){
-  if(_autoRefreshTimer){clearInterval(_autoRefreshTimer);_autoRefreshTimer=null;}
-}
-</script>
-</body>
-</html>
+  _autoRefreshTimer=setInterva
