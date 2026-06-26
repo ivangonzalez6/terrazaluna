@@ -785,7 +785,7 @@ function resetSalaInactivityTimer(){
     if(game){sbPatch('tor_games?id=eq.'+game.id,{status:'ended'}).catch(function(){});}
     stopRealtime();stopPolling();
     game=null;_disclaimerAccepted=false;
-    _xxxUnlocked=false;_xxxPhone=null;
+    _xxxUnlocked=false;_xxxPhone=null;_xxxCodeId=null;_xxxCode=null;
     clearTimeout(_inactivityTimer);
     salirDeSala();
     toast('Sala cerrada por inactividad.',3500);
@@ -1162,7 +1162,7 @@ async function checkXXXAccess(){
 }
 
 function revocarAcceso(){
-  _xxxUnlocked=false;_xxxPhone=null;_xxxCodeId=null;
+  _xxxUnlocked=false;_xxxPhone=null;_xxxCodeId=null;_xxxCode=null;
   clearTimeout(_inactivityTimer);
   var el=document.createElement('div');
   el.className='overlay';
@@ -1215,4 +1215,456 @@ function setCardType(type){
 }
 
 async function confirmAddCard(){
-  va
+  var txt=document.getElementById('newCardText').value.trim();
+  if(!txt){toast('Escribe algo');return;}
+  var card={text:txt,type:selectedCardType,level:game?game.level:'familiar',source:'comunidad',approved:false,game_id:game?game.id:null,user_ref:_xxxPhone||null};
+  try{
+    var saved=await sbPost('tor_cards_community',card);
+    var savedId=(Array.isArray(saved)?saved[0]:saved)?.id||('comm_'+Date.now());
+    var localCard=Object.assign({},card,{id:savedId,tags:[]});
+    // Calcular turno aleatorio futuro (3–8 turnos adelante)
+    var players=game?game.players||[]:[];
+    var currTurn=game?(((game.round||1)-1)*players.length+(game.current_player_index||0)):0;
+    var randomOffset=Math.floor(Math.random()*6)+3;
+    var targetTurn=currTurn+randomOffset;
+    // Agregar a la cola local de este dispositivo
+    _cardQueue.push({card:localCard,targetTurn:targetTurn});
+    // Broadcast a todos los demás dispositivos en la sala
+    if(_ws&&_ws.readyState===1){
+      _ws.send(JSON.stringify({
+        topic:'realtime:public:tor_games',
+        event:'broadcast',
+        payload:{event:'card_queued',payload:{card:localCard,targetTurn:targetTurn}},
+        ref:'cq_'+Date.now()
+      }));
+    }
+    document.getElementById('newCardText').value='';
+    closeOverlay('addCardOverlay');
+    toast('¡Carta agregada! Aparecerá en el siguiente turno.');
+  }catch(e){toast('Error al guardar');}
+}
+
+async function confirmAddPlayer(){
+  var name=document.getElementById('newPlayerName').value.trim();
+  if(!name){toast('Ingresa un nombre');return;}
+  if(!game)return;
+  var players=game.players||[];
+  players.push({name:name,color:col(players.length)});
+  game.players=players;
+  await sbPatch('tor_games?id=eq.'+game.id,{players:players});
+  document.getElementById('newPlayerName').value='';
+  closeOverlay('addPlayerOverlay');
+  toast(name+' se unió 🎉');
+}
+
+function openOptionsOverlay(){document.getElementById('optionsOverlay').classList.remove('hidden');}
+function openAddPlayerOverlay(){document.getElementById('addPlayerOverlay').classList.remove('hidden');setTimeout(function(){document.getElementById('newPlayerName').focus();},200);}
+function openAddCardOverlay(){document.getElementById('addCardOverlay').classList.remove('hidden');setTimeout(function(){document.getElementById('newCardText').focus();},200);}
+function openInviteOverlay(){
+  var url=getSalaUrl();
+  document.getElementById('overlayCode').textContent=_salaCode||'------';
+  document.getElementById('overlayUrl').textContent=url;
+  document.getElementById('inviteOverlay').classList.remove('hidden');
+}
+function copyLink(){navigator.clipboard.writeText(getSalaUrl()).then(function(){toast('¡Link de sala copiado!');});}
+function shareGame(){
+  var url=getSalaUrl();
+  var msg='¿Te atreverías a jugar Verdad o Reto conmigo? 🙈😈';
+  var fullMsg=msg+' '+url;
+  if(navigator.share)navigator.share({title:'Verdad o Reto',text:msg,url:url}).catch(function(){});
+  else window.open('https://wa.me/?text='+encodeURIComponent(fullMsg),'_blank');
+}
+
+function startRealtime(){
+  stopRealtime();
+  if(!game)return;
+  var url=SB.replace('https','wss')+'/realtime/v1/websocket?apikey='+SK+'&vsn=1.0.0';
+  try{
+    _ws=new WebSocket(url);
+    _ws.onopen=function(){
+      _ws.send(JSON.stringify({
+        topic:'realtime:public:tor_games',
+        event:'phx_join',
+        payload:{
+          config:{
+            broadcast:{self:false,ack:false},
+            presence:{key:''},
+            postgres_changes:[{event:'UPDATE',schema:'public',table:'tor_games',filter:'id=eq.'+game.id}]
+          }
+        },
+        ref:'1'
+      }));
+    };
+    _ws.onmessage=function(e){
+      try{
+        var m=JSON.parse(e.data);
+        // Broadcast de carta de comunidad
+        if(m.event==='broadcast'&&m.payload&&m.payload.event==='card_queued'&&m.payload.payload&&m.payload.payload.card){
+          _cardQueue.push({card:m.payload.payload.card,targetTurn:m.payload.payload.targetTurn||0});
+          return;
+        }
+        // Formato Supabase Realtime: payload.data.record
+        var rec=null;
+        if(m.event==='postgres_changes'&&m.payload&&m.payload.data&&m.payload.data.record){
+          rec=m.payload.data.record;
+        }
+        // Formato alternativo legacy: payload.record
+        else if(m.event==='UPDATE'&&m.payload&&m.payload.record){
+          rec=m.payload.record;
+        }
+        if(!rec)return;
+        if(!game||rec.id!==game.id)return;
+        if(rec.status==='ended'){endGame(true);return;}
+        if(rec.current_card&&JSON.stringify(rec.current_card)!==JSON.stringify(game.current_card)){
+          if(rec.current_card.id)_cardQueue=_cardQueue.filter(function(item){return item.card.id!==rec.current_card.id;});
+          game.current_card=rec.current_card;game.current_player_index=rec.current_player_index||0;game.round=rec.round||1;
+          showCard(rec.current_card);
+        }
+      }catch(er){}
+    };
+    _wsHb=setInterval(function(){if(_ws&&_ws.readyState===1)_ws.send(JSON.stringify({topic:'phoenix',event:'heartbeat',payload:{},ref:'hb'}));},25000);
+  }catch(e){}
+}
+function stopRealtime(){if(_wsHb){clearInterval(_wsHb);_wsHb=null;}if(_ws){try{_ws.close();}catch(e){}; _ws=null;}}
+function startPolling(){
+  stopPolling();if(!game)return;
+  _pollInterval=setInterval(async function(){
+    if(!game)return;
+    var gid=game.id;
+    try{
+      // Para guests: verificar estado de sala (tor_rooms siempre es legible)
+      if(_salaCode&&!_salaIsHost){
+        var sr=await sbGet('tor_rooms','?code=eq.'+_salaCode+'&select=status,current_game_id');
+        if(sr&&sr[0]){
+          if(sr[0].status==='closed'){salirDeSala();return;}
+          // Si la sala ya no está en 'playing' con este juego → host terminó
+          var salaGameId=sr[0].current_game_id;
+          if(sr[0].status!=='playing'||(salaGameId!==null&&salaGameId!==undefined&&salaGameId!==gid)){
+            if(game&&game.id===gid){_salaLastGameId=gid;endGame(true);}
+            return;
+          }
+          if(!salaGameId){
+            // current_game_id es null → host terminó el juego
+            if(game&&game.id===gid){_salaLastGameId=gid;endGame(true);}
+            return;
+          }
+        }
+      }
+      // Sincronizar carta desde tor_games (fallback si realtime falló)
+      var rows=await sbGet('tor_games','?id=eq.'+gid+'&select=status,current_card,current_player_index,round');
+      if(!rows||!rows[0])return;
+      var r=rows[0];
+      if(r.status==='ended'){if(game&&game.id===gid)endGame(true);return;}
+      if(r.current_card&&JSON.stringify(r.current_card)!==JSON.stringify(game&&game.current_card)){
+        if(game&&game.id===gid){
+          // Limpiar carta de la cola si ya fue elegida por otro dispositivo
+          if(r.current_card.id)_cardQueue=_cardQueue.filter(function(item){return item.card.id!==r.current_card.id;});
+          game.current_card=r.current_card;
+          game.current_player_index=r.current_player_index||0;
+          game.round=r.round||1;
+          showCard(r.current_card);
+        }
+      }
+    }catch(e){}
+  },2500);
+}
+function stopPolling(){if(_pollInterval){clearInterval(_pollInterval);_pollInterval=null;}}
+
+function openXXXModal(){document.getElementById('codeXXXOverlay').classList.remove('hidden');}
+function closeXXXModal(){document.getElementById('codeXXXOverlay').classList.add('hidden');}
+
+async function submitPagoXXX(){
+  var file=document.getElementById('pagoFile').files[0];
+  var phone=document.getElementById('inputTelXXX').value.trim();
+  if(!phone||phone.replace(/\D/g,'').length<10){toast('Ingresa tu número de teléfono');return;}
+  if(!file){toast('Selecciona el comprobante');return;}
+  var btn=document.querySelector('#pagoForm .btn-gold');
+  if(btn){btn.disabled=true;btn.textContent='Enviando…';}
+  try{
+    var ext=file.name.split('.').pop().toLowerCase();
+    var fname='comp_'+Date.now()+'.'+ext;
+    var upRes=await fetch(SB+'/storage/v1/object/comprobantes/'+fname,{method:'POST',headers:{'apikey':SK,'Authorization':'Bearer '+SK,'Content-Type':file.type},body:file});
+    var imgUrl=upRes.ok?(SB+'/storage/v1/object/public/comprobantes/'+fname):null;
+    var reqRes=await sbPost('tor_unlock_requests',{phone:phone,status:'pendiente',comprobante_url:imgUrl});
+    var reqId=Array.isArray(reqRes)?reqRes[0]?.id:reqRes?.id;
+    if(imgUrl&&reqId){
+      fetch(SB+'/functions/v1/validate-receipt',{method:'POST',headers:{'apikey':SK,'Authorization':'Bearer '+SK,'Content-Type':'application/json'},body:JSON.stringify({request_id:reqId,image_url:imgUrl,phone:phone})}).catch(function(){});
+    }
+    _xxxPhone=phone;
+    unlockPaidLevels();
+    closeXXXModal();
+    if(selectedLevel&&LOCKED_LEVELS.includes(selectedLevel))goToPlayers();
+    toast('¡Acceso concedido! Comprobante enviado para revisión.');
+  }catch(e){toast('Error al enviar. Intenta de nuevo.');}
+  finally{if(btn){btn.disabled=false;btn.textContent='Enviar comprobante';}}
+}
+
+async function validateCodigoXXX(){
+  var raw=document.getElementById('inputCodigoXXX').value.trim();
+  var errEl=document.getElementById('codeXXXError');
+  errEl.style.display='none';
+  if(!raw){errEl.textContent='Ingresa tu teléfono o código.';errEl.style.display='block';return;}
+  var onlyDigits=raw.replace(/\D/g,'');
+  var isPhone=onlyDigits.length>=10;
+  try{
+    if(isPhone){
+      // 1. Verificar pago aprobado
+      var rows=await sbGet('tor_unlock_requests','?phone=eq.'+onlyDigits+'&status=eq.aprobado&select=id&limit=1');
+      if(Array.isArray(rows)&&rows.length){_xxxPhone=onlyDigits;unlockPaidLevels();closeXXXModal();if(selectedLevel&&LOCKED_LEVELS.includes(selectedLevel))goToPlayers();toast('¡Acceso concedido!');return;}
+      // 2. Verificar teléfono registrado como código en tor_unlock_codes
+      var telCode=await sbGet('tor_unlock_codes','?code=eq.'+onlyDigits+'&select=id,code,expires_at,used,multi_use,use_count&limit=1');
+      if(Array.isArray(telCode)&&telCode.length){
+        var tc=telCode[0];
+        if(tc.expires_at&&new Date(tc.expires_at)<new Date()){errEl.textContent='Este acceso ha expirado.';errEl.style.display='block';return;}
+        if(!tc.multi_use&&tc.used){errEl.textContent='Este acceso ya fue utilizado.';errEl.style.display='block';return;}
+        _xxxCodeId=tc.id;_xxxCode=tc.code;
+        sbPatch('tor_unlock_codes?id=eq.'+tc.id,{use_count:(tc.use_count||0)+1,last_used_at:new Date().toISOString()}).catch(function(){});
+        unlockPaidLevels();closeXXXModal();if(selectedLevel&&LOCKED_LEVELS.includes(selectedLevel))goToPlayers();toast('¡Acceso concedido!');return;
+      }
+      errEl.textContent='Teléfono no encontrado o pago no aprobado.';errEl.style.display='block';
+    }else{
+      var codeInput=raw.replace(/\D/g,'').length>=10?raw.replace(/\D/g,''):raw.toUpperCase();
+      var codeRows=await sbGet('tor_unlock_codes','?code=eq.'+codeInput+'&select=id,code,expires_at,used,multi_use,use_count&limit=1');
+      if(Array.isArray(codeRows)&&codeRows.length){
+        var ce=codeRows[0];
+        if(ce.expires_at&&new Date(ce.expires_at)<new Date()){errEl.textContent='Este código ya expiró.';errEl.style.display='block';return;}
+        if(!ce.multi_use&&ce.used){errEl.textContent='Este código ya fue utilizado.';errEl.style.display='block';return;}
+        _xxxCodeId=ce.id;_xxxCode=ce.code;
+        sbPatch('tor_unlock_codes?id=eq.'+ce.id,{use_count:(ce.use_count||0)+1,last_used_at:new Date().toISOString()}).catch(function(){});
+        if(!ce.multi_use)sbPatch('tor_unlock_codes?id=eq.'+ce.id,{used:true}).catch(function(){});
+        unlockPaidLevels();closeXXXModal();if(selectedLevel&&LOCKED_LEVELS.includes(selectedLevel))goToPlayers();toast('¡Código válido!');return;
+      }
+      errEl.textContent='Código inválido o expirado.';errEl.style.display='block';
+    }
+  }catch(e){errEl.textContent='Error de conexión.';errEl.style.display='block';}
+}
+
+// ── PUSH SUBSCRIPTIONS ──
+var _VAPID_KEY='BLrMdK06AbTTyrWpJzTkc-SwukmKw0sWQgj_vHcKGWgDIPFP14szlv38kRTvRcvgtmq6qBCGo95GMKpsMI55JdQ';
+function _b64ToUint8(b){var p='='.repeat((4-b.length%4)%4);var s=(b+p).replace(/-/g,'+').replace(/_/g,'/');var r=atob(s);return Uint8Array.from([...r].map(function(c){return c.charCodeAt(0);}));}
+var _swReg=null;
+async function _regPush(){
+  if(!_swReg||!('PushManager' in window)||Notification.permission!=='granted')return;
+  try{
+    var sub=await _swReg.pushManager.getSubscription();
+    if(!sub)sub=await _swReg.pushManager.subscribe({userVisibleOnly:true,applicationServerKey:_b64ToUint8(_VAPID_KEY)});
+    var j=sub.toJSON();
+    await fetch(SB+'/rest/v1/push_subscriptions',{
+      method:'POST',
+      headers:Object.assign({},h(),{'Prefer':'resolution=merge-duplicates,return=minimal'}),
+      body:JSON.stringify({endpoint:j.endpoint,p256dh:j.keys.p256dh,auth:j.keys.auth,user_agent:navigator.userAgent||''})
+    });
+  }catch(e){}
+}
+
+document.addEventListener('vorNotifPrompt',function(){
+  if(!('Notification' in window)||Notification.permission!=='default')return;
+  setTimeout(function(){Notification.requestPermission().then(function(perm){if(perm==='granted')_regPush();});},2000);
+});
+
+(async function(){
+  if('serviceWorker' in navigator){
+    try{_swReg=await navigator.serviceWorker.register('/sw-vor.js');}catch(e){}
+    if('Notification' in window&&Notification.permission==='granted')_regPush();
+  }
+  var p=new URLSearchParams(window.location.search);
+  var gameId=p.get('id');
+  initSala();
+
+  // Enlace directo a juego (legacy ?id=)
+  if(gameId){
+    try{
+      var rows=await sbGet('tor_games','?id=eq.'+gameId+'&select=*');
+      if(rows&&rows.length&&rows[0].status==='playing'){
+        game=rows[0];resetPools();await loadCardPool(game.level,game.mode);
+        startRealtime();startPolling();
+        if(game.current_card)showCard(game.current_card);
+        else{var c=pickCardForTurn(0);if(c){game.current_card=c;showCard(c);}}
+        return;
+      }
+    }catch(e){}
+  }
+
+  // Guest llegó por link de sala (?sala=CODE) o tiene sala guardada
+  if(_salaCode&&!_salaIsHost){
+    try{
+      // Ver si hay juego activo en este momento
+      var activeRows=await sbGet('tor_games','?room_code=eq.'+_salaCode+'&status=eq.playing&order=created_at.desc&limit=1&select=*');
+      if(activeRows&&activeRows.length){
+        var found=activeRows[0];
+        _salaLastGameId=found.id;
+        game=found;resetPools();await loadCardPool(game.level,game.mode);
+        startRealtime();startPolling();
+        if(game.current_card)showCard(game.current_card);
+        else{var c2=pickCardForTurn(0);if(c2){game.current_card=c2;showCard(c2);}}
+        return;
+      }
+    }catch(e){}
+    // Sin juego activo → pantalla de espera + polling
+    startSalaPolling();
+    return;
+  }
+
+  show('screen-welcome');
+})();
+</script>
+<script>
+// ── Funciones del modal XXX (inyectadas por separado) ──
+function showXXXCodigo(){
+  ['xxxViewAdquirir','xxxViewConfirm','xxxViewAprobado','xxxViewRechazado'].forEach(function(id){var e=document.getElementById(id);if(e)e.style.display='none';});
+  var v=document.getElementById('xxxViewCodigo');if(v)v.style.display='block';
+}
+function showXXXAdquirir(){
+  ['xxxViewCodigo','xxxViewConfirm','xxxViewAprobado','xxxViewRechazado'].forEach(function(id){var e=document.getElementById(id);if(e)e.style.display='none';});
+  var v=document.getElementById('xxxViewAdquirir');if(v)v.style.display='block';
+  loadXXXPricing();
+}
+function showXXXView(id){
+  ['xxxViewCodigo','xxxViewAdquirir','xxxViewConfirm','xxxViewAprobado','xxxViewRechazado'].forEach(function(vid){var e=document.getElementById(vid);if(e)e.style.display='none';});
+  var v=document.getElementById(id);if(v)v.style.display='block';
+}
+async function loadXXXPricing(){
+  try{
+    var rows=await sbGet('tor_config','?key=in.(precio_xxx,banco,clabe,cuenta,beneficiario,concepto)&select=key,value');
+    if(!Array.isArray(rows))return;
+    var m={};rows.forEach(function(r){m[r.key]=r.value;});
+    if(m.precio_xxx){var pe=document.getElementById('pago-precio');if(pe)pe.textContent='$'+m.precio_xxx+' MXN';}
+    if(m.banco)document.getElementById('pago-banco').textContent=m.banco;
+    if(m.beneficiario)document.getElementById('pago-beneficiario').textContent=m.beneficiario;
+    if(m.concepto){var ce=document.getElementById('pago-concepto');if(ce)ce.textContent=m.concepto;}
+    var clabeRow=document.getElementById('pago-clabe-row');
+    var cuentaRow=document.getElementById('pago-cuenta-row');
+    if(m.clabe){
+      document.getElementById('pago-clabe').textContent=m.clabe;
+      if(clabeRow)clabeRow.style.display='block';
+    } else {
+      if(clabeRow)clabeRow.style.display='none';
+    }
+    if(m.cuenta){
+      document.getElementById('pago-cuenta').textContent=m.cuenta.replace(/(\d{4})(?=\d)/g,'$1 ');
+      if(cuentaRow)cuentaRow.style.display='block';
+    } else {
+      if(cuentaRow)cuentaRow.style.display='none';
+    }
+  }catch(e){}
+}
+function copiarDato(spanId,btnId){
+  var el=document.getElementById(spanId);
+  var btn=document.getElementById(btnId);
+  if(!el||!btn)return;
+  var txt=el.textContent.replace(/\s/g,'');
+  if(!txt)return;
+  navigator.clipboard.writeText(txt).then(function(){
+    var orig=btn.textContent;
+    btn.textContent='✓ Copiado';
+    btn.style.background='var(--gold)';
+    btn.style.color='#000';
+    setTimeout(function(){btn.textContent=orig;btn.style.background='transparent';btn.style.color='var(--gold)';},2000);
+  }).catch(function(){
+    // Fallback para navegadores sin clipboard API
+    var ta=document.createElement('textarea');
+    ta.value=txt;ta.style.position='fixed';ta.style.opacity='0';
+    document.body.appendChild(ta);ta.select();document.execCommand('copy');document.body.removeChild(ta);
+    var orig=btn.textContent;
+    btn.textContent='✓ Copiado';btn.style.background='var(--gold)';btn.style.color='#000';
+    setTimeout(function(){btn.textContent=orig;btn.style.background='transparent';btn.style.color='var(--gold)';},2000);
+  });
+}
+function xxxFileSelected(inp){
+  var info=document.getElementById('xxxFileInfo');
+  if(inp.files[0]){
+    info.textContent='✓ '+inp.files[0].name;
+    info.style.display='block';
+    var label=document.getElementById('xxxFileLabel');
+    if(label)label.style.borderColor='var(--gold)';
+  }
+}
+// Wrapper: submitPagoXXX — valida con apiCEP+Banxico antes de dar acceso
+var _submitPagoXXX_original=submitPagoXXX;
+submitPagoXXX=async function(){
+  var fileInput=document.getElementById('xxxFileInput');
+  var phoneInput=document.getElementById('xxxPhone');
+  var errEl=document.getElementById('xxxSubmitError');
+  if(errEl)errEl.style.display='none';
+  var phone=(phoneInput?phoneInput.value:'').trim();
+  var file=fileInput?fileInput.files[0]:null;
+  if(!phone||phone.replace(/\D/g,'').length<10){if(errEl){errEl.textContent='Ingresa tu número de teléfono.';errEl.style.display='block';}return;}
+  if(!file){if(errEl){errEl.textContent='Selecciona el comprobante de pago.';errEl.style.display='block';}return;}
+  var btn=document.getElementById('btnSubmitPago');
+  if(btn){btn.disabled=true;btn.textContent='Verificando con Banxico…';}
+  try{
+    // 1. Subir imagen
+    var ext=file.name.split('.').pop().toLowerCase();
+    var fname='comp_'+Date.now()+'.'+ext;
+    var upRes=await fetch(SB+'/storage/v1/object/comprobantes/'+fname,{method:'POST',headers:{'apikey':SK,'Authorization':'Bearer '+SK,'Content-Type':file.type},body:file});
+    if(!upRes.ok){throw new Error('Error al subir imagen');}
+    var imgUrl=SB+'/storage/v1/object/public/comprobantes/'+fname;
+
+    // 2. Llamar a validate-receipt y ESPERAR respuesta (apiCEP + fallback Claude)
+    var valRes=await fetch(SB+'/functions/v1/validate-receipt',{
+      method:'POST',
+      headers:{'apikey':SK,'Authorization':'Bearer '+SK,'Content-Type':'application/json'},
+      body:JSON.stringify({phone:phone.replace(/\D/g,''),image_url:imgUrl})
+    });
+    var valData=await valRes.json();
+    var verdict=valData.verdict||'revision_manual';
+    var code=valData.code||null;
+
+    if(verdict==='rechazado'){
+      var code=valData.code||'';
+      var msg='Comprobante no válido. Verifica que el monto y la cuenta sean correctos.';
+      if(code==='wrong_date')msg='La fecha del comprobante no corresponde a hoy.';
+      else if(code==='wrong_amount')msg='El monto es insuficiente. El acceso cuesta $50 MXN.';
+      else if(code==='not_receipt')msg='La imagen no parece ser un comprobante de transferencia.';
+      else if(code==='duplicate')msg='Este comprobante ya fue utilizado anteriormente.';
+      else if(code==='rate_limit')msg='Demasiados intentos. Espera unos minutos.';
+      if(errEl){errEl.textContent=msg;errEl.style.display='block';}
+      return;
+    }
+
+    // Aprobado (Banxico) o revisión manual (Claude Vision) → dar acceso
+    _xxxPhone=phone.replace(/\D/g,'');
+    if(code){_xxxCodeId=code;} // guardar código para revocación futura
+    unlockPaidLevels();
+    closeXXXModal();
+    if(selectedLevel&&LOCKED_LEVELS.includes(selectedLevel))goToPlayers();
+
+    if(verdict==='aprobado'){
+      toast('✓ Pago verificado con Banxico. ¡Acceso activado!');
+    }else{
+      toast('Comprobante recibido. Acceso temporal mientras lo revisamos.');
+    }
+  }catch(e){if(errEl){errEl.textContent='Error al enviar. Intenta de nuevo.';errEl.style.display='block';}}
+  finally{if(btn){btn.disabled=false;btn.textContent='Enviar comprobante';}}
+};
+
+function confirmXXXDisclaimer(){
+  var chks=['chk1','chk2','chk3','chk4'];
+  var allChecked=chks.every(function(id){var el=document.getElementById(id);return el&&el.checked;});
+  if(!allChecked){toast('Acepta todos los puntos para continuar');return;}
+  document.getElementById('xxxDisclaimerOverlay').classList.add('hidden');
+  _disclaimerAccepted=true;
+  initGame();
+}
+function cancelXXXDisclaimer(){
+  document.getElementById('xxxDisclaimerOverlay').classList.add('hidden');
+  // El usuario queda en la pantalla de jugadores, sin cancelar el nivel
+}
+
+function procederDesdeAprobado(){
+  closeXXXModal();
+  if(selectedLevel&&LOCKED_LEVELS.includes(selectedLevel))goToPlayers();
+}
+// handleLockedLevel: primero pide teléfono/código, disclaimer va antes de iniciar
+function handleLockedLevel(level){
+  _setLevel(level);
+  if(!_xxxUnlocked){
+    openXXXModal();
+  } else {
+    goToPlayers();
+  }
+}
+</script>
+
+</body>
+</html>
