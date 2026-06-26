@@ -200,7 +200,6 @@ textarea{resize:none;line-height:1.5;}
 <body>
 <script>
 // Ocultar welcome inmediatamente si el usuario es guest de sala
-// (evita el flash de la pantalla de inicio mientras carga el IIFE async)
 (function(){
   var p=new URLSearchParams(window.location.search);
   var salaParam=p.get('sala');
@@ -215,17 +214,13 @@ textarea{resize:none;line-height:1.5;}
 })();
 </script>
 
-<!-- ══════════════════════════════════════════
-     PANTALLA 1: BIENVENIDA
-══════════════════════════════════════════ -->
+<!-- PANTALLA 1: BIENVENIDA -->
 <div class="screen" id="screen-welcome">
   <div class="inner" style="padding:16px 0">
     <div style="text-align:center;padding:8px 0 4px">
       <h1 class="hero-title">Verdad<br>o Reto</h1>
       <div class="hero-ornament"><div class="hero-ornament-inner">El clásico de las noches épicas</div></div>
     </div>
-
-    <!-- Banner de sala activa (guest que volvió) -->
     <div id="salaGuestBanner" style="display:none;text-align:center;margin:8px 0 4px;">
       <div style="display:inline-flex;align-items:center;gap:8px;background:rgba(201,163,91,.1);border:1px solid rgba(201,163,91,.25);border-radius:10px;padding:8px 14px;">
         <span style="font-size:13px;">🎮</span>
@@ -233,7 +228,6 @@ textarea{resize:none;line-height:1.5;}
         <button onclick="salirDeSala()" style="font-size:10px;color:var(--faint);background:none;border:none;cursor:pointer;padding:0 0 0 4px;text-transform:uppercase;letter-spacing:.04em;">Salir</button>
       </div>
     </div>
-
     <div class="mode-grid">
       <div class="mode-card" onclick="selectMode('presencial')">
         <div class="mode-card-icon">🍹</div>
@@ -246,13 +240,10 @@ textarea{resize:none;line-height:1.5;}
         <div class="mode-card-sub">Por videollamada<br>o chat</div>
       </div>
     </div>
-
   </div>
 </div>
 
-<!-- ══════════════════════════════════════════
-     PANTALLA 2: JUGADORES
-══════════════════════════════════════════ -->
+<!-- PANTALLA 2: JUGADORES -->
 <div class="screen hidden" id="screen-players">
   <div class="inner">
     <div>
@@ -260,24 +251,17 @@ textarea{resize:none;line-height:1.5;}
       <h2 class="section-title">¿Quién se<br>atreve a jugar?</h2>
       <div class="section-line"><div class="section-line-dot"></div></div>
     </div>
-
     <div class="card" style="padding:16px 16px 12px">
       <div class="section-label" style="margin-bottom:12px">Nombres de los jugadores</div>
       <div class="names-grid" id="namesGrid"></div>
-      <button class="btn-add-player" style="margin-top:12px" onclick="addPlayerField()">
-        ＋ Agregar jugador
-      </button>
+      <button class="btn-add-player" style="margin-top:12px" onclick="addPlayerField()">＋ Agregar jugador</button>
     </div>
-
     <button class="btn btn-gold" id="startGameBtn" onclick="initGame()">Iniciar Juego</button>
     <button class="btn btn-outline" onclick="show('screen-level')">Volver</button>
   </div>
 </div>
 
-
-<!-- ══════════════════════════════════════════
-     PANTALLA 3: NIVEL
-══════════════════════════════════════════ -->
+<!-- PANTALLA 3: NIVEL -->
 <div class="screen hidden" id="screen-level">
   <div class="inner">
     <div>
@@ -285,7 +269,6 @@ textarea{resize:none;line-height:1.5;}
       <h2 class="section-title">Elige el nivel</h2>
       <div class="section-line"><div class="section-line-dot"></div></div>
     </div>
-
     <div class="level-grid">
       <div class="level-option" data-level="familiar" onclick="selectLevel('familiar')">
         <div class="level-option-icon">🌿</div>
@@ -316,32 +299,24 @@ textarea{resize:none;line-height:1.5;}
         <div id="lock-xxx" style="position:absolute;top:6px;right:8px;font-size:10px;opacity:.6;">🔒</div>
       </div>
     </div>
-
     <div class="level-desc-box hidden" id="levelDesc"></div>
-
     <button class="btn btn-gold" onclick="goToPlayers()">Siguiente</button>
     <button class="btn btn-outline" onclick="show('screen-welcome')">Volver</button>
   </div>
 </div>
 
-
-<!-- ══════════════════════════════════════════
-     PANTALLA 4: CARTA / JUEGO
-══════════════════════════════════════════ -->
+<!-- PANTALLA 4: CARTA / JUEGO -->
 <div class="screen hidden" id="screen-card">
   <div class="level-badge" id="levelBadge">Mixto</div>
   <div class="round-badge" id="roundBadge">Ronda 1</div>
-
   <div class="card-reveal">
     <div id="cardBadge"></div>
     <div class="card-text" id="cardText">…</div>
     <div id="cardLevel"></div>
   </div>
-
   <div class="card-next-wrap" style="margin-top:28px">
     <button class="btn-next" id="btnSiguiente" onclick="nextTurn()">Siguiente</button>
   </div>
-
   <div class="game-bar">
     <button class="game-bar-btn" onclick="openInviteOverlay()">📲 Invitar</button>
     <button class="game-bar-btn" onclick="openOptionsOverlay()" style="font-size:22px;line-height:1;padding:6px 14px;">＋</button>
@@ -349,10 +324,7 @@ textarea{resize:none;line-height:1.5;}
   </div>
 </div>
 
-
-<!-- ══════════════════════════════════════════
-     PANTALLA ESPERA SALA (GUESTS ENTRE JUEGOS)
-══════════════════════════════════════════ -->
+<!-- PANTALLA ESPERA SALA -->
 <div class="screen hidden" id="screen-sala-waiting">
   <div class="inner" style="justify-content:center;text-align:center;gap:16px;padding:40px 0;">
     <div style="font-size:52px;line-height:1;margin-bottom:4px">🌙</div>
@@ -370,12 +342,7 @@ textarea{resize:none;line-height:1.5;}
   </div>
 </div>
 
-
-<!-- ══════════════════════════════════════════
-     OVERLAYS
-══════════════════════════════════════════ -->
-
-<!-- Invitar -->
+<!-- OVERLAYS -->
 <div class="overlay hidden" id="inviteOverlay" onclick="closeOverlay('inviteOverlay',event)">
   <div class="overlay-sheet">
     <div class="overlay-title">Invitar a jugar</div>
@@ -390,7 +357,6 @@ textarea{resize:none;line-height:1.5;}
   </div>
 </div>
 
-<!-- Opciones -->
 <div class="overlay hidden" id="optionsOverlay" onclick="closeOverlay('optionsOverlay',event)">
   <div class="overlay-sheet">
     <div class="overlay-title">Opciones</div>
@@ -407,21 +373,18 @@ textarea{resize:none;line-height:1.5;}
   </div>
 </div>
 
-<!-- Confirmar fin de juego -->
 <div class="overlay hidden" id="endConfirmOverlay" onclick="closeOverlay('endConfirmOverlay',event)">
   <div class="overlay-sheet">
     <div class="overlay-title">Terminar juego</div>
-    <div class="overlay-sub">Esto termina la partida para todos los jugadores. Esta acción no se puede deshacer.</div>
+    <div class="overlay-sub">Esto termina la partida para todos los jugadores.</div>
     <button class="btn btn-danger" style="width:100%;padding:14px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:13px;letter-spacing:.08em;text-transform:uppercase;cursor:pointer;font-family:'Inter Tight',sans-serif;font-weight:600;" onclick="endGame()">Terminar juego</button>
     <button class="overlay-close" onclick="closeOverlay('endConfirmOverlay')">Cancelar</button>
   </div>
 </div>
 
-<!-- Modal: Acceso XXX (código / adquirir) -->
+<!-- Modal: Acceso XXX -->
 <div class="overlay hidden" id="codeXXXOverlay">
   <div class="overlay-sheet">
-
-    <!-- Vista A: Ingresar teléfono o código -->
     <div id="xxxViewCodigo">
       <div class="overlay-title">🔞 Nivel XXX</div>
       <div class="overlay-sub">Ingresa tu número de WhatsApp registrado o un código de acceso.</div>
@@ -434,12 +397,9 @@ textarea{resize:none;line-height:1.5;}
       <button class="btn btn-gold" onclick="showXXXAdquirir()" style="width:100%;margin-bottom:10px;">🛒 Adquirir acceso XXX</button>
       <button class="overlay-close" onclick="closeOverlay('codeXXXOverlay')">Cancelar</button>
     </div>
-
-    <!-- Vista B: Adquirir código -->
     <div id="xxxViewAdquirir" style="display:none;">
       <div class="overlay-title">🛒 Adquirir acceso XXX</div>
-      <div class="overlay-sub">Sigue los pasos, sube tu comprobante y recibirás tu código al instante.</div>
-
+      <div class="overlay-sub">Transfiere y sube tu comprobante para recibir acceso.</div>
       <div style="background:var(--bg3);border:1px solid var(--line2);border-radius:12px;padding:14px 16px;margin-bottom:14px;font-size:13px;line-height:1.8;color:var(--ink);">
         <div style="font-weight:600;margin-bottom:6px;font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--dim);">Instrucciones de pago</div>
         <div>💳 <strong>Transfiere <span id="pago-precio">$100 MXN</span></strong> a:</div>
@@ -470,10 +430,8 @@ textarea{resize:none;line-height:1.5;}
         </div>
         <div style="font-size:12px;color:var(--dim);">📌 Concepto: <strong id="pago-concepto">Tu whatsapp</strong></div>
       </div>
-
       <div style="font-size:12px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--dim);margin-bottom:8px;">Tu número de WhatsApp</div>
       <input id="xxxPhone" type="tel" placeholder="10 dígitos" maxlength="15" style="width:100%;box-sizing:border-box;border:1px solid var(--line2);border-radius:10px;padding:11px 14px;font-size:15px;margin-bottom:12px;font-family:'Inter Tight',sans-serif;background:var(--bg3);color:var(--ink);">
-
       <div style="font-size:12px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--dim);margin-bottom:8px;">Comprobante de pago</div>
       <label id="xxxFileLabel" style="display:flex;align-items:center;justify-content:center;gap:8px;border:2px dashed var(--line2);border-radius:10px;padding:18px;cursor:pointer;color:var(--dim);font-size:13px;margin-bottom:12px;background:var(--bg3);">
         📎 Toca para subir foto del comprobante
@@ -481,34 +439,25 @@ textarea{resize:none;line-height:1.5;}
       </label>
       <div id="xxxFileInfo" style="font-size:12px;color:var(--gold);margin-bottom:12px;display:none;"></div>
       <div id="xxxSubmitError" style="color:#c0392b;font-size:12px;margin-bottom:8px;display:none;"></div>
-
       <button class="btn btn-gold" id="btnSubmitPago" onclick="submitPagoXXX()" style="width:100%;margin-bottom:10px;">Enviar comprobante</button>
       <div style="text-align:center;margin-bottom:10px;">
-        <a href="https://wa.me/527761148786" target="_blank" style="font-size:11px;color:var(--faint);text-decoration:none;line-height:1.6;">
-          ¿Problemas con tu pago? Comunícate por<br><span style="color:#25D366;font-weight:600;">WhatsApp 776 114 8786</span>
-        </a>
+        <a href="https://wa.me/527761148786" target="_blank" style="font-size:11px;color:var(--faint);text-decoration:none;line-height:1.6;">¿Problemas? <span style="color:#25D366;font-weight:600;">WhatsApp 776 114 8786</span></a>
       </div>
       <button class="overlay-close" onclick="showXXXCodigo()">← Volver / Ya tengo acceso</button>
     </div>
-
-    <!-- Vista C: Revisión manual -->
     <div id="xxxViewConfirm" style="display:none;text-align:center;padding:8px 0;">
       <div style="font-size:40px;margin-bottom:12px;">🕐</div>
       <div class="overlay-title" style="font-size:20px;">En revisión</div>
-      <div style="font-size:14px;color:var(--dim);line-height:1.6;margin:12px 0 20px;">Tu comprobante requiere verificación manual. Te avisamos por WhatsApp en cuanto sea aprobado — luego entra con tu número.</div>
+      <div style="font-size:14px;color:var(--dim);line-height:1.6;margin:12px 0 20px;">Tu comprobante requiere verificación manual. Te avisamos por WhatsApp en cuanto sea aprobado.</div>
       <button class="overlay-close" onclick="closeOverlay('codeXXXOverlay')">Cerrar</button>
     </div>
-
-    <!-- Vista D: Aprobado -->
     <div id="xxxViewAprobado" style="display:none;text-align:center;padding:8px 0;">
       <div style="font-size:36px;margin-bottom:10px;">🎉</div>
       <div class="overlay-title" style="font-size:20px;color:#2d7a2d;">¡Acceso activado!</div>
-      <div id="xxxAprobadoSub" style="font-size:13px;color:var(--dim);margin:8px 0 16px;line-height:1.6;">Tu número de WhatsApp quedó registrado. A partir de ahora entra al nivel XXX con tu número — no necesitas recordar nada más.</div>
+      <div id="xxxAprobadoSub" style="font-size:13px;color:var(--dim);margin:8px 0 16px;line-height:1.6;">Tu número quedó registrado.</div>
       <button class="btn btn-gold" onclick="procederDesdeAprobado()" style="width:100%;margin-bottom:10px;">Continuar al juego →</button>
-      <button class="overlay-close" onclick="closeOverlay('codeXXXOverlay')">Cerrar (entrar después)</button>
+      <button class="overlay-close" onclick="closeOverlay('codeXXXOverlay')">Cerrar</button>
     </div>
-
-    <!-- Vista E: Rechazado -->
     <div id="xxxViewRechazado" style="display:none;text-align:center;padding:8px 0;">
       <div style="font-size:36px;margin-bottom:10px;">❌</div>
       <div class="overlay-title" style="font-size:18px;color:#c0392b;">No pudimos validar</div>
@@ -516,39 +465,25 @@ textarea{resize:none;line-height:1.5;}
       <button class="btn btn-gold" onclick="showXXXAdquirir()" style="width:100%;margin-bottom:10px;">Intentar de nuevo</button>
       <button class="overlay-close" onclick="closeOverlay('codeXXXOverlay')">Cancelar</button>
     </div>
-
   </div>
 </div>
 
-<!-- Modal: Disclaimer XXX (aviso de consentimiento) -->
+<!-- Modal: Disclaimer XXX -->
 <div class="overlay hidden" id="xxxDisclaimerOverlay">
   <div class="overlay-sheet">
     <div class="overlay-title" style="color:#9b1a1a;">⚠️ Contenido para adultos</div>
-    <div class="overlay-sub">Antes de continuar con el nivel XXX, todos los participantes deben confirmar lo siguiente:</div>
+    <div class="overlay-sub">Todos los participantes deben confirmar:</div>
     <div style="background:rgba(155,26,26,.06);border:1px solid rgba(155,26,26,.2);border-radius:12px;padding:14px 16px;margin-bottom:14px;font-size:13px;line-height:1.7;color:var(--ink);">
-      <label style="display:flex;align-items:flex-start;gap:10px;cursor:pointer;margin-bottom:10px;">
-        <input type="checkbox" id="chk1" style="margin-top:3px;accent-color:#9b1a1a;width:16px;height:16px;flex-shrink:0;">
-        <span>Todos los participantes tienen <strong>18 años o más</strong>.</span>
-      </label>
-      <label style="display:flex;align-items:flex-start;gap:10px;cursor:pointer;margin-bottom:10px;">
-        <input type="checkbox" id="chk2" style="margin-top:3px;accent-color:#9b1a1a;width:16px;height:16px;flex-shrink:0;">
-        <span>Todos han dado su <strong>consentimiento voluntario</strong> para participar en contenido adulto.</span>
-      </label>
-      <label style="display:flex;align-items:flex-start;gap:10px;cursor:pointer;margin-bottom:10px;">
-        <input type="checkbox" id="chk3" style="margin-top:3px;accent-color:#9b1a1a;width:16px;height:16px;flex-shrink:0;">
-        <span>No se tomarán <strong>fotos, videos ni grabaciones</strong> de ningún tipo.</span>
-      </label>
-      <label style="display:flex;align-items:flex-start;gap:10px;cursor:pointer;">
-        <input type="checkbox" id="chk4" style="margin-top:3px;accent-color:#9b1a1a;width:16px;height:16px;flex-shrink:0;">
-        <span>Cualquier participante puede <strong>rechazar un reto en cualquier momento</strong> sin presión.</span>
-      </label>
+      <label style="display:flex;align-items:flex-start;gap:10px;cursor:pointer;margin-bottom:10px;"><input type="checkbox" id="chk1" style="margin-top:3px;accent-color:#9b1a1a;width:16px;height:16px;flex-shrink:0;"><span>Todos tienen <strong>18 años o más</strong>.</span></label>
+      <label style="display:flex;align-items:flex-start;gap:10px;cursor:pointer;margin-bottom:10px;"><input type="checkbox" id="chk2" style="margin-top:3px;accent-color:#9b1a1a;width:16px;height:16px;flex-shrink:0;"><span>Todos dan su <strong>consentimiento voluntario</strong>.</span></label>
+      <label style="display:flex;align-items:flex-start;gap:10px;cursor:pointer;margin-bottom:10px;"><input type="checkbox" id="chk3" style="margin-top:3px;accent-color:#9b1a1a;width:16px;height:16px;flex-shrink:0;"><span>No se harán <strong>grabaciones</strong>.</span></label>
+      <label style="display:flex;align-items:flex-start;gap:10px;cursor:pointer;"><input type="checkbox" id="chk4" style="margin-top:3px;accent-color:#9b1a1a;width:16px;height:16px;flex-shrink:0;"><span>Cualquiera puede <strong>rechazar un reto</strong> sin presión.</span></label>
     </div>
-    <button class="btn btn-gold" id="btnConfirmXXX" onclick="confirmXXXDisclaimer()" style="background:#9b1a1a;border-color:#9b1a1a;width:100%;padding:14px;border-radius:12px;font-size:13px;letter-spacing:.08em;text-transform:uppercase;cursor:pointer;font-family:'Inter Tight',sans-serif;font-weight:600;color:#fff;border:none;display:block;">Acepto — continuar con nivel XXX</button>
+    <button class="btn btn-gold" id="btnConfirmXXX" onclick="confirmXXXDisclaimer()" style="background:#9b1a1a;width:100%;padding:14px;border-radius:12px;font-size:13px;letter-spacing:.08em;text-transform:uppercase;cursor:pointer;font-family:'Inter Tight',sans-serif;font-weight:600;color:#fff;border:none;display:block;">Acepto — continuar con nivel XXX</button>
     <button class="overlay-close" onclick="cancelXXXDisclaimer()">Cancelar</button>
   </div>
 </div>
 
-<!-- Agregar jugador -->
 <div class="overlay hidden" id="addPlayerOverlay" onclick="closeOverlay('addPlayerOverlay',event)">
   <div class="overlay-sheet">
     <div class="overlay-title">Agregar jugador</div>
@@ -561,7 +496,6 @@ textarea{resize:none;line-height:1.5;}
   </div>
 </div>
 
-<!-- Agregar pregunta / reto -->
 <div class="overlay hidden" id="addCardOverlay" onclick="closeOverlay('addCardOverlay',event)">
   <div class="overlay-sheet">
     <div class="overlay-title">Agregar al juego</div>
@@ -576,7 +510,6 @@ textarea{resize:none;line-height:1.5;}
   </div>
 </div>
 
-<!-- Feedback al terminar juego -->
 <div class="overlay hidden" id="feedbackOverlay">
   <div class="overlay-sheet">
     <div style="font-size:28px;text-align:center;margin-bottom:8px">🌙</div>
@@ -588,7 +521,6 @@ textarea{resize:none;line-height:1.5;}
   </div>
 </div>
 
-<!-- Marketing media -->
 <div id="mktOverlay" style="position:fixed;inset:0;z-index:500;background:#000;display:none;align-items:center;justify-content:center;opacity:0;transition:opacity .5s;">
   <img id="mktImg" style="max-width:100vw;max-height:100vh;object-fit:contain;display:none">
   <video id="mktVideo" style="max-width:100vw;max-height:100vh;object-fit:contain;display:none" playsinline></video>
@@ -605,46 +537,22 @@ textarea{resize:none;line-height:1.5;}
 const SB='https://biuaxkpyujypiigxolwt.supabase.co';
 const SK='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJpdWF4a3B5dWp5cGlpZ3hvbHd0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk5MDY1ODUsImV4cCI6MjA5NTQ4MjU4NX0.4MJ2WfTo6tDNImcN0E5RCy4ilU2-sXnmRb6_BB85YaQ';
 
-// ── Constantes ──
 const COLORS=['#c0392b','#2980b9','#27ae60','#d35400','#8e44ad','#16a085','#7f6b4a','#2c3e50','#1a7a4a','#8a6420'];
-const LEVELS={
-  familiar:{label:'Familiar',chip:'chip-familiar'},
-  light:   {label:'Light',   chip:'chip-light'},
-  hot:     {label:'Hot',     chip:'chip-hot'},
-  extremo: {label:'Extremo', chip:'chip-extremo'},
-  mixto:   {label:'Mixto',   chip:'chip-mixto'},
-  comunidad:{label:'Comunidad',chip:'chip-comunidad'},
-  xxx:     {label:'XXX 🔞',  chip:'chip-extremo'}
-};
-const LEVEL_INFO={
-  familiar: {icon:'🌿',desc:'El nivel de entrada. Preguntas y retos divertidos aptos para cualquier persona y cualquier ambiente. Sin contenido adulto — perfecto para romper el hielo.'},
-  light:    {icon:'✨',desc:'Un escalón arriba del familiar. Preguntas más personales y retos con algo de picardía. Para adultos que empiezan a soltar la lengua.'},
-  hot:      {icon:'🔥',desc:'La temperatura sube. Preguntas atrevidas y retos subidos de tono para adultos con confianza. Un nivel más arriba que Light, pero aún con límites.'},
-  extremo:  {icon:'💀',desc:'Casi sin filtros. Preguntas y retos muy directos y explícitos. Solo para grupos con mucha confianza. Un escalón debajo del XXX.'},
-  mixto:    {icon:'🎲',desc:'Una mezcla de todos los niveles. Garantiza variedad y sorpresas para cualquier tipo de grupo.'},
-  comunidad:{icon:'🌙',desc:'Cartas creadas por la comunidad. Auténticas, locales y siempre únicas.'},
-  xxx:      {icon:'🔞',desc:'El nivel más alto. Contenido completamente explícito y sin censura. Solo para mayores de 18 con consentimiento de todos. Requiere código de acceso.'}
-};
+const LEVELS={familiar:{label:'Familiar',chip:'chip-familiar'},light:{label:'Light',chip:'chip-light'},hot:{label:'Hot',chip:'chip-hot'},extremo:{label:'Extremo',chip:'chip-extremo'},mixto:{label:'Mixto',chip:'chip-mixto'},comunidad:{label:'Comunidad',chip:'chip-comunidad'},xxx:{label:'XXX 🔞',chip:'chip-extremo'}};
+const LEVEL_INFO={familiar:{icon:'🌿',desc:'El nivel de entrada. Preguntas y retos divertidos aptos para cualquier persona. Sin contenido adulto.'},light:{icon:'✨',desc:'Un escalón arriba del familiar. Preguntas más personales y retos con algo de picardía.'},hot:{icon:'🔥',desc:'La temperatura sube. Preguntas atrevidas y retos subidos de tono para adultos con confianza.'},extremo:{icon:'💀',desc:'Casi sin filtros. Preguntas y retos muy directos. Solo para grupos con mucha confianza.'},mixto:{icon:'🎲',desc:'Una mezcla de todos los niveles. Garantiza variedad y sorpresas.'},comunidad:{icon:'🌙',desc:'Cartas creadas por la comunidad. Auténticas, locales y siempre únicas.'},xxx:{icon:'🔞',desc:'El nivel más alto. Contenido completamente explícito. Solo para mayores de 18. Requiere acceso.'}};
 
-// ── Estado ──
 var selectedMode='presencial', selectedLevel=null, selectedCardType='truth';
-var _xxxUnlocked=false; // true cuando el usuario validó acceso
-var _xxxPhone=null;    // teléfono validado, para verificar revocación
-var _xxxCodeId=null;   // legacy (no usado)
-var _disclaimerAccepted=false; // true cuando el disclaimer fue aceptado en esta sesión de inicio
+var _xxxUnlocked=false;
+var _xxxPhone=null;
+var _xxxCodeId=null;
+var _disclaimerAccepted=false;
 var _inactivityTimer=null;
-var INACTIVITY_MS=15*60*1000; // 15 minutos
-
-// Niveles que requieren acceso de pago / código
+var INACTIVITY_MS=15*60*1000;
 var LOCKED_LEVELS=['hot','extremo','mixto','xxx'];
 
-// Desbloquea los niveles de pago tras validar teléfono/código/comprobante
 function unlockPaidLevels(){
   _xxxUnlocked=true;
-  LOCKED_LEVELS.forEach(function(l){
-    var lk=document.getElementById('lock-'+l);
-    if(lk)lk.style.display='none';
-  });
+  LOCKED_LEVELS.forEach(function(l){var lk=document.getElementById('lock-'+l);if(lk)lk.style.display='none';});
   resetInactivityTimer();
 }
 
@@ -663,95 +571,45 @@ function resetInactivityTimer(){
 }
 
 var game=null, _pendingPlayers=[];
-// Pools de cartas (allCombined es el pool unificado en orden determinístico)
 var allQ=[], allD=[], allQComm=[], allDComm=[], allCombined=[];
 var usedQIdx=[], usedDIdx=[], usedQCommIdx=[], usedDCommIdx=[];
 var commQDone=false, commDDone=false;
-// Realtime
 var _ws=null, _wsRef=0, _wsHb=null, _pollInterval=null;
-// Salas
-// sala vars are below
-// Marketing media
-var _cardCount=0; // cartas mostradas en el juego actual (para cadencia de marketing)
-var _cardShownAt=null; // timestamp cuando se mostró la carta actual
-var _trackedCard=null; // carta actual siendo trackeada
-var _sessionTagScores={}; // tag → {total: N, count: N} — preferencias semánticas de la sesión
-var _tagReorderTurn=0;   // último turno en que se reordenó el pool
-var _recentCardTags=[];  // tags de las últimas 5 cartas para penalizar repetición
-var _config={}; // configuración dinámica desde tor_config
+var _cardCount=0, _cardShownAt=null, _trackedCard=null;
+var _sessionTagScores={}, _tagReorderTurn=0, _recentCardTags=[];
+var _config={};
 
-// ── SALAS (transparente — el usuario nunca las ve) ──
-// Una sala = grupo de usuarios ligados al mismo host.
-// El host crea la sala automáticamente al iniciar su primer juego.
-// Los guests llegan por link ?sala=CODE y quedan ligados en localStorage.
-// Cuando el host inicia un nuevo juego, todos los guests auto-entran.
+var _salaCode=null, _salaIsHost=false, _salaPollInterval=null, _salaLastGameId=null;
+var _guestWaitTimer=null, _salaInactivityTimer=null, _cardQueue=[];
 
-var _salaCode=null;   // código de sala (6 chars)
-var _salaIsHost=false;
-var _salaPollInterval=null;
-var _salaLastGameId=null;
-var _guestWaitTimer=null;     // timeout 15min para guest en sala-waiting
-var _salaInactivityTimer=null; // timeout 15min del host para cerrar sala
-var _cardQueue=[];             // cola de cartas escritas por usuarios durante el juego
+function genSalaCode(){var c='ABCDEFGHJKLMNPQRSTUVWXYZ23456789';return Array.from({length:6},function(){return c[Math.floor(Math.random()*c.length)];}).join('');}
 
-function genSalaCode(){
-  var c='ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
-  return Array.from({length:6},function(){return c[Math.floor(Math.random()*c.length)];}).join('');
-}
-
-// Llamado al iniciar un juego (host). Si no hay sala, crea una.
 async function ensureSala(){
   if(_salaCode)return _salaCode;
-  _salaCode=genSalaCode();
-  _salaIsHost=true;
-  try{
-    await fetch(SB+'/rest/v1/tor_rooms',{
-      method:'POST',
-      headers:Object.assign({},h(),{'Prefer':'return=minimal'}),
-      body:JSON.stringify({code:_salaCode,status:'waiting'})
-    });
-    localStorage.setItem('tor_sala',_salaCode);
-    localStorage.setItem('tor_sala_host','1');
-  }catch(e){}
+  _salaCode=genSalaCode();_salaIsHost=true;
+  try{await fetch(SB+'/rest/v1/tor_rooms',{method:'POST',headers:Object.assign({},h(),{'Prefer':'return=minimal'}),body:JSON.stringify({code:_salaCode,status:'waiting'})});localStorage.setItem('tor_sala',_salaCode);localStorage.setItem('tor_sala_host','1');}catch(e){}
   return _salaCode;
 }
 
-// Enlace de sala compartible (host lo ve en el overlay de invitación)
-function getSalaUrl(){
-  var base=window.location.origin+window.location.pathname;
-  return _salaCode ? base+'?sala='+_salaCode : gameUrl();
-}
+function getSalaUrl(){var base=window.location.origin+window.location.pathname;return _salaCode?base+'?sala='+_salaCode:gameUrl();}
 
-// Guest: polling para detectar nuevo juego activo en la sala
 function startSalaPolling(){
   stopSalaPolling();
   if(!_salaCode||_salaIsHost)return;
-  // Mostrar pantalla de espera
   show('screen-sala-waiting');
-  // Timer propio del guest: 15min sin juego → salir de sala
-  _guestWaitTimer=setTimeout(function(){
-    salirDeSala();
-    toast('La sala cerró por inactividad.',3500);
-  },INACTIVITY_MS);
-
+  _guestWaitTimer=setTimeout(function(){salirDeSala();toast('La sala cerró por inactividad.',3500);},INACTIVITY_MS);
   _salaPollInterval=setInterval(async function(){
     try{
-      // Leer estado de sala (una sola query, fuente de verdad)
       var salaRows=await sbGet('tor_rooms','?code=eq.'+_salaCode+'&select=status,current_game_id');
       if(!salaRows||!salaRows[0])return;
       var sala=salaRows[0];
       if(sala.status==='closed'){salirDeSala();toast('La sala fue cerrada.',3000);return;}
-      // Hay juego activo nuevo
       var cgid=sala.current_game_id;
       if(sala.status==='playing'&&cgid&&cgid!==_salaLastGameId){
         var rows=await sbGet('tor_games','?id=eq.'+cgid+'&select=*');
         if(!rows||!rows.length||rows[0].status!=='playing')return;
-        var found=rows[0];
-        _salaLastGameId=found.id;
-        stopSalaPolling();
-        game=found;
-        resetPools();
-        await loadCardPool(game.level,game.mode);
+        var found=rows[0];_salaLastGameId=found.id;stopSalaPolling();
+        game=found;resetPools();await loadCardPool(game.level,game.mode);
         startRealtime();startPolling();
         if(game.current_card)showCard(game.current_card);
         else{var c=pickCardForTurn(0);if(c){game.current_card=c;showCard(c);}}
@@ -760,10 +618,7 @@ function startSalaPolling(){
     }catch(e){}
   },2500);
 }
-function stopSalaPolling(){
-  if(_salaPollInterval){clearInterval(_salaPollInterval);_salaPollInterval=null;}
-  if(_guestWaitTimer){clearTimeout(_guestWaitTimer);_guestWaitTimer=null;}
-}
+function stopSalaPolling(){if(_salaPollInterval){clearInterval(_salaPollInterval);_salaPollInterval=null;}if(_guestWaitTimer){clearTimeout(_guestWaitTimer);_guestWaitTimer=null;}}
 
 function salirDeSala(){
   stopSalaPolling();
@@ -774,83 +629,57 @@ function salirDeSala(){
   show('screen-welcome');
 }
 
-// Host: reiniciar timer de inactividad de sala (se llama al avanzar cartas)
 function resetSalaInactivityTimer(){
   if(!_salaCode||!_salaIsHost)return;
   if(_salaInactivityTimer)clearTimeout(_salaInactivityTimer);
   _salaInactivityTimer=setTimeout(function(){
-    // Cerrar sala para todos
     fetch(SB+'/rest/v1/tor_rooms?code=eq.'+_salaCode,{method:'PATCH',headers:Object.assign({},h(),{'Prefer':'return=minimal'}),body:JSON.stringify({status:'closed'})}).catch(function(){});
     if(game){sbPatch('tor_games?id=eq.'+game.id,{status:'ended'}).catch(function(){});}
-    stopRealtime();stopPolling();
-    game=null;_disclaimerAccepted=false;
-    _xxxUnlocked=false;_xxxPhone=null;
-    clearTimeout(_inactivityTimer);
-    salirDeSala();
-    toast('Sala cerrada por inactividad.',3500);
+    stopRealtime();stopPolling();game=null;_disclaimerAccepted=false;
+    _xxxUnlocked=false;_xxxPhone=null;clearTimeout(_inactivityTimer);
+    salirDeSala();toast('Sala cerrada por inactividad.',3500);
   },INACTIVITY_MS);
 }
 
 function initSala(){
   var p=new URLSearchParams(window.location.search);
   var salaFromUrl=p.get('sala');
-  if(salaFromUrl){
-    // Llegó por link de invitación
-    _salaCode=salaFromUrl.toUpperCase();
-    _salaIsHost=false;
-    localStorage.setItem('tor_sala',_salaCode);
-    localStorage.removeItem('tor_sala_host');
-    return;
-  }
-  // Restaurar de localStorage
+  if(salaFromUrl){_salaCode=salaFromUrl.toUpperCase();_salaIsHost=false;localStorage.setItem('tor_sala',_salaCode);localStorage.removeItem('tor_sala_host');return;}
   var saved=localStorage.getItem('tor_sala');
-  if(saved){
-    _salaCode=saved;
-    _salaIsHost=!!localStorage.getItem('tor_sala_host');
-  }
+  if(saved){_salaCode=saved;_salaIsHost=!!localStorage.getItem('tor_sala_host');}
 }
 
-// ── PRNG determinístico (Mulberry32) ──
 function strHash(s){var h=0;for(var i=0;i<s.length;i++){h=Math.imul(31,h)+s.charCodeAt(i)|0;}return h>>>0;}
 function mulberry32(seed){return function(){seed|=0;seed=seed+0x6D2B79F5|0;var t=Math.imul(seed^seed>>>15,1|seed);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296;};}
 function seededShuffle(arr,seed){var rng=mulberry32(seed),a=arr.slice();for(var i=a.length-1;i>0;i--){var j=Math.floor(rng()*(i+1)),t=a[i];a[i]=a[j];a[j]=t;}return a;}
 
-// ── API ──
 function h(){return{'apikey':SK,'Authorization':'Bearer '+SK,'Content-Type':'application/json'};}
 async function sbGet(t,f){var r=await fetch(SB+'/rest/v1/'+t+(f||''),{headers:h()});return r.json();}
 async function sbPost(t,b){var r=await fetch(SB+'/rest/v1/'+t,{method:'POST',headers:Object.assign({},h(),{'Prefer':'return=representation'}),body:JSON.stringify(b)});return r.json();}
 async function sbPatch(t,b){return fetch(SB+'/rest/v1/'+t,{method:'PATCH',headers:Object.assign({},h(),{'Prefer':'return=minimal'}),body:JSON.stringify(b)});}
 
-// ── Helpers ──
 function show(s){var id=s.indexOf('screen-')===0?s:'screen-'+s;document.querySelectorAll('.screen').forEach(function(el){el.classList.toggle('hidden',el.id!==id);});}
 function toast(m,dur){var t=document.getElementById('toast');t.textContent=m;t.classList.add('show');clearTimeout(t._t);t._t=setTimeout(function(){t.classList.remove('show');},dur||2600);}
 function esc(s){return String(s||'').replace(/[&<>"']/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];});}
 function uid5(){var c='ABCDEFGHJKMNPQRSTUVWXYZ23456789';var r='';for(var i=0;i<5;i++)r+=c[Math.floor(Math.random()*c.length)];return r;}
-function ini(n){return String(n||'').trim().substring(0,2).toUpperCase()||'?';}
 function col(i){return COLORS[i%COLORS.length];}
 function shuffle(arr){for(var i=arr.length-1;i>0;i--){var j=Math.floor(Math.random()*(i+1));var t=arr[i];arr[i]=arr[j];arr[j]=t;}return arr;}
 function resetPools(){allQ=[];allD=[];allQComm=[];allDComm=[];allCombined=[];usedQIdx=[];usedDIdx=[];usedQCommIdx=[];usedDCommIdx=[];commQDone=false;commDDone=false;_sessionTagScores={};_tagReorderTurn=0;_recentCardTags=[];}
 function gameUrl(){var base=window.location.origin+window.location.pathname;return game?base+'?id='+game.id:base;}
 function closeOverlay(id,e){if(e&&e.target!==document.getElementById(id))return;document.getElementById(id).classList.add('hidden');}
 
-// ── PANTALLA 1: Selección de modo ──
 function selectMode(mode){
-  selectedMode=mode;
-  selectedLevel=null;
+  selectedMode=mode;selectedLevel=null;
   document.getElementById('modeLabelPlayers').textContent=mode==='presencial'?'Presencial':'A distancia';
   document.dispatchEvent(new Event('vorNotifPrompt'));
-  // Resetear selección de nivel
   document.querySelectorAll('.level-option').forEach(function(el){el.classList.remove('active');});
   document.getElementById('levelDesc').classList.add('hidden');
   show('screen-level');
 }
 
-// ── PANTALLA 2: Jugadores ──
 function initPlayersGrid(){
-  var g=document.getElementById('namesGrid');
-  g.innerHTML='';
-  var saved=[];
-  try{saved=JSON.parse(localStorage.getItem('tor_players')||'[]');}catch(e){}
+  var g=document.getElementById('namesGrid');g.innerHTML='';
+  var saved=[];try{saved=JSON.parse(localStorage.getItem('tor_players')||'[]');}catch(e){}
   var names=saved.length>=2?saved:['',''];
   names.forEach(function(){addPlayerField();});
   var inputs=g.querySelectorAll('input');
@@ -859,106 +688,67 @@ function initPlayersGrid(){
 }
 
 function addPlayerField(){
-  var g=document.getElementById('namesGrid');
-  var count=g.children.length;
+  var g=document.getElementById('namesGrid');var count=g.children.length;
   if(count>=10){toast('Máximo 10 jugadores');return;}
-  var row=document.createElement('div');
-  row.className='player-row';
-  var showRemove=count>=2; // Solo mostrar ✕ a partir del tercer jugador
-  row.innerHTML=
-    '<div class="avatar" style="background:'+col(count)+';font-size:'+(count<9?13:11)+'px">'+(count+1)+'</div>'+
-    '<input placeholder="Nombre '+(count+1)+'" maxlength="20" oninput="this.classList.remove(\'error\')">'+
-    (showRemove?'<button class="remove-btn" onclick="removePlayerField(this)" title="Quitar">×</button>':'<div style="width:38px;flex-shrink:0"></div>');
+  var row=document.createElement('div');row.className='player-row';
+  var showRemove=count>=2;
+  row.innerHTML='<div class="avatar" style="background:'+col(count)+';font-size:'+(count<9?13:11)+'px">'+(count+1)+'</div><input placeholder="Nombre '+(count+1)+'" maxlength="20" oninput="this.classList.remove(\'error\')">'+(showRemove?'<button class="remove-btn" onclick="removePlayerField(this)" title="Quitar">×</button>':'<div style="width:38px;flex-shrink:0"></div>');
   g.appendChild(row);
 }
 
 function removePlayerField(btn){
-  var row=btn.parentElement;
-  var g=document.getElementById('namesGrid');
+  var row=btn.parentElement;var g=document.getElementById('namesGrid');
   if(g.children.length<=2){toast('Mínimo 2 jugadores');return;}
   row.remove();
-  // Re-numerar avatares
   Array.from(g.children).forEach(function(r,i){
-    var av=r.querySelector('.avatar');
-    if(av){av.style.background=col(i);av.textContent=i+1;av.style.fontSize=(i<9?13:11)+'px';}
-    var inp=r.querySelector('input');
-    if(inp){inp.placeholder='Nombre '+(i+1);}
-    // Primer y segundo campo no tienen botón de quitar
+    var av=r.querySelector('.avatar');if(av){av.style.background=col(i);av.textContent=i+1;av.style.fontSize=(i<9?13:11)+'px';}
+    var inp=r.querySelector('input');if(inp){inp.placeholder='Nombre '+(i+1);}
     var rb=r.querySelector('.remove-btn');
     if(i<2&&rb){rb.style.display='none';}
-    else if(i>=2&&!rb){
-      var ph=r.querySelector('div[style*="38px"]');
-      if(ph){
-        var b=document.createElement('button');
-        b.className='remove-btn';b.title='Quitar';b.textContent='×';
-        b.onclick=function(){removePlayerField(b);};
-        r.replaceChild(b,ph);
-      }
-    }
+    else if(i>=2&&!rb){var ph=r.querySelector('div[style*="38px"]');if(ph){var b=document.createElement('button');b.className='remove-btn';b.title='Quitar';b.textContent='×';b.onclick=function(){removePlayerField(b);};r.replaceChild(b,ph);}}
   });
 }
 
-// Nivel → Jugadores (nuevo orden: modo → nivel → jugadores)
 function goToPlayers(){
   if(!selectedLevel){toast('Elige un nivel para continuar');return;}
-  // Niveles de pago: re-verificar acceso antes de avanzar
   if(LOCKED_LEVELS.includes(selectedLevel)&&!_xxxUnlocked){openXXXModal();return;}
-  initPlayersGrid();
-  show('screen-players');
+  initPlayersGrid();show('screen-players');
 }
 
-// ── PANTALLA 3: Nivel ──
-function selectLevel(level){
-  _setLevel(level);
-}
+function selectLevel(level){_setLevel(level);}
 function _setLevel(level){
   selectedLevel=level;
-  document.querySelectorAll('.level-option').forEach(function(el){
-    el.classList.toggle('active',el.dataset.level===level);
-  });
-  var info=LEVEL_INFO[level]||{};
-  var desc=document.getElementById('levelDesc');
+  document.querySelectorAll('.level-option').forEach(function(el){el.classList.toggle('active',el.dataset.level===level);});
+  var info=LEVEL_INFO[level]||{};var desc=document.getElementById('levelDesc');
   desc.innerHTML='<strong style="color:var(--gold)">'+(LEVELS[level]?LEVELS[level].label:level)+'</strong> — '+esc(info.desc||'');
   desc.classList.remove('hidden');
 }
 
-// ── PANTALLA 4: Juego ──
 async function initGame(){
   var inputs=document.querySelectorAll('#namesGrid input');
   var players=[],hasError=false;
-  inputs.forEach(function(inp,i){
-    var name=inp.value.trim();
-    if(!name){inp.classList.add('error');hasError=true;}
-    else players.push({name:name,color:col(i)});
-  });
+  inputs.forEach(function(inp,i){var name=inp.value.trim();if(!name){inp.classList.add('error');hasError=true;}else players.push({name:name,color:col(i)});});
   if(hasError){toast('Completa los nombres');return;}
   if(players.length<2){toast('Mínimo 2 jugadores');return;}
-  // Verificar acceso de pago (segunda línea de defensa)
   if(LOCKED_LEVELS.includes(selectedLevel)&&!_xxxUnlocked){openXXXModal();return;}
-  // Mostrar disclaimer para niveles adultos antes de iniciar
   if(LOCKED_LEVELS.includes(selectedLevel)&&!_disclaimerAccepted){
     ['chk1','chk2','chk3','chk4'].forEach(function(id){var el=document.getElementById(id);if(el)el.checked=false;});
-    document.getElementById('xxxDisclaimerOverlay').classList.remove('hidden');
-    return;
+    document.getElementById('xxxDisclaimerOverlay').classList.remove('hidden');return;
   }
   try{localStorage.setItem('tor_players',JSON.stringify(players.map(function(p){return p.name;})));}catch(e){}
-  var btn=document.getElementById('startGameBtn');
-  btn.disabled=true;btn.textContent='Iniciando…';
+  var btn=document.getElementById('startGameBtn');btn.disabled=true;btn.textContent='Iniciando…';
   try{
     var body={id:uid5(),level:selectedLevel,mode:selectedMode,players:players,status:'playing',current_card:null,current_player_index:0,round:1,unlocked_by:_xxxPhone||null};
     var sala=await ensureSala();if(sala)body.room_code=sala;
     var data=await sbPost('tor_games',body);
     if(!data||data.message||!Array.isArray(data))throw new Error(data&&data.message?data.message:'Insert fallido');
     game=data[0];
-    resetPools();
-    await loadCardPool(game.level,game.mode);
+    resetPools();await loadCardPool(game.level,game.mode);
     startRealtime();startPolling();
     var c=pickCardForTurn(0);
     if(!c){toast('No hay cartas disponibles para este nivel.');sbPatch('tor_games?id=eq.'+game.id,{status:'ended'}).catch(function(){});stopRealtime();stopPolling();game=null;return;}
     game.current_card=c;sbPatch('tor_games?id=eq.'+game.id,{current_card:c,current_player_index:0,round:1}).catch(function(){});showCard(c);
-    if(_salaCode){
-      fetch(SB+'/rest/v1/tor_rooms?code=eq.'+_salaCode,{method:'PATCH',headers:Object.assign({},h(),{'Prefer':'return=minimal'}),body:JSON.stringify({status:'playing',current_game_id:game.id})}).catch(function(){});
-    }
+    if(_salaCode){fetch(SB+'/rest/v1/tor_rooms?code=eq.'+_salaCode,{method:'PATCH',headers:Object.assign({},h(),{'Prefer':'return=minimal'}),body:JSON.stringify({status:'playing',current_game_id:game.id})}).catch(function(){});}
     resetSalaInactivityTimer();
   }catch(err){toast('Error al iniciar: '+(err&&err.message?err.message:'desconocido'));console.error(err);}
   finally{btn.disabled=false;btn.textContent='Iniciar Juego';}
@@ -969,446 +759,266 @@ async function loadCardPool(level,mode){
   var lvls=(level==='mixto')?['familiar','light','hot','extremo']:[level];
   for(var i=0;i<lvls.length;i++){
     var l=lvls[i];
-    // Filtrar por modo: presencial → presencial+ambos, distancia → distancia+ambos
-    var modeFilter=mode==='distancia'
-      ?'&or=(mode.eq.distancia,mode.eq.ambos)'
-      :'&or=(mode.eq.presencial,mode.eq.ambos)';
-    // order=id garantiza el mismo orden en todos los dispositivos
+    var modeFilter=mode==='distancia'?'&or=(mode.eq.distancia,mode.eq.ambos)':'&or=(mode.eq.presencial,mode.eq.ambos)';
     var qr=await sbGet('tor_questions','?level=eq.'+l+modeFilter+'&select=id,text,tags,mode&order=id');
     var dr=await sbGet('tor_dares','?level=eq.'+l+modeFilter+'&select=id,text,tags,mode&order=id');
     if(Array.isArray(qr))allQ=allQ.concat(qr.map(function(c){return Object.assign({},c,{type:'truth'});}));
     if(Array.isArray(dr))allD=allD.concat(dr.map(function(c){return Object.assign({},c,{type:'dare'});}));
   }
-  // Shuffle determinístico: mismo game.id → mismo orden en todos los dispositivos
   var seed=strHash(game?game.id:'default');
   allCombined=seededShuffle(allQ.concat(allD),seed);
 }
 
 function pickCardForTurn(turnOverride){
   if(!game||!allCombined.length)return null;
-  var players=game.players||[];
-  var idx=game.current_player_index||0;
-  var p=players[idx%players.length];
-  // Número de turno absoluto: todos los dispositivos calculan el mismo
+  var players=game.players||[];var idx=game.current_player_index||0;var p=players[idx%players.length];
   var turn=(turnOverride!==undefined)?turnOverride:(((game.round||1)-1)*players.length+idx);
   var card=Object.assign({},allCombined[turn%allCombined.length]);
-  if(p)card._player=p;
-  return card;
+  if(p)card._player=p;return card;
 }
 
 function showCard(card){
   if(!card||!game)return;
-  // Registrar cuándo se mostró (solo host, para no duplicar)
-  if(!_salaCode||_salaIsHost){
-    _trackCardStat(); // guardar duración de la carta anterior si hay
-    _cardShownAt=Date.now();
-    _trackedCard=card;
-  }
-  var players=game.players||[];
-  var idx=game.current_player_index||0;
+  if(!_salaCode||_salaIsHost){_trackCardStat();_cardShownAt=Date.now();_trackedCard=card;}
+  var players=game.players||[];var idx=game.current_player_index||0;
   var p=card._player||players[idx%players.length]||{name:'?'};
-  var raw=card.text||'';
-  var prefix='',body=raw;
+  var raw=card.text||'';var prefix='',body=raw;
   if(raw.charAt(0)==='¿'||raw.charAt(0)==='¡'){prefix=raw.charAt(0);body=raw.slice(1);}
   var formatted=p.name+', '+prefix+body.charAt(0).toLowerCase()+body.slice(1);
   document.getElementById('cardText').textContent=formatted;
-  var isQ=card.type==='truth';
-  var badge=document.getElementById('cardBadge');
-  badge.textContent=isQ?'🔮 Verdad':'🎯 Reto';
-  badge.className='card-badge '+(isQ?'badge-truth':'badge-dare');
+  var isQ=card.type==='truth';var badge=document.getElementById('cardBadge');
+  badge.textContent=isQ?'🔮 Verdad':'🎯 Reto';badge.className='card-badge '+(isQ?'badge-truth':'badge-dare');
   document.getElementById('roundBadge').textContent='Ronda '+(game.round||1);
   var lvlBadge=document.getElementById('levelBadge');
   lvlBadge.textContent=(LEVELS[game.level]||{label:game.level}).label;
   lvlBadge.className='level-badge chip-'+(game.level||'familiar');
-  show('screen-card');
-  resetInactivityTimer();
+  show('screen-card');resetInactivityTimer();
 }
 
 function _trackCardStat(){
   if(!_trackedCard||!_cardShownAt||!game)return;
-  var durSec=Math.round((Date.now()-_cardShownAt)/100)/10; // 1 decimal
-  if(durSec<1||durSec>600)return; // ignorar datos inválidos
-  var card=_trackedCard;
-  _cardShownAt=null;_trackedCard=null;
-  var cardType=card.type==='truth'?'pregunta':'reto';
-  var payload={
-    card_id:card.id||null,
-    card_type:cardType,
-    level:game.level||null,
-    mode:game.mode||null,
-    duration_seconds:durSec
-  };
-  // Acumular preferencias semánticas de la sesión
-  _updateTagScores(card, durSec);
-  // fire-and-forget, sin bloquear el flujo de juego
-  fetch(SB+'/rest/v1/tor_card_stats',{
-    method:'POST',
-    headers:Object.assign({},h(),{'Prefer':'return=minimal'}),
-    body:JSON.stringify(payload)
-  }).catch(function(){});
+  var durSec=Math.round((Date.now()-_cardShownAt)/100)/10;
+  if(durSec<1||durSec>600)return;
+  var card=_trackedCard;_cardShownAt=null;_trackedCard=null;
+  _updateTagScores(card,durSec);
+  fetch(SB+'/rest/v1/tor_card_stats',{method:'POST',headers:Object.assign({},h(),{'Prefer':'return=minimal'}),body:JSON.stringify({card_id:card.id||null,card_type:card.type==='truth'?'pregunta':'reto',level:game.level||null,mode:game.mode||null,duration_seconds:durSec})}).catch(function(){});
 }
 
-// ── Recomendación semántica por tags ──
-var _DIVERSITY_WINDOW=5; // cuántas cartas recientes revisar para diversidad
-function _updateTagScores(card, durSec){
+var _DIVERSITY_WINDOW=5;
+function _updateTagScores(card,durSec){
   if(!card||!card.tags||!card.tags.length)return;
-  // Registrar tags recientes para factor de diversidad
-  _recentCardTags.push(card.tags.slice());
-  if(_recentCardTags.length>_DIVERSITY_WINDOW)_recentCardTags.shift();
-  // Acumular scores de engagement por tag
-  card.tags.forEach(function(tag){
-    if(!_sessionTagScores[tag])_sessionTagScores[tag]={total:0,count:0};
-    _sessionTagScores[tag].total+=durSec;
-    _sessionTagScores[tag].count++;
-  });
+  _recentCardTags.push(card.tags.slice());if(_recentCardTags.length>_DIVERSITY_WINDOW)_recentCardTags.shift();
+  card.tags.forEach(function(tag){if(!_sessionTagScores[tag])_sessionTagScores[tag]={total:0,count:0};_sessionTagScores[tag].total+=durSec;_sessionTagScores[tag].count++;});
 }
 function _tagScore(card){
   if(!card||!card.tags||!card.tags.length)return 0;
-  var keys=Object.keys(_sessionTagScores);
-  if(!keys.length)return 0;
-  // Score base: promedio de engagement por tag de la carta
-  var score=0;
-  card.tags.forEach(function(tag){
-    var s=_sessionTagScores[tag];
-    if(s&&s.count>0)score+=(s.total/s.count);
-  });
-  score=score/card.tags.length;
-  // Penalización por diversidad: reducir score si los tags aparecieron mucho recientemente
-  if(_recentCardTags.length>0){
-    var recentCounts={};
-    _recentCardTags.forEach(function(tags){
-      tags.forEach(function(t){recentCounts[t]=(recentCounts[t]||0)+1;});
-    });
-    var overlap=0;
-    card.tags.forEach(function(tag){if(recentCounts[tag])overlap+=recentCounts[tag];});
-    var maxOverlap=card.tags.length*_recentCardTags.length;
-    // Penalidad: hasta 55% de reducción si hay solapamiento total
-    var penalty=maxOverlap>0?Math.min(0.55,(overlap/maxOverlap)*0.75):0;
-    score=score*(1-penalty);
-  }
+  var keys=Object.keys(_sessionTagScores);if(!keys.length)return 0;
+  var score=0;card.tags.forEach(function(tag){var s=_sessionTagScores[tag];if(s&&s.count>0)score+=(s.total/s.count);});score=score/card.tags.length;
+  if(_recentCardTags.length>0){var recentCounts={};_recentCardTags.forEach(function(tags){tags.forEach(function(t){recentCounts[t]=(recentCounts[t]||0)+1;});});var overlap=0;card.tags.forEach(function(tag){if(recentCounts[tag])overlap+=recentCounts[tag];});var maxOverlap=card.tags.length*_recentCardTags.length;var penalty=maxOverlap>0?Math.min(0.55,(overlap/maxOverlap)*0.75):0;score=score*(1-penalty);}
   return score;
 }
 function _maybeReorderPool(nextTurnNum){
-  // Solo reordenar si hay suficientes datos y no se hizo ya recientemente
-  if(!allCombined.length||nextTurnNum<5)return;
-  if(nextTurnNum-_tagReorderTurn<3)return;
-  if(!Object.keys(_sessionTagScores).length)return;
-  _tagReorderTurn=nextTurnNum;
-  // Cartas ya jugadas se quedan en su lugar; reordenar solo las restantes
-  var played=allCombined.slice(0,nextTurnNum);
-  var remaining=allCombined.slice(nextTurnNum);
-  if(remaining.length<2)return;
-  // Pequeño jitter determinístico para no mostrar siempre lo mismo
+  if(!allCombined.length||nextTurnNum<5)return;if(nextTurnNum-_tagReorderTurn<3)return;if(!Object.keys(_sessionTagScores).length)return;
+  _tagReorderTurn=nextTurnNum;var played=allCombined.slice(0,nextTurnNum);var remaining=allCombined.slice(nextTurnNum);if(remaining.length<2)return;
   var rng=mulberry32((nextTurnNum*1999)^strHash(game?game.id:'x'));
-  remaining.sort(function(a,b){
-    var sa=_tagScore(a)+(rng()*3);
-    var sb=_tagScore(b)+(rng()*3);
-    return sb-sa;
-  });
+  remaining.sort(function(a,b){var sa=_tagScore(a)+(rng()*3);var sb=_tagScore(b)+(rng()*3);return sb-sa;});
   allCombined=played.concat(remaining);
-  // Persistir preferencias de tags en la DB para visibilidad en admin
-  if(game&&game.id){
-    sbPatch('tor_games?id=eq.'+game.id,{
-      tag_scores:_sessionTagScores,
-      recent_tags:_recentCardTags
-    }).catch(function(){});
-  }
+  if(game&&game.id){sbPatch('tor_games?id=eq.'+game.id,{tag_scores:_sessionTagScores,recent_tags:_recentCardTags}).catch(function(){});}
 }
 
 async function nextTurn(){
   if(!game)return;
   var isGuest=(_salaCode&&!_salaIsHost);
-  if(!isGuest){
-    await checkXXXAccess();
-    if(!_xxxUnlocked&&['hot','extremo','mixto','xxx'].includes(game.level)){endGame(true);return;}
-  }
-  var players=game.players||[];
-  var nextIdx=((game.current_player_index||0)+1)%players.length;
-  var round=nextIdx===0?(game.round||1)+1:(game.round||1);
-  var nextTurnNum=((round-1)*players.length)+nextIdx;
+  if(!isGuest){await checkXXXAccess();if(!_xxxUnlocked&&['hot','extremo','mixto','xxx'].includes(game.level)){endGame(true);return;}}
+  var players=game.players||[];var nextIdx=((game.current_player_index||0)+1)%players.length;
+  var round=nextIdx===0?(game.round||1)+1:(game.round||1);var nextTurnNum=((round-1)*players.length)+nextIdx;
   game.current_player_index=nextIdx;game.round=round;
-  // Revisar si hay carta de comunidad programada para este turno
-  var c=null;
-  var queuedIdx=_cardQueue.findIndex(function(item){return item.targetTurn===nextTurnNum;});
-  if(queuedIdx>=0){
-    c=_cardQueue.splice(queuedIdx,1)[0].card;
-  } else {
-    if(!_salaCode||_salaIsHost)_maybeReorderPool(nextTurnNum);
-    c=pickCardForTurn(nextTurnNum);
-  }
+  var c=null;var queuedIdx=_cardQueue.findIndex(function(item){return item.targetTurn===nextTurnNum;});
+  if(queuedIdx>=0){c=_cardQueue.splice(queuedIdx,1)[0].card;}
+  else{if(!_salaCode||_salaIsHost)_maybeReorderPool(nextTurnNum);c=pickCardForTurn(nextTurnNum);}
   if(!c){toast('¡Se acabaron las cartas!');return;}
-  game.current_card=c;
-  sbPatch('tor_games?id=eq.'+game.id,{current_card:c,current_player_index:nextIdx,round:round}).catch(function(){});
-  showCard(c);
-  resetInactivityTimer();
-  resetSalaInactivityTimer();
+  game.current_card=c;sbPatch('tor_games?id=eq.'+game.id,{current_card:c,current_player_index:nextIdx,round:round}).catch(function(){});
+  showCard(c);resetInactivityTimer();resetSalaInactivityTimer();
 }
 
 async function checkXXXAccess(){
   if(!_xxxUnlocked)return;
   try{
-    if(_xxxPhone){
-      var r=await sbGet('tor_unlock_requests','?phone=eq.'+_xxxPhone+'&status=eq.rechazado&select=id&limit=1');
-      if(Array.isArray(r)&&r.length>0){revocarAcceso();return;}
-    }
-    if(_xxxCodeId){
-      // Revocar si el código fue marcado como usado (y no es multi-uso) o fue eliminado
-      var r2=await sbGet('tor_unlock_codes','?id=eq.'+_xxxCodeId+'&select=id,used,multi_use&limit=1');
-      if(!Array.isArray(r2)||!r2.length){revocarAcceso();return;} // eliminado
-      if(!r2[0].multi_use&&r2[0].used){revocarAcceso();return;}  // usado y no multi-uso
-    }
+    if(_xxxPhone){var r=await sbGet('tor_unlock_requests','?phone=eq.'+_xxxPhone+'&status=eq.rechazado&select=id&limit=1');if(Array.isArray(r)&&r.length>0){revocarAcceso();return;}}
+    if(_xxxCodeId){var r2=await sbGet('tor_unlock_codes','?id=eq.'+_xxxCodeId+'&select=id,used,multi_use&limit=1');if(!Array.isArray(r2)||!r2.length){revocarAcceso();return;}if(!r2[0].multi_use&&r2[0].used){revocarAcceso();return;}}
   }catch(e){}
 }
 
 function revocarAcceso(){
-  _xxxUnlocked=false;_xxxPhone=null;_xxxCodeId=null;
-  clearTimeout(_inactivityTimer);
-  var el=document.createElement('div');
-  el.className='overlay';
-  el.style.cssText='position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,.85);display:flex;align-items:center;justify-content:center;padding:24px;';
-  el.innerHTML='<div class="overlay-sheet" style="text-align:center"><div style="font-size:32px;margin-bottom:8px">🚫</div><div class="overlay-title">Acceso revocado</div><div class="overlay-sub" style="margin:8px 0 16px">Tu pago fue rechazado.<br>Contacta al administrador.</div><button id="btnCerrarRevocacion" class="btn btn-gold">Entendido</button></div>';
-  document.body.appendChild(el);
-  document.getElementById('btnCerrarRevocacion').addEventListener('click',function(){
-    el.remove();game=null;show('screen-welcome');
-  });
+  _xxxUnlocked=false;_xxxPhone=null;_xxxCodeId=null;clearTimeout(_inactivityTimer);
+  var el=document.createElement('div');el.className='overlay';el.style.cssText='position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,.85);display:flex;align-items:center;justify-content:center;padding:24px;';
+  el.innerHTML='<div class="overlay-sheet" style="text-align:center"><div style="font-size:32px;margin-bottom:8px">🚫</div><div class="overlay-title">Acceso revocado</div><div class="overlay-sub" style="margin:8px 0 16px">Tu pago fue rechazado.</div><button id="btnCerrarRevocacion" class="btn btn-gold">Entendido</button></div>';
+  document.body.appendChild(el);document.getElementById('btnCerrarRevocacion').addEventListener('click',function(){el.remove();game=null;show('screen-welcome');});
 }
 
 function openEndConfirmOverlay(){document.getElementById('endConfirmOverlay').classList.remove('hidden');}
 function closeEndConfirmOverlay(){document.getElementById('endConfirmOverlay').classList.add('hidden');}
 
 function endGame(silent){
-  var wasGuest=(_salaCode&&!_salaIsHost);
-  var lastGameId=game?game.id:null;
+  var wasGuest=(_salaCode&&!_salaIsHost);var lastGameId=game?game.id:null;
   if(game){
-    _trackCardStat(); // guardar duración de la última carta
-    sbPatch('tor_games?id=eq.'+game.id,{status:'ended'}).catch(function(){});
-    if(_salaCode&&_salaIsHost){
-      // Host: sala vuelve a estado "waiting" (no cerrada — puede iniciar nuevo juego)
-      fetch(SB+'/rest/v1/tor_rooms?code=eq.'+_salaCode,{method:'PATCH',headers:Object.assign({},h(),{'Prefer':'return=minimal'}),body:JSON.stringify({status:'waiting',current_game_id:null})}).catch(function(){});
-    }
+    _trackCardStat();sbPatch('tor_games?id=eq.'+game.id,{status:'ended'}).catch(function(){});
+    if(_salaCode&&_salaIsHost){fetch(SB+'/rest/v1/tor_rooms?code=eq.'+_salaCode,{method:'PATCH',headers:Object.assign({},h(),{'Prefer':'return=minimal'}),body:JSON.stringify({status:'waiting',current_game_id:null})}).catch(function(){});}
   }
-  stopRealtime();stopPolling();
-  game=null;_disclaimerAccepted=false;_cardQueue=[];
-  closeEndConfirmOverlay();
+  stopRealtime();stopPolling();game=null;_disclaimerAccepted=false;_cardQueue=[];closeEndConfirmOverlay();
   if(!silent)document.getElementById('feedbackOverlay').classList.remove('hidden');
-  if(wasGuest){
-    // Guest: ir a pantalla de espera y seguir esperando nuevo juego
-    if(lastGameId)_salaLastGameId=lastGameId;
-    startSalaPolling();
-  }else{
-    show('screen-welcome');
-  }
+  if(wasGuest){if(lastGameId)_salaLastGameId=lastGameId;startSalaPolling();}
+  else{show('screen-welcome');}
 }
 
-function submitFeedback(){
-  var txt=document.getElementById('feedbackText').value.trim();
-  if(txt)sbPost('tor_feedback',{text:txt}).catch(function(){});
-  document.getElementById('feedbackOverlay').classList.add('hidden');
-}
+function submitFeedback(){var txt=document.getElementById('feedbackText').value.trim();if(txt)sbPost('tor_feedback',{text:txt}).catch(function(){});document.getElementById('feedbackOverlay').classList.add('hidden');}
 function skipFeedback(){document.getElementById('feedbackOverlay').classList.add('hidden');}
+function setCardType(type){selectedCardType=type;document.getElementById('tabTruth').classList.toggle('active',type==='truth');document.getElementById('tabDare').classList.toggle('active',type==='dare');}
 
-function setCardType(type){
-  selectedCardType=type;
-  document.getElementById('tabTruth').classList.toggle('active',type==='truth');
-  document.getElementById('tabDare').classList.toggle('active',type==='dare');
-}
-
-
-// ── XXX MODAL ──
-function showView(viewId){
-  ['xxxViewCodigo','xxxViewAdquirir','xxxViewConfirm','xxxViewAprobado','xxxViewRechazado'].forEach(function(id){
-    var el=document.getElementById(id);if(el)el.style.display=id===viewId?'':'none';
-  });
-}
-function showXXXAdquirir(){showView('xxxViewAdquirir');loadPaymentConfig();}
-function showXXXCodigo(){showView('xxxViewCodigo');}
-function openXXXModal(){
-  showView('xxxViewCodigo');
-  var e=document.getElementById('codeXXXError');if(e)e.style.display='none';
-  var i=document.getElementById('inputCodigoXXX');if(i)i.value='';
-  document.getElementById('codeXXXOverlay').classList.remove('hidden');
-  loadPaymentConfig();
-}
-
-async function loadPaymentConfig(){
+async function confirmAddCard(){
+  var txt=document.getElementById('newCardText').value.trim();if(!txt){toast('Escribe algo');return;}
+  var card={text:txt,type:selectedCardType,level:game?game.level:'familiar',source:'comunidad',approved:false,game_id:game?game.id:null,user_ref:_xxxPhone||null};
   try{
-    var rows=await sbGet('tor_config','?select=*&limit=1');
-    if(!rows||!rows.length)return;
-    var c=rows[0];
-    var s=function(id,v){var el=document.getElementById(id);if(el&&v)el.textContent=v;};
-    if(c.precio)s('pago-precio','$'+c.precio+' MXN');
-    s('pago-banco',c.banco);s('pago-clabe',c.clabe);s('pago-cuenta',c.cuenta);
-    s('pago-beneficiario',c.beneficiario);s('pago-concepto',c.concepto);
+    var saved=await sbPost('tor_cards_community',card);
+    var savedId=(Array.isArray(saved)?saved[0]:saved)?.id||('comm_'+Date.now());
+    var localCard=Object.assign({},card,{id:savedId,tags:[]});
+    var players=game?game.players||[]:[];var currTurn=game?(((game.round||1)-1)*players.length+(game.current_player_index||0)):0;
+    var targetTurn=currTurn+Math.floor(Math.random()*6)+3;
+    _cardQueue.push({card:localCard,targetTurn:targetTurn});
+    if(_ws&&_ws.readyState===1){_ws.send(JSON.stringify({topic:'realtime:public:tor_games',event:'broadcast',payload:{event:'card_queued',payload:{card:localCard,targetTurn:targetTurn}},ref:'cq_'+Date.now()}));}
+    document.getElementById('newCardText').value='';closeOverlay('addCardOverlay');
+    toast('¡Carta agregada! Aparecerá en el siguiente turno.');
+  }catch(e){toast('Error al guardar');}
+}
+
+async function confirmAddPlayer(){
+  var name=document.getElementById('newPlayerName').value.trim();if(!name){toast('Ingresa un nombre');return;}if(!game)return;
+  var players=game.players||[];players.push({name:name,color:col(players.length)});game.players=players;
+  await sbPatch('tor_games?id=eq.'+game.id,{players:players});
+  document.getElementById('newPlayerName').value='';closeOverlay('addPlayerOverlay');toast(name+' se unió 🎉');
+}
+
+function openOptionsOverlay(){document.getElementById('optionsOverlay').classList.remove('hidden');}
+function openAddPlayerOverlay(){document.getElementById('addPlayerOverlay').classList.remove('hidden');setTimeout(function(){document.getElementById('newPlayerName').focus();},200);}
+function openAddCardOverlay(){document.getElementById('addCardOverlay').classList.remove('hidden');setTimeout(function(){document.getElementById('newCardText').focus();},200);}
+function openInviteOverlay(){var url=getSalaUrl();document.getElementById('overlayCode').textContent=_salaCode||'------';document.getElementById('overlayUrl').textContent=url;document.getElementById('inviteOverlay').classList.remove('hidden');}
+function copyLink(){navigator.clipboard.writeText(getSalaUrl()).then(function(){toast('¡Link de sala copiado!');});}
+function shareGame(){var url=getSalaUrl();var msg='¿Te atreverías a jugar Verdad o Reto conmigo? 🙈😈';if(navigator.share)navigator.share({title:'Verdad o Reto',text:msg,url:url}).catch(function(){});else window.open('https://wa.me/?text='+encodeURIComponent(msg+' '+url),'_blank');}
+
+function startRealtime(){
+  stopRealtime();if(!game)return;
+  var url=SB.replace('https','wss')+'/realtime/v1/websocket?apikey='+SK+'&vsn=1.0.0';
+  try{
+    _ws=new WebSocket(url);
+    _ws.onopen=function(){_ws.send(JSON.stringify({topic:'realtime:public:tor_games',event:'phx_join',payload:{config:{broadcast:{self:false,ack:false},presence:{key:''},postgres_changes:[{event:'UPDATE',schema:'public',table:'tor_games',filter:'id=eq.'+game.id}]}},ref:'1'}));};
+    _ws.onmessage=function(e){
+      try{
+        var m=JSON.parse(e.data);
+        if(m.event==='broadcast'&&m.payload&&m.payload.event==='card_queued'&&m.payload.payload&&m.payload.payload.card){_cardQueue.push({card:m.payload.payload.card,targetTurn:m.payload.payload.targetTurn||0});return;}
+        var rec=null;
+        if(m.event==='postgres_changes'&&m.payload&&m.payload.data&&m.payload.data.record)rec=m.payload.data.record;
+        else if(m.event==='UPDATE'&&m.payload&&m.payload.record)rec=m.payload.record;
+        if(!rec)return;if(!game||rec.id!==game.id)return;
+        if(rec.status==='ended'){endGame(true);return;}
+        if(rec.current_card&&JSON.stringify(rec.current_card)!==JSON.stringify(game.current_card)){
+          if(rec.current_card.id)_cardQueue=_cardQueue.filter(function(item){return item.card.id!==rec.current_card.id;});
+          game.current_card=rec.current_card;game.current_player_index=rec.current_player_index||0;game.round=rec.round||1;showCard(rec.current_card);
+        }
+      }catch(er){}
+    };
+    _wsHb=setInterval(function(){if(_ws&&_ws.readyState===1)_ws.send(JSON.stringify({topic:'phoenix',event:'heartbeat',payload:{},ref:'hb'}));},25000);
   }catch(e){}
+}
+function stopRealtime(){if(_wsHb){clearInterval(_wsHb);_wsHb=null;}if(_ws){try{_ws.close();}catch(e){}_ws=null;}}
+
+function startPolling(){
+  stopPolling();if(!game)return;
+  _pollInterval=setInterval(async function(){
+    if(!game)return;var gid=game.id;
+    try{
+      if(_salaCode&&!_salaIsHost){
+        var sr=await sbGet('tor_rooms','?code=eq.'+_salaCode+'&select=status,current_game_id');
+        if(sr&&sr[0]){
+          if(sr[0].status==='closed'){salirDeSala();return;}
+          var salaGameId=sr[0].current_game_id;
+          if(sr[0].status!=='playing'||(salaGameId!==null&&salaGameId!==undefined&&salaGameId!==gid)){if(game&&game.id===gid){_salaLastGameId=gid;endGame(true);}return;}
+          if(!salaGameId){if(game&&game.id===gid){_salaLastGameId=gid;endGame(true);}return;}
+        }
+      }
+      var rows=await sbGet('tor_games','?id=eq.'+gid+'&select=status,current_card,current_player_index,round');
+      if(!rows||!rows[0])return;var r=rows[0];
+      if(r.status==='ended'){if(game&&game.id===gid)endGame(true);return;}
+      if(r.current_card&&JSON.stringify(r.current_card)!==JSON.stringify(game&&game.current_card)){
+        if(game&&game.id===gid){if(r.current_card.id)_cardQueue=_cardQueue.filter(function(item){return item.card.id!==r.current_card.id;});game.current_card=r.current_card;game.current_player_index=r.current_player_index||0;game.round=r.round||1;showCard(r.current_card);}
+      }
+    }catch(e){}
+  },2500);
+}
+function stopPolling(){if(_pollInterval){clearInterval(_pollInterval);_pollInterval=null;}}
+
+function openXXXModal(){document.getElementById('codeXXXOverlay').classList.remove('hidden');}
+function closeXXXModal(){document.getElementById('codeXXXOverlay').classList.add('hidden');}
+
+async function submitPagoXXX(){
+  var fileInput=document.getElementById('xxxFileInput');var phoneInput=document.getElementById('xxxPhone');
+  var errEl=document.getElementById('xxxSubmitError');if(errEl)errEl.style.display='none';
+  var phone=(phoneInput?phoneInput.value:'').trim();var file=fileInput?fileInput.files[0]:null;
+  if(!phone||phone.replace(/\D/g,'').length<10){if(errEl){errEl.textContent='Ingresa tu número de teléfono.';errEl.style.display='block';}return;}
+  if(!file){if(errEl){errEl.textContent='Selecciona el comprobante de pago.';errEl.style.display='block';}return;}
+  var btn=document.getElementById('btnSubmitPago');if(btn){btn.disabled=true;btn.textContent='Verificando…';}
+  try{
+    var ext=file.name.split('.').pop().toLowerCase();var fname='comp_'+Date.now()+'.'+ext;
+    var upRes=await fetch(SB+'/storage/v1/object/comprobantes/'+fname,{method:'POST',headers:{'apikey':SK,'Authorization':'Bearer '+SK,'Content-Type':file.type},body:file});
+    if(!upRes.ok)throw new Error('Error al subir imagen');
+    var imgUrl=SB+'/storage/v1/object/public/comprobantes/'+fname;
+    var valRes=await fetch(SB+'/functions/v1/validate-receipt',{method:'POST',headers:{'apikey':SK,'Authorization':'Bearer '+SK,'Content-Type':'application/json'},body:JSON.stringify({phone:phone.replace(/\D/g,''),image_url:imgUrl})});
+    var valData=await valRes.json();var verdict=valData.verdict||'revision_manual';var code=valData.code||null;
+    if(verdict==='rechazado'){
+      var msg='Comprobante no válido.';
+      if(code==='wrong_date')msg='La fecha del comprobante no corresponde a hoy.';
+      else if(code==='wrong_amount')msg='El monto es insuficiente.';
+      else if(code==='not_receipt')msg='La imagen no parece ser un comprobante.';
+      else if(code==='duplicate')msg='Este comprobante ya fue utilizado.';
+      else if(code==='rate_limit')msg='Demasiados intentos. Espera unos minutos.';
+      if(errEl){errEl.textContent=msg;errEl.style.display='block';}return;
+    }
+    _xxxPhone=phone.replace(/\D/g,'');if(code){_xxxCodeId=code;}
+    unlockPaidLevels();closeXXXModal();
+    if(selectedLevel&&LOCKED_LEVELS.includes(selectedLevel))goToPlayers();
+    toast(verdict==='aprobado'?'✓ Pago verificado. ¡Acceso activado!':'Comprobante recibido. Acceso temporal.');
+  }catch(e){if(errEl){errEl.textContent='Error al enviar. Intenta de nuevo.';errEl.style.display='block';}}
+  finally{if(btn){btn.disabled=false;btn.textContent='Enviar comprobante';}}
 }
 
 async function validateCodigoXXX(){
-  var errEl=document.getElementById('codeXXXError');
-  var inp=document.getElementById('inputCodigoXXX');
-  errEl.style.display='none';
-  var raw=(inp.value||'').trim();
-  if(!raw){errEl.textContent='Ingresa tu teléfono o código';errEl.style.display='block';return;}
-  var onlyDigits=raw.replace(/\D/g,'');
-  var isPhone=onlyDigits.length>=10;
-  inp.disabled=true;
+  var raw=document.getElementById('inputCodigoXXX').value.trim();
+  var errEl=document.getElementById('codeXXXError');errEl.style.display='none';
+  if(!raw){errEl.textContent='Ingresa tu teléfono o código.';errEl.style.display='block';return;}
+  var onlyDigits=raw.replace(/\D/g,'');var isPhone=onlyDigits.length>=10;
   try{
     if(isPhone){
-      // 1. Verificar pago aprobado en tor_unlock_requests
       var rows=await sbGet('tor_unlock_requests','?phone=eq.'+onlyDigits+'&status=eq.aprobado&select=id&limit=1');
-      if(Array.isArray(rows)&&rows.length){
-        _xxxPhone=onlyDigits;unlockPaidLevels();closeXXXModal();
-        if(selectedLevel&&LOCKED_LEVELS.includes(selectedLevel))goToPlayers();
-        toast('\u00a1Acceso concedido!');return;
-      }
-      // 2. Verificar como código numérico en tor_unlock_codes
+      if(Array.isArray(rows)&&rows.length){_xxxPhone=onlyDigits;unlockPaidLevels();closeXXXModal();if(selectedLevel&&LOCKED_LEVELS.includes(selectedLevel))goToPlayers();toast('¡Acceso concedido!');return;}
       var telCode=await sbGet('tor_unlock_codes','?code=eq.'+onlyDigits+'&select=id,expires_at,used,multi_use&limit=1');
       if(Array.isArray(telCode)&&telCode.length){
         var tc=telCode[0];
         if(tc.expires_at&&new Date(tc.expires_at)<new Date()){errEl.textContent='Este acceso ha expirado.';errEl.style.display='block';return;}
         if(!tc.multi_use&&tc.used){errEl.textContent='Este acceso ya fue utilizado.';errEl.style.display='block';return;}
-        _xxxCodeId=tc.id;unlockPaidLevels();closeXXXModal();
-        if(selectedLevel&&LOCKED_LEVELS.includes(selectedLevel))goToPlayers();
-        toast('\u00a1Acceso concedido!');return;
+        _xxxCodeId=tc.id;unlockPaidLevels();closeXXXModal();if(selectedLevel&&LOCKED_LEVELS.includes(selectedLevel))goToPlayers();toast('¡Acceso concedido!');return;
       }
-      errEl.textContent='Número no registrado o pago no aprobado.';errEl.style.display='block';
+      errEl.textContent='Teléfono no encontrado o pago no aprobado.';errEl.style.display='block';
     }else{
-      // Código alfanumérico — consulta directa a tor_unlock_codes
       var codeInput=raw.toUpperCase();
       var codeRows=await sbGet('tor_unlock_codes','?code=eq.'+encodeURIComponent(codeInput)+'&select=id,expires_at,used,multi_use&limit=1');
       if(Array.isArray(codeRows)&&codeRows.length){
         var ce=codeRows[0];
         if(ce.expires_at&&new Date(ce.expires_at)<new Date()){errEl.textContent='Este código ya expiró.';errEl.style.display='block';return;}
         if(!ce.multi_use&&ce.used){errEl.textContent='Este código ya fue utilizado.';errEl.style.display='block';return;}
-        _xxxCodeId=ce.id;unlockPaidLevels();closeXXXModal();
-        if(selectedLevel&&LOCKED_LEVELS.includes(selectedLevel))goToPlayers();
-        toast('\u00a1Código válido!');return;
+        _xxxCodeId=ce.id;unlockPaidLevels();closeXXXModal();if(selectedLevel&&LOCKED_LEVELS.includes(selectedLevel))goToPlayers();toast('¡Código válido!');return;
       }
       errEl.textContent='Código inválido o expirado.';errEl.style.display='block';
     }
-  }catch(e){errEl.textContent='Error: '+(e&&e.message?e.message:'desconocido');errEl.style.display='block';}
-  finally{inp.disabled=false;}
-}
-
-// ── PAGO XXX ──
-var _xxxFile=null;
-function xxxFileSelected(input){
-  _xxxFile=input.files[0]||null;
-  var info=document.getElementById('xxxFileInfo');
-  var label=document.getElementById('xxxFileLabel');
-  if(_xxxFile){
-    info.textContent='📎 '+_xxxFile.name;info.style.display='block';
-    if(label)label.style.borderColor='var(--gold)';
-  }else{info.style.display='none';}
-}
-
-async function submitPagoXXX(){
-  var errEl=document.getElementById('xxxSubmitError');errEl.style.display='none';
-  var phone=(document.getElementById('xxxPhone').value||'').trim().replace(/\s/g,'');
-  if(!phone||phone.length<10){errEl.textContent='Ingresa tu número de WhatsApp (10 dígitos)';errEl.style.display='block';return;}
-  if(!_xxxFile){errEl.textContent='Sube una foto del comprobante de pago';errEl.style.display='block';return;}
-  var btn=document.getElementById('btnSubmitPago');
-  btn.disabled=true;btn.textContent='Enviando…';
-  try{
-    var fd=new FormData();
-    fd.append('phone',phone);
-    fd.append('file',_xxxFile);
-    var concepto=document.getElementById('pago-concepto');
-    fd.append('concepto',concepto?concepto.textContent:'Verdad o Reto XXX');
-    var res=await fetch(SB+'/functions/v1/validate-receipt',{
-      method:'POST',
-      headers:{'apikey':SK,'Authorization':'Bearer '+SK},
-      body:fd
-    });
-    var data=await res.json();
-    if(data.status==='aprobado'||data.approved||data.status==='ok'){
-      _xxxUnlocked=true;_xxxPhone=phone;
-      var sub=document.getElementById('xxxAprobadoSub');
-      if(sub)sub.textContent='Tu número '+phone+' quedó registrado. Ya puedes jugar el nivel XXX.';
-      showView('xxxViewAprobado');
-    }else if(data.status==='pendiente'||data.pending){
-      showView('xxxViewConfirm');
-    }else if(data.status==='rechazado'){
-      var msg=document.getElementById('xxxRechazadoMsg');
-      if(msg)msg.textContent=data.reason||'No pudimos validar tu comprobante.';
-      showView('xxxViewRechazado');
-    }else{
-      errEl.textContent=data.error||'Error al procesar. Intenta de nuevo.';errEl.style.display='block';
-    }
-  }catch(e){errEl.textContent='Error de conexión. Intenta de nuevo.';errEl.style.display='block';}
-  finally{btn.disabled=false;btn.textContent='Enviar comprobante';}
-}
-
-function procederDesdeAprobado(){
-  closeOverlay('codeXXXOverlay');
-  document.dispatchEvent(new Event('vorNotifPrompt'));
-  initGame();
-}
-
-function copiarDato(elId,btnId){
-  var txt=(document.getElementById(elId)||{}).textContent||'';
-  if(!txt)return;
-  navigator.clipboard.writeText(txt.trim()).then(function(){
-    var btn=document.getElementById(btnId);
-    if(btn){var o=btn.textContent;btn.textContent='✓';setTimeout(function(){btn.textContent=o;},1500);}
-  }).catch(function(){});
-}
-
-// ── DISCLAIMER XXX ──
-function confirmXXXDisclaimer(){
-  var all=['chk1','chk2','chk3','chk4'].every(function(id){var el=document.getElementById(id);return el&&el.checked;});
-  if(!all){toast('Confirma todas las casillas para continuar');return;}
-  _disclaimerAccepted=true;
-  document.getElementById('xxxDisclaimerOverlay').classList.add('hidden');
-  initGame();
-}
-function cancelXXXDisclaimer(){
-  document.getElementById('xxxDisclaimerOverlay').classList.add('hidden');
-  show('screen-level');
-}
-
-// ── OVERLAYS EN JUEGO ──
-function openAddPlayerOverlay(){
-  var inp=document.getElementById('newPlayerName');if(inp)inp.value='';
-  document.getElementById('addPlayerOverlay').classList.remove('hidden');
-}
-function openAddCardOverlay(){
-  var ta=document.getElementById('newCardText');if(ta)ta.value='';
-  selectedCardType='truth';
-  document.getElementById('tabTruth').classList.add('active');
-  document.getElementById('tabDare').classList.remove('active');
-  document.getElementById('addCardOverlay').classList.remove('hidden');
-}
-
-async function confirmAddPlayer(){
-  var inp=document.getElementById('newPlayerName');
-  var name=(inp?inp.value:'').trim();
-  if(!name){toast('Escribe un nombre');return;}
-  if(!game||!game.players){toast('No hay juego activo');return;}
-  var players=game.players.slice();
-  players.push({name:name,color:col(players.length)});
-  game.players=players;
-  await sbPatch('tor_games?id=eq.'+game.id,{players:players});
-  closeOverlay('addPlayerOverlay');
-  toast(name+' se unió 🎉');
-}
-
-async function confirmAddCard(){
-  var txt=(document.getElementById('newCardText').value||'').trim();
-  if(!txt){toast('Escribe algo');return;}
-  var card={text:txt,type:selectedCardType,level:game?game.level:'familiar',added_by_phone:_xxxPhone||null};
-  try{
-    var rows=await sbPost('tor_cards_community',card);
-    if(rows&&rows[0]){
-      closeOverlay('addCardOverlay');
-      toast('¡Carta agregada! Se jugará pronto 🃏');
-      document.getElementById('newCardText').value='';
-      if(allCombined&&allCombined.length>0){
-        var offset=3+Math.floor(Math.random()*3);
-        var insertAt=Math.min((_turnCount||0)+offset,allCombined.length);
-        allCombined.splice(insertAt,0,Object.assign({},rows[0],{source:'comunidad',_communityCard:true}));
-      }
-    }else{toast('Error al guardar');}
-  }catch(e){toast('Error de conexión');}
+  }catch(e){errEl.textContent='Error de conexión: '+(e&&e.message?e.message:'');errEl.style.display='block';}
 }
 
 // ── PUSH SUBSCRIPTIONS ──
@@ -1421,11 +1031,7 @@ async function _regPush(){
     var sub=await _swReg.pushManager.getSubscription();
     if(!sub)sub=await _swReg.pushManager.subscribe({userVisibleOnly:true,applicationServerKey:_b64ToUint8(_VAPID_KEY)});
     var j=sub.toJSON();
-    await fetch(SB+'/rest/v1/push_subscriptions',{
-      method:'POST',
-      headers:Object.assign({},h(),{'Prefer':'resolution=merge-duplicates,return=minimal'}),
-      body:JSON.stringify({endpoint:j.endpoint,p256dh:j.keys.p256dh,auth:j.keys.auth,user_agent:navigator.userAgent||''})
-    });
+    await fetch(SB+'/rest/v1/push_subscriptions',{method:'POST',headers:Object.assign({},h(),{'Prefer':'resolution=merge-duplicates,return=minimal'}),body:JSON.stringify({endpoint:j.endpoint,p256dh:j.keys.p256dh,auth:j.keys.auth,user_agent:navigator.userAgent||''})});
   }catch(e){}
 }
 
@@ -1434,7 +1040,6 @@ document.addEventListener('vorNotifPrompt',function(){
   setTimeout(function(){Notification.requestPermission().then(function(perm){if(perm==='granted')_regPush();});},2000);
 });
 
-// ── INIT ──
 (async function(){
   if('serviceWorker' in navigator){
     try{_swReg=await navigator.serviceWorker.register('/sw-vor.js');}catch(e){}
@@ -1443,6 +1048,7 @@ document.addEventListener('vorNotifPrompt',function(){
   var p=new URLSearchParams(window.location.search);
   var gameId=p.get('id');
   initSala();
+
   if(gameId){
     try{
       var rows=await sbGet('tor_games','?id=eq.'+gameId+'&select=*');
@@ -1456,14 +1062,11 @@ document.addEventListener('vorNotifPrompt',function(){
     }catch(e){}
   }
 
-  // Guest llegó por link de sala (?sala=CODE) o tiene sala guardada
   if(_salaCode&&!_salaIsHost){
     try{
-      // Ver si hay juego activo en este momento
       var activeRows=await sbGet('tor_games','?room_code=eq.'+_salaCode+'&status=eq.playing&order=created_at.desc&limit=1&select=*');
       if(activeRows&&activeRows.length){
-        var found=activeRows[0];
-        _salaLastGameId=found.id;
+        var found=activeRows[0];_salaLastGameId=found.id;
         game=found;resetPools();await loadCardPool(game.level,game.mode);
         startRealtime();startPolling();
         if(game.current_card)showCard(game.current_card);
@@ -1471,161 +1074,44 @@ document.addEventListener('vorNotifPrompt',function(){
         return;
       }
     }catch(e){}
-    // Sin juego activo → pantalla de espera + polling
-    startSalaPolling();
-    return;
+    startSalaPolling();return;
   }
 
   show('screen-welcome');
 })();
 </script>
 <script>
-// ── Funciones del modal XXX (inyectadas por separado) ──
-function showXXXCodigo(){
-  ['xxxViewAdquirir','xxxViewConfirm','xxxViewAprobado','xxxViewRechazado'].forEach(function(id){var e=document.getElementById(id);if(e)e.style.display='none';});
-  var v=document.getElementById('xxxViewCodigo');if(v)v.style.display='block';
-}
-function showXXXAdquirir(){
-  ['xxxViewCodigo','xxxViewConfirm','xxxViewAprobado','xxxViewRechazado'].forEach(function(id){var e=document.getElementById(id);if(e)e.style.display='none';});
-  var v=document.getElementById('xxxViewAdquirir');if(v)v.style.display='block';
-  loadXXXPricing();
-}
-function showXXXView(id){
-  ['xxxViewCodigo','xxxViewAdquirir','xxxViewConfirm','xxxViewAprobado','xxxViewRechazado'].forEach(function(vid){var e=document.getElementById(vid);if(e)e.style.display='none';});
-  var v=document.getElementById(id);if(v)v.style.display='block';
-}
+function showXXXCodigo(){['xxxViewAdquirir','xxxViewConfirm','xxxViewAprobado','xxxViewRechazado'].forEach(function(id){var e=document.getElementById(id);if(e)e.style.display='none';});var v=document.getElementById('xxxViewCodigo');if(v)v.style.display='block';}
+function showXXXAdquirir(){['xxxViewCodigo','xxxViewConfirm','xxxViewAprobado','xxxViewRechazado'].forEach(function(id){var e=document.getElementById(id);if(e)e.style.display='none';});var v=document.getElementById('xxxViewAdquirir');if(v)v.style.display='block';loadXXXPricing();}
+function showXXXView(id){['xxxViewCodigo','xxxViewAdquirir','xxxViewConfirm','xxxViewAprobado','xxxViewRechazado'].forEach(function(vid){var e=document.getElementById(vid);if(e)e.style.display='none';});var v=document.getElementById(id);if(v)v.style.display='block';}
 async function loadXXXPricing(){
   try{
     var rows=await sbGet('tor_config','?key=in.(precio_xxx,banco,clabe,cuenta,beneficiario,concepto)&select=key,value');
-    if(!Array.isArray(rows))return;
-    var m={};rows.forEach(function(r){m[r.key]=r.value;});
+    if(!Array.isArray(rows))return;var m={};rows.forEach(function(r){m[r.key]=r.value;});
     if(m.precio_xxx){var pe=document.getElementById('pago-precio');if(pe)pe.textContent='$'+m.precio_xxx+' MXN';}
     if(m.banco)document.getElementById('pago-banco').textContent=m.banco;
     if(m.beneficiario)document.getElementById('pago-beneficiario').textContent=m.beneficiario;
     if(m.concepto){var ce=document.getElementById('pago-concepto');if(ce)ce.textContent=m.concepto;}
-    var clabeRow=document.getElementById('pago-clabe-row');
-    var cuentaRow=document.getElementById('pago-cuenta-row');
-    if(m.clabe){
-      document.getElementById('pago-clabe').textContent=m.clabe;
-      if(clabeRow)clabeRow.style.display='block';
-    } else {
-      if(clabeRow)clabeRow.style.display='none';
-    }
-    if(m.cuenta){
-      document.getElementById('pago-cuenta').textContent=m.cuenta.replace(/(\d{4})(?=\d)/g,'$1 ');
-      if(cuentaRow)cuentaRow.style.display='block';
-    } else {
-      if(cuentaRow)cuentaRow.style.display='none';
-    }
+    var clabeRow=document.getElementById('pago-clabe-row');var cuentaRow=document.getElementById('pago-cuenta-row');
+    if(m.clabe){document.getElementById('pago-clabe').textContent=m.clabe;if(clabeRow)clabeRow.style.display='block';}else{if(clabeRow)clabeRow.style.display='none';}
+    if(m.cuenta){document.getElementById('pago-cuenta').textContent=m.cuenta.replace(/(\d{4})(?=\d)/g,'$1 ');if(cuentaRow)cuentaRow.style.display='block';}else{if(cuentaRow)cuentaRow.style.display='none';}
   }catch(e){}
 }
 function copiarDato(spanId,btnId){
-  var el=document.getElementById(spanId);
-  var btn=document.getElementById(btnId);
-  if(!el||!btn)return;
-  var txt=el.textContent.replace(/\s/g,'');
-  if(!txt)return;
-  navigator.clipboard.writeText(txt).then(function(){
-    var orig=btn.textContent;
-    btn.textContent='✓ Copiado';
-    btn.style.background='var(--gold)';
-    btn.style.color='#000';
-    setTimeout(function(){btn.textContent=orig;btn.style.background='transparent';btn.style.color='var(--gold)';},2000);
-  }).catch(function(){
-    var ta=document.createElement('textarea');
-    ta.value=txt;ta.style.position='fixed';ta.style.opacity='0';
-    document.body.appendChild(ta);ta.select();document.execCommand('copy');document.body.removeChild(ta);
-    var orig=btn.textContent;
-    btn.textContent='✓ Copiado';btn.style.background='var(--gold)';btn.style.color='#000';
-    setTimeout(function(){btn.textContent=orig;btn.style.background='transparent';btn.style.color='var(--gold)';},2000);
-  });
+  var el=document.getElementById(spanId);var btn=document.getElementById(btnId);if(!el||!btn)return;
+  var txt=el.textContent.replace(/\s/g,'');if(!txt)return;
+  navigator.clipboard.writeText(txt).then(function(){var orig=btn.textContent;btn.textContent='✓ Copiado';btn.style.background='var(--gold)';btn.style.color='#000';setTimeout(function(){btn.textContent=orig;btn.style.background='transparent';btn.style.color='var(--gold)';},2000);}).catch(function(){var ta=document.createElement('textarea');ta.value=txt;ta.style.position='fixed';ta.style.opacity='0';document.body.appendChild(ta);ta.select();document.execCommand('copy');document.body.removeChild(ta);var orig=btn.textContent;btn.textContent='✓ Copiado';btn.style.background='var(--gold)';btn.style.color='#000';setTimeout(function(){btn.textContent=orig;btn.style.background='transparent';btn.style.color='var(--gold)';},2000);});
 }
-function xxxFileSelected(inp){
-  var info=document.getElementById('xxxFileInfo');
-  if(inp.files[0]){
-    info.textContent='✓ '+inp.files[0].name;
-    info.style.display='block';
-    var label=document.getElementById('xxxFileLabel');
-    if(label)label.style.borderColor='var(--gold)';
-  }
-}
-// Wrapper: submitPagoXXX — valida con apiCEP+Banxico antes de dar acceso
-var _submitPagoXXX_original=submitPagoXXX;
-submitPagoXXX=async function(){
-  var fileInput=document.getElementById('xxxFileInput');
-  var phoneInput=document.getElementById('xxxPhone');
-  var errEl=document.getElementById('xxxSubmitError');
-  if(errEl)errEl.style.display='none';
-  var phone=(phoneInput?phoneInput.value:'').trim();
-  var file=fileInput?fileInput.files[0]:null;
-  if(!phone||phone.replace(/\D/g,'').length<10){if(errEl){errEl.textContent='Ingresa tu número de teléfono.';errEl.style.display='block';}return;}
-  if(!file){if(errEl){errEl.textContent='Selecciona el comprobante de pago.';errEl.style.display='block';}return;}
-  var btn=document.getElementById('btnSubmitPago');
-  if(btn){btn.disabled=true;btn.textContent='Verificando con Banxico…';}
-  try{
-    var ext=file.name.split('.').pop().toLowerCase();
-    var fname='comp_'+Date.now()+'.'+ext;
-    var upRes=await fetch(SB+'/storage/v1/object/comprobantes/'+fname,{method:'POST',headers:{'apikey':SK,'Authorization':'Bearer '+SK,'Content-Type':file.type},body:file});
-    if(!upRes.ok){throw new Error('Error al subir imagen');}
-    var imgUrl=SB+'/storage/v1/object/public/comprobantes/'+fname;
-    var valRes=await fetch(SB+'/functions/v1/validate-receipt',{
-      method:'POST',
-      headers:{'apikey':SK,'Authorization':'Bearer '+SK,'Content-Type':'application/json'},
-      body:JSON.stringify({phone:phone.replace(/\D/g,''),image_url:imgUrl})
-    });
-    var valData=await valRes.json();
-    var verdict=valData.verdict||'revision_manual';
-    var code=valData.code||null;
-    if(verdict==='rechazado'){
-      var code=valData.code||'';
-      var msg='Comprobante no válido. Verifica que el monto y la cuenta sean correctos.';
-      if(code==='wrong_date')msg='La fecha del comprobante no corresponde a hoy.';
-      else if(code==='wrong_amount')msg='El monto es insuficiente. El acceso cuesta $50 MXN.';
-      else if(code==='not_receipt')msg='La imagen no parece ser un comprobante de transferencia.';
-      else if(code==='duplicate')msg='Este comprobante ya fue utilizado anteriormente.';
-      else if(code==='rate_limit')msg='Demasiados intentos. Espera unos minutos.';
-      if(errEl){errEl.textContent=msg;errEl.style.display='block';}
-      return;
-    }
-    _xxxPhone=phone.replace(/\D/g,'');
-    if(code){_xxxCodeId=code;}
-    unlockPaidLevels();
-    closeXXXModal();
-    if(selectedLevel&&LOCKED_LEVELS.includes(selectedLevel))goToPlayers();
-    if(verdict==='aprobado'){
-      toast('✓ Pago verificado con Banxico. ¡Acceso activado!');
-    }else{
-      toast('Comprobante recibido. Acceso temporal mientras lo revisamos.');
-    }
-  }catch(e){if(errEl){errEl.textContent='Error al enviar. Intenta de nuevo.';errEl.style.display='block';}}
-  finally{if(btn){btn.disabled=false;btn.textContent='Enviar comprobante';}}
-};
-
+function xxxFileSelected(inp){var info=document.getElementById('xxxFileInfo');if(inp.files[0]){info.textContent='✓ '+inp.files[0].name;info.style.display='block';var label=document.getElementById('xxxFileLabel');if(label)label.style.borderColor='var(--gold)';}}
 function confirmXXXDisclaimer(){
   var chks=['chk1','chk2','chk3','chk4'];
   var allChecked=chks.every(function(id){var el=document.getElementById(id);return el&&el.checked;});
   if(!allChecked){toast('Acepta todos los puntos para continuar');return;}
-  document.getElementById('xxxDisclaimerOverlay').classList.add('hidden');
-  _disclaimerAccepted=true;
-  initGame();
+  document.getElementById('xxxDisclaimerOverlay').classList.add('hidden');_disclaimerAccepted=true;initGame();
 }
-function cancelXXXDisclaimer(){
-  document.getElementById('xxxDisclaimerOverlay').classList.add('hidden');
-}
-
-function procederDesdeAprobado(){
-  closeXXXModal();
-  if(selectedLevel&&LOCKED_LEVELS.includes(selectedLevel))goToPlayers();
-}
-// handleLockedLevel: primero pide teléfono/código, disclaimer va antes de iniciar
-function handleLockedLevel(level){
-  _setLevel(level);
-  if(!_xxxUnlocked){
-    openXXXModal();
-  } else {
-    goToPlayers();
-  }
-}
+function cancelXXXDisclaimer(){document.getElementById('xxxDisclaimerOverlay').classList.add('hidden');}
+function procederDesdeAprobado(){closeXXXModal();if(selectedLevel&&LOCKED_LEVELS.includes(selectedLevel))goToPlayers();}
+function handleLockedLevel(level){_setLevel(level);if(!_xxxUnlocked){openXXXModal();}else{goToPlayers();}}
 </script>
 
 </body>
