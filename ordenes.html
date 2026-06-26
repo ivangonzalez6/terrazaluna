@@ -2285,7 +2285,15 @@ function pRange(p){var n=new Date(),s=new Date(n);if(p==='day')s.setHours(0,0,0,
 function pLabel(p){return{day:'Hoy',week:'Esta semana',month:'Este mes',year:'Este año'}[p];}
 function filtHist(p){var r=pRange(p);return appHistory.filter(function(h){return h.openedAt>=r.from&&h.openedAt<=r.to;});}
 function renderStats(){
-  document.querySelectorAll('.per-tab').forEach(function(b){b.classList.toggle('active',b.getAttribute('data-period')===curPeriod);});
+  var admin=isAdmin();
+  // Solo admin puede ver historial de semana/mes/año
+  document.querySelectorAll('.per-tab').forEach(function(b){
+    var p=b.getAttribute('data-period');
+    if(p&&p!=='day')b.style.display=admin?'':'none';
+    b.classList.toggle('active',p===curPeriod);
+  });
+  // Si no es admin y tenía un período distinto a hoy, resetear a hoy
+  if(!admin&&curPeriod!=='day'){curPeriod='day';}
   var f=filtHist(curPeriod),tot=f.reduce(function(s,h){return s+h.total;},0);
   gid('statLbl').textContent=pLabel(curPeriod);gid('statVal').textContent=money(tot);gid('statSub').textContent=f.length+' cuenta'+(f.length!==1?'s':'');
   var list=gid('appHistoryList');list.innerHTML='';
@@ -2327,7 +2335,7 @@ gid('hdClose').addEventListener('click',function(){gid('histDetailModal').classL
 gid('histDetailModal').addEventListener('click',function(e){if(e.target===gid('histDetailModal'))gid('histDetailModal').classList.remove('show');});
 gid('esCancel').addEventListener('click',function(){gid('editSaleModal').classList.remove('show');editSaleId=null;});
 gid('esSave').addEventListener('click',async function(){if(!editSaleId)return;var nt=parseFloat(gid('esTotal').value);if(isNaN(nt)||nt<0){showToast('Total inválido');return;}var note=gid('esNote').value.trim();await updateHist(editSaleId,nt,note);var r=null;for(var i=0;i<appHistory.length;i++){if(appHistory[i].id===editSaleId){r=appHistory[i];break;}}if(r){r.total=nt;r.editNote=note;}await updateFinanceMovements(editSaleId,nt,r&&r.paymentMethod);gid('editSaleModal').classList.remove('show');editSaleId=null;renderStats();showToast('✓ Venta actualizada');});
-document.querySelectorAll('.per-tab').forEach(function(btn){btn.addEventListener('click',async function(){var p=btn.getAttribute('data-period');if(p!=='day'){var ok=await askPass('Contraseña para ver '+pLabel(p).toLowerCase());if(!ok)return;}curPeriod=p;renderStats();});});
+document.querySelectorAll('.per-tab').forEach(function(btn){btn.addEventListener('click',function(){var p=btn.getAttribute('data-period');if(p!=='day'&&!isAdmin())return;curPeriod=p;renderStats();});});
 gid('exportCSV').addEventListener('click',async function(){var ok=await askPass('Contraseña para exportar CSV');if(!ok)return;var f=filtHist(curPeriod);if(!f.length){showToast('Sin datos');return;}var csv='fecha,hora,mesa,persona,producto,nota,cantidad,precio_unitario,subtotal,total_cuenta\n';f.forEach(function(h){var d=new Date(h.closedAt),fe=d.toISOString().slice(0,10),ho=d.toTimeString().slice(0,5);h.items.forEach(function(it){var nt=(it.note||'').replace(/"/g,'""'),ps=(it.person||'').replace(/"/g,'""');csv+=fe+','+ho+','+h.table+',"'+ps+'","'+it.n+'","'+nt+'",'+it.q+','+it.p+','+it.p*it.q+','+h.total+'\n';});});dlFile('terraza_luna_'+Date.now()+'.csv',csv,'text/csv');showToast('CSV descargado');});
 gid('exportJSON').addEventListener('click',async function(){var ok=await askPass('Contraseña para exportar JSON');if(!ok)return;var f=filtHist(curPeriod);if(!f.length){showToast('Sin datos');return;}dlFile('terraza_luna_'+Date.now()+'.json',JSON.stringify(f,null,2),'application/json');showToast('JSON descargado');});
 gid('clearHistory').addEventListener('click',async function(){var ok=await askPass('Contraseña para borrar historial');if(!ok)return;openConfirm('Borrar TODO el historial','Sin retorno.','Borrar todo',async function(){await deleteAllHist();appHistory=[];renderStats();showToast('Historial borrado');});});
@@ -4740,4 +4748,5 @@ async function deleteLoyaltyPromo(id){
   </div>
 </div>
 
-</body
+</body>
+</html>
