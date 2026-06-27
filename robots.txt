@@ -1,0 +1,11 @@
+User-agent: *
+Allow: /
+Disallow: /tor-admin
+Disallow: /staff
+Disallow: /ordenes
+Disallow: /inventario
+Disallow: /finanzas
+Disallow: /registro
+Disallow: /etiquetar-cartas
+
+Sitemap: https://terrazaluna.mx/sitemap.xml

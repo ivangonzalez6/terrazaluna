@@ -3,7 +3,47 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0, user-scalable=no">
-<title>Verdad o Reto</title>
+<title>Verdad o Reto Online — Juego para grupos y amigos | Terraza Luna</title>
+<meta name="description" content="Juega Verdad o Reto en línea o cara a cara, gratis y sin registro. Niveles: familiar, light, hot y adulto. El juego perfecto para reuniones y fiestas.">
+<meta name="keywords" content="verdad o reto online, verdad o reto gratis, juego para grupos, truth or dare en español, juego de fiesta, retos para amigos">
+<link rel="canonical" href="https://terrazaluna.mx/tor">
+
+<!-- Open Graph -->
+<meta property="og:type" content="website">
+<meta property="og:title" content="Verdad o Reto Online — Gratis, sin registro">
+<meta property="og:description" content="El juego de verdad o reto más completo en español. Juega cara a cara o en línea con tus amigos. Varios niveles, desde familiar hasta adulto.">
+<meta property="og:url" content="https://terrazaluna.mx/tor">
+<meta property="og:site_name" content="Terraza Luna">
+<meta property="og:locale" content="es_MX">
+
+<!-- Twitter Card -->
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Verdad o Reto Online — Gratis, sin registro">
+<meta name="twitter:description" content="El juego de verdad o reto más completo en español. Juega cara a cara o en línea con tus amigos.">
+
+<!-- Schema: WebApplication -->
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "WebApplication",
+  "name": "Verdad o Reto — Terraza Luna",
+  "url": "https://terrazaluna.mx/tor",
+  "description": "Juego de verdad o reto en línea o cara a cara. Gratis, sin registro. Múltiples niveles: familiar, light, hot y adulto.",
+  "applicationCategory": "GameApplication",
+  "operatingSystem": "Any",
+  "offers": {
+    "@type": "Offer",
+    "price": "0",
+    "priceCurrency": "MXN"
+  },
+  "inLanguage": "es-MX",
+  "author": {
+    "@type": "Organization",
+    "name": "Terraza Luna",
+    "url": "https://terrazaluna.mx"
+  }
+}
+</script>
 
 <!-- PWA -->
 <link rel="manifest" href="/manifest-vor.json">
@@ -198,6 +238,27 @@ textarea{resize:none;line-height:1.5;}
 </style>
 </head>
 <body>
+
+<!-- SEO: contenido estático para Google -->
+<div style="position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;" aria-hidden="true">
+  <h1>Verdad o Reto Online — Juego gratis para grupos y amigos</h1>
+  <p>Juega Verdad o Reto en línea o cara a cara, completamente gratis y sin registro. El juego perfecto para fiestas, reuniones y salidas con amigos.</p>
+  <h2>¿Cómo jugar?</h2>
+  <p>Agrega los nombres de los jugadores, elige el nivel de dificultad y empieza a jugar. Puedes jugar cara a cara en el mismo teléfono, o crear una sala en línea para jugar con amigos a distancia.</p>
+  <h2>Niveles disponibles</h2>
+  <ul>
+    <li>Familiar — apto para todas las edades</li>
+    <li>Light — preguntas y retos ligeros</li>
+    <li>Hot — para grupos adultos que buscan más diversión</li>
+    <li>Extremo — retos sin filtros</li>
+    <li>Mixto — mezcla de todos los niveles</li>
+    <li>XXX — contenido adulto (requiere verificación)</li>
+  </ul>
+  <h2>Modos de juego</h2>
+  <p>Modo cara a cara: ideal para grupos en persona. Modo en línea: crea una sala y comparte el link para que tus amigos se unan desde cualquier lugar.</p>
+  <p>Verdad o Reto es una creación de <a href="https://terrazaluna.mx">Terraza Luna</a>, bar con terraza en Huauchinango, Puebla.</p>
+</div>
+
 <script>
 // Ocultar welcome inmediatamente si el usuario es guest de sala
 // (evita el flash de la pantalla de inicio mientras carga el IIFE async)
@@ -811,7 +872,7 @@ function initSala(){
   }
 }
 
-// Cierra automáticamente juegos de una sala que llevan más de 2h activos
+// Cierra automáticamente juegos y sala que llevan más de 2h activos
 // Se llama cuando el host abre la app o inicia un nuevo juego
 async function cleanupStaleGames(roomCode){
   if(!roomCode)return;
