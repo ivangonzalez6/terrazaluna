@@ -234,22 +234,20 @@
   function updateSelectedDisplay() {
     var numbersEl = $("#selectedNumbers");
     var totalEl   = $("#selectedTotal");
-    var amountRow = $("#amountRow");
-    var amountBadge = $("#amountBadge");
+    var btnReg    = $("#btnRegistrar");
     if (!numbersEl) return;
     var nums = Array.from(selectedTickets).sort(function (a, b) { return a - b; });
     if (nums.length === 0) {
       numbersEl.textContent = "Ninguno";
       if (totalEl) totalEl.textContent = "";
-      if (amountRow) amountRow.style.display = "none";
+      if (btnReg)  btnReg.classList.remove("visible");
     } else {
       numbersEl.textContent = nums.map(function (n) { return "#" + pad(n); }).join(", ");
       var total = nums.length * CONFIG.precioPorBoleto;
       if (totalEl) {
         totalEl.textContent = "Total: $" + total + " pesos · " + nums.length + " boleto" + (nums.length > 1 ? "s" : "");
       }
-      if (amountRow) amountRow.style.display = "";
-      if (amountBadge) amountBadge.textContent = "$" + total + " pesos";
+      if (btnReg)  btnReg.classList.add("visible");
     }
   }
 
@@ -347,16 +345,55 @@
     });
   }
 
+  /* ── PAY MODAL ──────────────────────────────────────────── */
+  function initPayModal() {
+    var btnOpen  = $("#btnRegistrar");
+    var modal    = $("#payModal");
+    var btnClose = $("#btnPayClose");
+    if (!btnOpen || !modal) return;
+
+    btnOpen.addEventListener("click", function () {
+      var nums  = Array.from(selectedTickets).sort(function (a, b) { return a - b; });
+      if (!nums.length) return;
+      var total = nums.length * CONFIG.precioPorBoleto;
+      // Actualizar resumen en modal
+      var numsEl  = $("#payNumsVal");
+      var totalEl = $("#payTotalVal");
+      if (numsEl)  numsEl.textContent  = nums.map(function(n){ return "#"+pad(n); }).join(", ");
+      if (totalEl) totalEl.textContent = "$" + total + " pesos (" + nums.length + " boleto" + (nums.length>1?"s":"") + ")";
+      // Limpiar form
+      var fn = $("#fieldName"); if (fn) fn.value = "";
+      var fp = $("#fieldPhone"); if (fp) fp.value = "";
+      var fr = $("#fieldReceipt"); if (fr) fr.value = "";
+      var fl = $("#fileLabelEl"); if (fl) fl.classList.remove("has-file");
+      var fd = $("#fileNameDisplay"); if (fd) fd.textContent = "";
+      var fe = $("#formError"); if (fe) { fe.textContent = ""; }
+      modal.hidden = false;
+      document.body.style.overflow = "hidden";
+    });
+
+    if (btnClose) {
+      btnClose.addEventListener("click", closePayModal);
+    }
+    modal.addEventListener("click", function (e) {
+      if (e.target === modal) closePayModal();
+    });
+  }
+
+  function closePayModal() {
+    var modal = $("#payModal");
+    if (modal) modal.hidden = true;
+    document.body.style.overflow = "";
+  }
+
   /* ── RECEIPT FORM (SUPABASE) ─────────────────────────────── */
   function initReceiptForm() {
-    var form   = $("#rifaForm");
-    var errEl  = $("#formError");
     var btnEl  = $("#btnSubmit");
-    if (!form) return;
+    var errEl  = $("#formError");
+    if (!btnEl) return;
 
-    form.addEventListener("submit", async function (e) {
-      e.preventDefault();
-      if (errEl) { errEl.textContent = ""; errEl.style.display = "none"; }
+    btnEl.addEventListener("click", async function () {
+      if (errEl) { errEl.textContent = ""; }
 
       var nombre = ($("#fieldName").value || "").trim();
       var phone  = ($("#fieldPhone").value || "").trim();
@@ -365,7 +402,8 @@
 
       // Validaciones
       if (!nombre) return showError(errEl, "Por favor escribe tu nombre completo.");
-      if (!nums.length) return showError(errEl, "Selecciona al menos un número de boleto arriba.");
+      if (!phone || phone.replace(/\D/g,"").length < 10) return showError(errEl, "Escribe tu número de WhatsApp (10 dígitos).");
+      if (!nums.length) return showError(errEl, "Selecciona al menos un número de boleto.");
       if (!file)   return showError(errEl, "Adjunta la foto de tu comprobante de pago.");
 
       var total = nums.length * CONFIG.precioPorBoleto;
@@ -424,10 +462,10 @@
           }).catch(function () {});
         }
 
-        // 5. Mostrar modal de éxito
+        // 5. Cerrar modal de pago y mostrar éxito
+        closePayModal();
         setBtnLoading(btnEl, false);
         showSuccessModal(nums, total);
-        form.reset();
         var labelEl = $("#fileLabelEl"); if (labelEl) labelEl.classList.remove("has-file");
         var nameEl  = $("#fileNameDisplay"); if (nameEl) nameEl.textContent = "";
 
@@ -566,12 +604,13 @@
     safe(initClearButton,    "clear");
     safe(initCopyButtons,    "copy");
     safe(initFileInput,      "file");
+    safe(initPayModal,       "payModal");
     safe(initFaq,            "faq");
 
     // Cargar boletos vendidos, luego construir grid
     try { await loadTakenTickets(); } catch(e) {}
     safe(buildGrid, "grid");
-    safe(initReceiptForm, "form");
+    safe(initReceiptForm,  "form");
     safe(initReveals,     "reveals");
   }
 

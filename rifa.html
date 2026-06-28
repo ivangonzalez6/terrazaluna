@@ -11,40 +11,85 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-
   <link rel="stylesheet" href="/Rifa/styles.css?v=20260628" />
+
   <style>
+    [hidden]{display:none!important;}
+
     /* ── Fotos de las niñas ── */
     .niñas-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin:32px 0;}
     .niña-card{border-radius:20px;overflow:hidden;position:relative;background:#0a1a0e;}
     .niña-card img{width:100%;height:260px;object-fit:cover;display:block;transition:transform .4s ease;}
     .niña-card:hover img{transform:scale(1.04);}
-    .niña-info{position:absolute;bottom:0;left:0;right:0;padding:14px 16px;background:linear-gradient(to top,rgba(0,0,0,.75),transparent);color:#fff;}
+    .niña-info{position:absolute;bottom:0;left:0;right:0;padding:14px 16px;background:linear-gradient(to top,rgba(0,0,0,.8),transparent);color:#fff;}
     .niña-name{font-weight:700;font-size:1rem;letter-spacing:.03em;}
     .niña-age{font-size:.8rem;opacity:.85;}
     @media(max-width:600px){.niñas-grid{grid-template-columns:1fr;}}
 
-    /* ── Videos ── */
-    .videos-grid{display:grid;grid-template-columns:1fr 1fr;gap:20px;margin:28px 0;}
-    .video-wrap{border-radius:18px;overflow:hidden;background:#0a1a0e;position:relative;}
-    .video-wrap video{width:100%;display:block;max-height:320px;object-fit:cover;}
-    .video-label{padding:10px 14px;font-size:.82rem;font-weight:600;color:var(--ink-mute);letter-spacing:.04em;text-transform:uppercase;}
-    @media(max-width:600px){.videos-grid{grid-template-columns:1fr;}}
+    /* ── Video vertical (para la causa y el premio) ── */
+    .video-vertical{border-radius:20px;overflow:hidden;background:#0a1a0e;flex-shrink:0;width:260px;}
+    .video-vertical video{width:100%;height:100%;min-height:360px;object-fit:cover;display:block;}
+    @media(max-width:700px){.video-vertical{width:100%;}}
 
-    /* ── Receipt form ── */
-    .file-label{display:flex;align-items:center;justify-content:center;gap:8px;border:2px dashed var(--green-muted);border-radius:12px;padding:20px;cursor:pointer;color:var(--ink-mute);font-size:.9rem;transition:border-color .2s;background:rgba(0,107,63,.04);}
+    /* ── La Causa: grid con video lateral ── */
+    .causa-grid{display:flex;gap:32px;align-items:flex-start;}
+    @media(max-width:700px){.causa-grid{flex-direction:column;}}
+
+    /* ── Premio: grid con video lateral ── */
+    .premio-grid{display:flex;gap:32px;align-items:flex-start;margin-top:32px;}
+    .premio-text-col{flex:1;min-width:0;}
+    .premio-text-col h3{font-size:1.6rem;font-weight:700;margin-bottom:8px;}
+    .premio-text-col .lugar{font-size:.95rem;color:var(--green);font-weight:600;margin-bottom:16px;letter-spacing:.04em;}
+    .premio-text-col .desc{font-size:1rem;line-height:1.75;color:var(--ink-mute);margin-bottom:24px;}
+    .premio-badge-inline{display:inline-block;background:rgba(0,107,63,.12);border:1px solid var(--green);border-radius:16px;padding:18px 24px;text-align:center;}
+    .premio-badge-inline .pb-label{display:block;font-size:.72rem;letter-spacing:.14em;text-transform:uppercase;color:var(--green);margin-bottom:4px;}
+    .premio-badge-inline .pb-main{display:block;font-size:1.4rem;font-weight:700;line-height:1.2;color:var(--ink);}
+    .premio-badge-inline .pb-sub{display:block;font-size:.82rem;color:var(--ink-mute);margin-top:4px;}
+    @media(max-width:700px){.premio-grid{flex-direction:column;}}
+
+    /* ── form-error (para el modal) ── */
+    .form-error{color:#c0392b;font-size:.85rem;margin-top:4px;min-height:1.2em;}
+    .btn-full{width:100%;margin-top:8px;}
+
+    /* ── Botón Registrar en selected-card ── */
+    .sel-actions{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-top:10px;}
+    .btn-registrar{padding:11px 22px;background:var(--green);border:none;border-radius:12px;color:#fff;font-size:.95rem;font-weight:700;cursor:pointer;font-family:inherit;transition:background .2s;display:none;}
+    .btn-registrar:hover{background:var(--green-d,#007a3a);}
+    .btn-registrar.visible{display:inline-block;}
+
+    /* ── MODAL DE PAGO ── */
+    .pay-overlay{position:fixed;inset:0;background:rgba(0,0,0,.72);z-index:8000;display:flex;align-items:center;justify-content:center;padding:16px;backdrop-filter:blur(5px);}
+    .pay-box{background:#0d1a0d;border:1px solid rgba(0,165,80,.3);border-radius:24px;padding:28px 24px;max-width:480px;width:100%;max-height:90vh;overflow-y:auto;}
+    .pay-box::-webkit-scrollbar{width:4px;}
+    .pay-box::-webkit-scrollbar-thumb{background:rgba(0,165,80,.3);border-radius:4px;}
+    .pay-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;}
+    .pay-title{font-size:1.15rem;font-weight:700;}
+    .pay-close{background:none;border:none;color:var(--ink-mute);font-size:1.4rem;cursor:pointer;line-height:1;padding:4px;}
+    .pay-nums-display{background:rgba(0,107,63,.08);border:1px solid rgba(0,107,63,.2);border-radius:12px;padding:14px 16px;margin-bottom:16px;}
+    .pay-nums-label{font-size:.75rem;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-mute);margin-bottom:6px;}
+    .pay-nums-val{font-weight:700;color:var(--green);font-size:.95rem;line-height:1.5;word-break:break-word;}
+    .pay-total{font-size:1.4rem;font-weight:700;color:var(--ink);margin-top:4px;}
+    .pay-section-lbl{font-size:.75rem;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-mute);font-weight:600;margin:18px 0 8px;}
+    .pay-form-field{margin-bottom:12px;}
+    .pay-form-field label{display:block;font-size:.8rem;font-weight:600;color:var(--ink-mute);margin-bottom:5px;}
+    .pay-form-field input{width:100%;background:#111e11;border:1px solid rgba(255,255,255,.1);border-radius:10px;color:var(--ink);font-size:15px;font-family:inherit;padding:11px 14px;outline:none;transition:border-color .2s;}
+    .pay-form-field input:focus{border-color:var(--green);}
+    .pay-bank-card{background:#111e11;border:1px solid rgba(255,255,255,.08);border-radius:14px;padding:16px;margin-bottom:4px;}
+    .pay-bank-row{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:10px;}
+    .pay-bank-row:last-child{margin-bottom:0;}
+    .pay-bank-lbl{font-size:.72rem;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-mute);margin-bottom:2px;}
+    .pay-bank-val{font-weight:700;font-size:.95rem;color:var(--ink);}
+    .copy-mini{padding:4px 11px;border:1px solid rgba(0,165,80,.4);border-radius:6px;background:transparent;color:var(--green);font-size:.75rem;font-weight:600;cursor:pointer;white-space:nowrap;font-family:inherit;flex-shrink:0;}
+    .copy-mini:hover{background:rgba(0,165,80,.1);}
+    .file-label{display:flex;align-items:center;justify-content:center;gap:8px;border:2px dashed rgba(0,165,80,.35);border-radius:12px;padding:18px;cursor:pointer;color:var(--ink-mute);font-size:.9rem;transition:border-color .2s;background:rgba(0,107,63,.04);}
     .file-label:hover,.file-label.has-file{border-color:var(--green);color:var(--green);}
     .file-label input[type=file]{display:none;}
     .file-name-display{font-size:.8rem;color:var(--green);margin-top:6px;min-height:1em;}
-    .amount-badge{display:inline-block;background:rgba(0,107,63,.12);border:1px solid var(--green);border-radius:10px;padding:10px 18px;font-size:1.3rem;font-weight:700;color:var(--green);letter-spacing:.02em;}
-    .form-error{color:#c0392b;font-size:.85rem;margin-top:4px;display:none;}
-    .btn-full{width:100%;margin-top:8px;}
-    .status-chip{display:inline-block;padding:3px 10px;border-radius:20px;font-size:.75rem;font-weight:600;letter-spacing:.04em;}
-    .chip-validado{background:rgba(0,200,83,.15);color:#00c853;}
-    .chip-pendiente{background:rgba(255,193,7,.15);color:#f9a825;}
+    .btn-pagar{width:100%;margin-top:14px;padding:14px;background:var(--green);border:none;border-radius:12px;color:#fff;font-size:1rem;font-weight:700;cursor:pointer;font-family:inherit;transition:background .2s;}
+    .btn-pagar:hover{background:#007a3a;}
+    .btn-pagar:disabled{opacity:.6;cursor:not-allowed;}
 
-    /* ── Success modal ── */
-    [hidden]{display:none!important;}
+    /* ── MODAL ÉXITO ── */
     .success-overlay{position:fixed;inset:0;background:rgba(0,0,0,.65);z-index:9000;display:flex;align-items:center;justify-content:center;padding:20px;backdrop-filter:blur(4px);}
     .success-box{background:#0d1f0f;border:1px solid var(--green);border-radius:24px;padding:36px 28px;max-width:420px;width:100%;text-align:center;}
     .success-emoji{font-size:3rem;margin-bottom:12px;}
@@ -56,7 +101,6 @@
 </head>
 <body>
 
-  <!-- Animated mesh background -->
   <div class="mesh-bg" aria-hidden="true"></div>
 
   <!-- ========== SPLASH ========== -->
@@ -79,7 +123,7 @@
       <li><a href="#causa">La causa</a></li>
       <li><a href="#galeria">Galería</a></li>
       <li><a href="#boletos">Boletos</a></li>
-      <li><a href="#confirmar">Participar</a></li>
+      <li><a href="#premio">El premio</a></li>
     </ul>
     <a href="#boletos" class="nav-cta">Compra tu boleto</a>
   </nav>
@@ -122,15 +166,15 @@
 
             <div class="countdown" id="countdown" role="timer" aria-live="polite">
               <div class="cd-unit"><span class="cd-num" id="cd-days">00</span><span class="cd-lbl">Días</span></div>
-              <div class="cd-sep" aria-hidden="true">:</div>
+              <div class="cd-sep">:</div>
               <div class="cd-unit"><span class="cd-num" id="cd-hours">00</span><span class="cd-lbl">Horas</span></div>
-              <div class="cd-sep" aria-hidden="true">:</div>
+              <div class="cd-sep">:</div>
               <div class="cd-unit"><span class="cd-num" id="cd-mins">00</span><span class="cd-lbl">Min</span></div>
-              <div class="cd-sep" aria-hidden="true">:</div>
+              <div class="cd-sep">:</div>
               <div class="cd-unit"><span class="cd-num" id="cd-secs">00</span><span class="cd-lbl">Seg</span></div>
             </div>
 
-            <div class="progress-bar-track" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" aria-label="Boletos vendidos">
+            <div class="progress-bar-track" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
               <div class="progress-bar-fill" id="hero-bar" style="width:0%"></div>
             </div>
 
@@ -170,17 +214,13 @@
   <!-- ========== LA CAUSA ========== -->
   <section class="causa" id="causa" aria-label="La causa">
     <div class="container">
-      <div class="historia-grid">
+      <div class="causa-grid">
 
-        <!-- Fotos de las niñas -->
-        <div class="historia-imgs">
-          <div class="niñas-grid" style="grid-template-columns:1fr;">
-            <div class="niña-card" style="margin-bottom:0;">
-              <img src="/media/Osmara.jpg" alt="Osmara, 9 años, bailarina" loading="lazy" />
-              <div class="niña-info"><div class="niña-name">Osmara</div><div class="niña-age">9 años 🩰</div></div>
-            </div>
-          </div>
-          <div class="img-label" aria-hidden="true" style="margin-top:10px;">💃 Campeonato Sudamericano<br>LIBRAF 2026</div>
+        <!-- Video de presentación vertical -->
+        <div class="video-vertical reveal">
+          <video src="/media/Presentaci%C3%B3n.mp4" controls preload="metadata" aria-label="Video de presentación de las bailarinas">
+            Tu navegador no soporta video HTML5.
+          </video>
         </div>
 
         <!-- Texto -->
@@ -235,7 +275,6 @@
         <p class="reveal delay-2">Tres niñas increíbles. Cada foto cuenta una historia de esfuerzo, disciplina y amor por el baile.</p>
       </div>
 
-      <!-- Fotos de las 3 niñas -->
       <div class="niñas-grid reveal">
         <div class="niña-card">
           <img src="/media/Osmara.jpg" alt="Osmara bailarina" loading="lazy" />
@@ -250,23 +289,6 @@
           <div class="niña-info"><div class="niña-name">Ana</div><div class="niña-age">12 años</div></div>
         </div>
       </div>
-
-      <!-- Videos -->
-      <div class="videos-grid reveal delay-1">
-        <div class="video-wrap">
-          <video src="/media/Presentaci%C3%B3n.mp4" controls preload="metadata" poster="" aria-label="Video de presentación de las bailarinas">
-            Tu navegador no soporta video HTML5.
-          </video>
-          <div class="video-label">▶ Presentación</div>
-        </div>
-        <div class="video-wrap">
-          <video src="/media/Cena.mp4" controls preload="metadata" poster="" aria-label="Video de la cena">
-            Tu navegador no soporta video HTML5.
-          </video>
-          <div class="video-label">▶ Cena solidaria</div>
-        </div>
-      </div>
-
     </div>
   </section>
 
@@ -281,41 +303,40 @@
         <p class="reveal delay-2">El ganador del sorteo recibirá este increíble premio.</p>
       </div>
 
-      <div class="premio-card reveal">
-        <div class="premio-card-top" aria-hidden="true"></div>
-        <div class="premio-inner">
-          <div class="premio-icon-big" aria-hidden="true">🌙</div>
-          <div class="premio-content">
-            <h3 class="premio-nombre">Cena Romántica para Dos</h3>
-            <p class="premio-lugar">✦ Terraza Luna</p>
-            <p class="premio-desc">
-              Una experiencia gastronómica especial para dos personas en el exclusivo restaurante Terraza Luna. Incluye cena completa en el mejor ambiente romántico para una noche única e inolvidable.
-            </p>
-            <ul class="premio-includes" aria-label="El premio incluye">
-              <li>🍽️ Cena completa para dos personas</li>
-              <li>🥂 Bebidas de bienvenida</li>
-              <li>🌙 Ambiente romántico</li>
-              <li>📍 Restaurante Terraza Luna</li>
-            </ul>
+      <div class="premio-grid reveal">
+
+        <!-- Video de la cena vertical -->
+        <div class="video-vertical">
+          <video src="/media/Cena.mp4" controls preload="metadata" aria-label="Video de la cena romántica">
+            Tu navegador no soporta video HTML5.
+          </video>
+        </div>
+
+        <!-- Texto del premio -->
+        <div class="premio-text-col">
+          <div class="premio-badge-inline" style="margin-bottom:20px;">
+            <span class="pb-label">Premio único</span>
+            <span class="pb-main">Cena<br>Romántica</span>
+            <span class="pb-sub">para 2 personas · Terraza Luna</span>
           </div>
-          <div class="premio-badge-wrap">
-            <div class="premio-badge">
-              <span class="pb-label">Premio</span>
-              <span class="pb-main">Cena<br>Romántica</span>
-              <span class="pb-sub">para 2 personas</span>
-            </div>
+
+          <h3>Cena Romántica para Dos</h3>
+          <p class="lugar">✦ Terraza Luna</p>
+          <p class="desc">
+            Una experiencia romántica para dos personas en el lugar más romántico de la ciudad. Vive una noche única e inolvidable.
+          </p>
+
+          <div class="prize-stats" style="margin-top:0;">
+            <div class="pstat"><span class="pstat-val">100</span><span class="pstat-lbl">boletos</span></div>
+            <div class="pstat-div" aria-hidden="true"></div>
+            <div class="pstat"><span class="pstat-val">$35</span><span class="pstat-lbl">por boleto</span></div>
+            <div class="pstat-div" aria-hidden="true"></div>
+            <div class="pstat"><span class="pstat-val">1</span><span class="pstat-lbl">ganador</span></div>
+            <div class="pstat-div" aria-hidden="true"></div>
+            <div class="pstat"><span class="pstat-val">Jul 5</span><span class="pstat-lbl">sorteo</span></div>
           </div>
         </div>
-      </div>
 
-      <div class="prize-stats reveal">
-        <div class="pstat"><span class="pstat-val">100</span><span class="pstat-lbl">boletos</span></div>
-        <div class="pstat-div" aria-hidden="true"></div>
-        <div class="pstat"><span class="pstat-val">$35</span><span class="pstat-lbl">por boleto</span></div>
-        <div class="pstat-div" aria-hidden="true"></div>
-        <div class="pstat"><span class="pstat-val">1</span><span class="pstat-lbl">ganador único</span></div>
-        <div class="pstat-div" aria-hidden="true"></div>
-        <div class="pstat"><span class="pstat-val">Jul 5</span><span class="pstat-lbl">sorteo 2026</span></div>
       </div>
     </div>
   </section>
@@ -335,19 +356,19 @@
           <div class="step-num" aria-hidden="true">01</div>
           <div class="step-icon" aria-hidden="true">🎯</div>
           <h3>Elige tu número</h3>
-          <p>Selecciona uno o más números disponibles en la cuadrícula. Puedes elegir varios y pagar todos de una vez.</p>
+          <p>Selecciona uno o más números disponibles. Puedes elegir varios y pagar todos de una vez.</p>
         </div>
         <div class="step-card reveal delay-1">
           <div class="step-num" aria-hidden="true">02</div>
           <div class="step-icon" aria-hidden="true">💳</div>
           <h3>Transfiere el monto</h3>
-          <p>$35 pesos por boleto. Si compras 3 boletos, transfieres $105. Guarda tu comprobante de pago.</p>
+          <p>$35 pesos por boleto. Si compras 3 boletos, transfieres $105. Guarda tu comprobante.</p>
         </div>
         <div class="step-card reveal delay-2">
           <div class="step-num" aria-hidden="true">03</div>
           <div class="step-icon" aria-hidden="true">📎</div>
-          <h3>Sube tu comprobante</h3>
-          <p>Llena el formulario con tu nombre, elige tus boletos y sube la foto de tu comprobante aquí mismo. ¡Tus boletos quedan registrados al instante!</p>
+          <h3>Regístra y listo</h3>
+          <p>Haz clic en "Registrar mis boletos", llena tus datos y sube el comprobante. ¡Quedan asignados al instante!</p>
         </div>
       </div>
     </div>
@@ -361,7 +382,7 @@
       <div class="section-header">
         <span class="kicker reveal">Boletos</span>
         <h2 class="reveal delay-1">Elige tu número <em>de la suerte.</em></h2>
-        <p class="reveal delay-2">Haz clic en un número para seleccionarlo. Puedes elegir varios boletos y pagar todo junto.</p>
+        <p class="reveal delay-2">Haz clic en un número para seleccionarlo. Puedes elegir varios y pagar todo junto.</p>
       </div>
 
       <div class="boletos-progress reveal">
@@ -369,10 +390,10 @@
           <span><strong id="stats-vendidos">0</strong> boletos vendidos</span>
           <span><strong id="stats-disponibles">100</strong> disponibles</span>
         </div>
-        <div class="progress-bar-track" role="progressbar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100" aria-label="Boletos vendidos">
+        <div class="progress-bar-track" role="progressbar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100">
           <div class="progress-bar-fill" id="progressFill" style="width:0%"></div>
         </div>
-        <p class="bp-urgency" id="urgencyMsg">⚡ ¡Date prisa! Los boletos se están agotando.</p>
+        <p class="bp-urgency">⚡ ¡Date prisa! Los boletos se están agotando.</p>
       </div>
 
       <div class="ticket-legend reveal" aria-label="Leyenda">
@@ -381,9 +402,7 @@
         <div class="leg-item"><div class="leg-dot ld-sel" aria-hidden="true"></div> Seleccionado</div>
       </div>
 
-      <div class="ticket-grid" id="ticketGrid" role="group" aria-label="Cuadrícula de 100 boletos">
-        <!-- Generado por JS -->
-      </div>
+      <div class="ticket-grid" id="ticketGrid" role="group" aria-label="Cuadrícula de 100 boletos"></div>
 
       <div class="ticket-actions reveal">
         <button class="btn-lucky" id="btnLucky" type="button">🎲 Elige por mí</button>
@@ -394,98 +413,9 @@
         <p class="sel-label">Números seleccionados:</p>
         <p class="sel-nums" id="selectedNumbers">Ninguno</p>
         <p class="sel-total" id="selectedTotal"></p>
-      </div>
-    </div>
-  </section>
-
-  <div class="divider" aria-hidden="true"></div>
-
-  <!-- ========== CONFIRMAR ========== -->
-  <section class="confirmar" id="confirmar" aria-label="Confirmar participación">
-    <div class="container">
-      <div class="section-header">
-        <span class="kicker reveal">¡Ya casi!</span>
-        <h2 class="reveal delay-1">Confirma tu <em>participación.</em></h2>
-        <p class="reveal delay-2">Transfiere el monto total y sube tu comprobante. Tus boletos quedan registrados al instante.</p>
-      </div>
-
-      <div class="methods-block">
-
-        <!-- Datos bancarios -->
-        <div class="method-card reveal">
-          <h3 class="method-title">🏦 Datos bancarios</h3>
-          <div class="method-detail">
-            <div>
-              <p class="field-lbl">Banco</p>
-              <strong>BBVA</strong>
-            </div>
-            <div>
-              <p class="field-lbl">Titular</p>
-              <strong>Ivan González Domínguez</strong>
-            </div>
-            <div>
-              <p class="field-lbl">Tarjeta</p>
-              <strong class="clabe-text" id="cardText">4152 3143 0098 7511</strong>
-            </div>
-            <div>
-              <p class="field-lbl">CLABE interbancaria</p>
-              <strong class="clabe-text" id="clabeText">012 650 01503672852 7</strong>
-            </div>
-            <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:4px;">
-              <button class="copy-btn" id="btnCopyClabe" type="button">📋 Copiar CLABE</button>
-              <button class="copy-btn" id="btnCopyCard" type="button">📋 Copiar tarjeta</button>
-            </div>
-            <p style="font-size:0.82rem;color:var(--ink-mute);margin-top:10px;">
-              Transfiere <strong style="color:var(--green)">$35 pesos por boleto</strong>. Si llevas 2 boletos, transfiere $70 pesos. Guarda tu comprobante.
-            </p>
-          </div>
+        <div class="sel-actions">
+          <button class="btn-registrar" id="btnRegistrar" type="button">🎟️ Registrar mis boletos</button>
         </div>
-
-        <!-- Formulario con comprobante -->
-        <div class="method-card reveal delay-1">
-          <h3 class="method-title">📎 Registra tus boletos</h3>
-          <p style="font-size:.85rem;color:var(--ink-mute);margin-bottom:16px;">
-            Tus boletos quedan asignados al instante. Si el comprobante requiere revisión, te avisamos por WhatsApp.
-          </p>
-          <form class="rifa-form" id="rifaForm" novalidate>
-
-            <div class="form-field">
-              <label for="fieldName">Nombre completo *</label>
-              <input type="text" id="fieldName" placeholder="Ej: María García" autocomplete="name" required />
-            </div>
-
-            <div class="form-field">
-              <label for="fieldPhone">WhatsApp (opcional)</label>
-              <input type="tel" id="fieldPhone" placeholder="Ej: 55 1234 5678" autocomplete="tel" />
-            </div>
-
-            <div class="form-field">
-              <label for="fieldTickets">Boletos seleccionados</label>
-              <input type="text" id="fieldTickets" readonly placeholder="Selecciona tus números arriba ↑" />
-            </div>
-
-            <div class="form-field" id="amountRow" style="display:none">
-              <label>Total a transferir</label>
-              <div class="amount-badge" id="amountBadge">$0 pesos</div>
-            </div>
-
-            <div class="form-field">
-              <label>Comprobante de pago *</label>
-              <label class="file-label" id="fileLabelEl" for="fieldReceipt">
-                📎 Toca para subir foto del comprobante
-                <input type="file" id="fieldReceipt" accept="image/*" />
-              </label>
-              <p class="file-name-display" id="fileNameDisplay"></p>
-            </div>
-
-            <p id="formError" class="form-error"></p>
-
-            <button class="btn-primary btn-full" id="btnSubmit" type="submit">
-              🎟️ Registrar mis boletos
-            </button>
-          </form>
-        </div>
-
       </div>
     </div>
   </section>
@@ -508,7 +438,7 @@
             <span class="faq-chevron" aria-hidden="true">▾</span>
           </button>
           <div class="faq-a" id="faq-a1" hidden>
-            Al subir tu comprobante, tus boletos quedan asignados de inmediato en el sistema. Si el comprobante es validado automáticamente, verás la confirmación en pantalla. Si requiere revisión manual, te avisamos por WhatsApp.
+            Al subir tu comprobante, tus boletos quedan asignados de inmediato. Si el comprobante es validado automáticamente, ves la confirmación en pantalla. Si requiere revisión, te avisamos por WhatsApp.
           </div>
         </div>
 
@@ -518,7 +448,7 @@
             <span class="faq-chevron" aria-hidden="true">▾</span>
           </button>
           <div class="faq-a" id="faq-a2" hidden>
-            ¡Sí! Selecciona todos los números que quieras en la cuadrícula. El monto a transferir se calcula automáticamente ($35 por boleto) y puedes pagar todo en una sola transferencia.
+            ¡Sí! Selecciona todos los números que quieras. El monto se calcula automáticamente ($35 por boleto) y puedes pagar todo en una sola transferencia.
           </div>
         </div>
 
@@ -528,7 +458,7 @@
             <span class="faq-chevron" aria-hidden="true">▾</span>
           </button>
           <div class="faq-a" id="faq-a3" hidden>
-            El sorteo se realiza el <strong>domingo 5 de julio de 2026 a las 8:00 PM</strong> en Terraza Luna. Es un sorteo presencial y transparente. Se publicará en redes sociales para que puedas verlo en tiempo real.
+            El sorteo se realiza el <strong>domingo 5 de julio de 2026 a las 8:00 PM</strong> en Terraza Luna. Es presencial y transparente. Se transmitirá en redes sociales.
           </div>
         </div>
 
@@ -538,7 +468,7 @@
             <span class="faq-chevron" aria-hidden="true">▾</span>
           </button>
           <div class="faq-a" id="faq-a4" hidden>
-            Los fondos cubren inscripción, vestuario, transporte y hospedaje para que <strong>Osmara, Mabel y Ana</strong> puedan participar en el <strong>Campeonato Sudamericano de Danza y Gimnasia LIBRAF 2026</strong> del 10 al 18 de octubre.
+            Los fondos cubren inscripción, vestuario, transporte y hospedaje para que <strong>Osmara, Mabel y Ana</strong> puedan participar en el <strong>Campeonato Sudamericano LIBRAF 2026</strong> del 10 al 18 de octubre.
           </div>
         </div>
 
@@ -548,7 +478,7 @@
             <span class="faq-chevron" aria-hidden="true">▾</span>
           </button>
           <div class="faq-a" id="faq-a5" hidden>
-            Una cena romántica para dos personas en Terraza Luna con experiencia gastronómica completa, bebidas de bienvenida y el mejor ambiente romántico. Los detalles se coordinan directamente con el ganador.
+            Una experiencia romántica para dos personas en el lugar más romántico de la ciudad. Vive una noche única e inolvidable en <strong>Terraza Luna</strong>.
           </div>
         </div>
 
@@ -589,6 +519,71 @@
     </div>
   </footer>
 
+  <!-- ========== MODAL DE PAGO ========== -->
+  <div class="pay-overlay" id="payModal" hidden role="dialog" aria-modal="true" aria-labelledby="payTitle">
+    <div class="pay-box">
+
+      <div class="pay-header">
+        <div class="pay-title" id="payTitle">🎟️ Registrar mis boletos</div>
+        <button class="pay-close" id="btnPayClose" aria-label="Cerrar">✕</button>
+      </div>
+
+      <!-- Resumen de boletos -->
+      <div class="pay-nums-display">
+        <div class="pay-nums-label">Números seleccionados</div>
+        <div class="pay-nums-val" id="payNumsVal">—</div>
+        <div class="pay-total" id="payTotalVal"></div>
+      </div>
+
+      <!-- Datos del comprador -->
+      <div class="pay-section-lbl">Tus datos</div>
+      <div class="pay-form-field">
+        <label for="fieldName">Nombre completo *</label>
+        <input type="text" id="fieldName" placeholder="Ej: María García" autocomplete="name" />
+      </div>
+      <div class="pay-form-field">
+        <label for="fieldPhone">WhatsApp *</label>
+        <input type="tel" id="fieldPhone" placeholder="Ej: 55 1234 5678" autocomplete="tel" />
+      </div>
+
+      <!-- Datos bancarios -->
+      <div class="pay-section-lbl">Datos para transferir</div>
+      <div class="pay-bank-card">
+        <div style="margin-bottom:12px;">
+          <div class="pay-bank-lbl">Banco · Titular</div>
+          <div class="pay-bank-val">BBVA · Ivan González Domínguez</div>
+        </div>
+        <div class="pay-bank-row">
+          <div>
+            <div class="pay-bank-lbl">Tarjeta</div>
+            <div class="pay-bank-val" id="cardText">4152 3143 0098 7511</div>
+          </div>
+          <button class="copy-mini" id="btnCopyCard">📋 Copiar</button>
+        </div>
+        <div class="pay-bank-row">
+          <div>
+            <div class="pay-bank-lbl">CLABE interbancaria</div>
+            <div class="pay-bank-val" id="clabeText">012 650 01503672852 7</div>
+          </div>
+          <button class="copy-mini" id="btnCopyClabe">📋 Copiar</button>
+        </div>
+      </div>
+
+      <!-- Comprobante -->
+      <div class="pay-section-lbl">Comprobante de pago</div>
+      <label class="file-label" id="fileLabelEl" for="fieldReceipt">
+        📎 Toca para subir foto del comprobante
+        <input type="file" id="fieldReceipt" accept="image/*" />
+      </label>
+      <p class="file-name-display" id="fileNameDisplay"></p>
+
+      <p id="formError" class="form-error"></p>
+
+      <button class="btn-pagar" id="btnSubmit" type="button">Pagar y registrar</button>
+
+    </div>
+  </div>
+
   <!-- ========== MODAL DE ÉXITO ========== -->
   <div class="success-overlay" id="successModal" hidden role="dialog" aria-modal="true" aria-labelledby="successTitle">
     <div class="success-box">
@@ -601,10 +596,9 @@
     </div>
   </div>
 
-  <!-- Scripts -->
   <script defer src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js" integrity="sha512-7eHRwcbYkK4d9d/6tD8X+SuNKwLLvkmusnLg9s4LHXQ5zXAKwkbLtSMLXrvueqXXmD4XEPyFKpfCuiEMDvow==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
   <script defer src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js" integrity="sha512-onMTRKJBKz8M1TnqqDuGBlowlH0ohFzMXYRNebz+yOcc5TORHDiAVnzD3/6fKSqIeZpAh4uPjBKtLX/OYEdIA==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
-  <script src="/Rifa/main.js?v=20260628"></script>
+  <script src="/Rifa/main.js?v=20260629"></script>
 
 </body>
 </html>
