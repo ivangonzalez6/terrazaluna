@@ -215,6 +215,49 @@
     syncTicketsToForm();
   }
 
+  /* ── REFRESH GRID (sincroniza con Supabase sin recargar) ─────── */
+  async function refreshGrid() {
+    try {
+      var newTaken = new Set();
+      var rows = await sbGet("rifa_purchases", "?select=ticket_numbers,status&status=neq.rechazado");
+      if (Array.isArray(rows)) {
+        rows.forEach(function (r) {
+          if (Array.isArray(r.ticket_numbers)) {
+            r.ticket_numbers.forEach(function (n) { newTaken.add(n); });
+          }
+        });
+      }
+
+      // Liberar boletos que ya no están en la BD
+      takenTickets.forEach(function (n) {
+        if (!newTaken.has(n) && !selectedTickets.has(n)) {
+          var el = document.querySelector('[data-num="' + n + '"]');
+          if (el && el.classList.contains("taken")) {
+            el.classList.remove("taken");
+            el.removeAttribute("aria-disabled");
+            el.setAttribute("aria-checked", "false");
+            el.setAttribute("aria-label", "Boleto #" + n + " — disponible");
+            el.textContent = pad(n);
+            el.addEventListener("click", onTicketClick);
+            el.addEventListener("keydown", function (e) {
+              if (e.key === "Enter" || e.key === " ") { e.preventDefault(); onTicketClick.call(this); }
+            });
+          }
+        }
+      });
+
+      // Marcar boletos nuevos como tomados
+      newTaken.forEach(function (n) {
+        if (!takenTickets.has(n)) markAsTaken([n]);
+      });
+
+      takenTickets = newTaken;
+      updateStats();
+    } catch (e) {
+      console.warn("[refreshGrid]", e);
+    }
+  }
+
   function updateStats() {
     var taken = takenTickets.size;
     var avail = 100 - taken;
@@ -612,6 +655,9 @@
     safe(buildGrid, "grid");
     safe(initReceiptForm,  "form");
     safe(initReveals,     "reveals");
+
+    // Auto-refresh cada 30 segundos
+    setInterval(refreshGrid, 30000);
   }
 
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", boot);
