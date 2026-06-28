@@ -1,0 +1,478 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>Admin — Rifa por sus Sueños</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box;}
+:root{
+  --bg:#0a0f0a;--bg2:#111811;--bg3:#161e16;
+  --ink:#e8f0e8;--dim:rgba(232,240,232,.65);--faint:rgba(232,240,232,.35);
+  --green:#00a550;--green-d:#007a3a;--gold:#c9a35b;
+  --red:#e05252;--yellow:#f5c518;
+  --line:rgba(255,255,255,.07);--line2:rgba(255,255,255,.13);
+  --card:#111811;
+}
+html,body{min-height:100%;background:var(--bg);color:var(--ink);font-family:'Inter',sans-serif;font-size:14px;}
+
+/* ── LOGIN ── */
+#loginScreen{display:flex;align-items:center;justify-content:center;min-height:100vh;padding:20px;}
+.login-box{background:var(--bg2);border:1px solid var(--line2);border-radius:20px;padding:40px 32px;width:100%;max-width:360px;text-align:center;}
+.login-box h1{font-size:1.4rem;font-weight:700;margin-bottom:6px;}
+.login-box p{color:var(--dim);font-size:.88rem;margin-bottom:24px;}
+.login-box input{width:100%;background:var(--bg3);border:1px solid var(--line2);border-radius:10px;color:var(--ink);font-size:15px;padding:12px 14px;outline:none;margin-bottom:12px;font-family:inherit;}
+.login-box input:focus{border-color:var(--green);}
+.login-box button{width:100%;background:var(--green);border:none;border-radius:10px;color:#fff;font-size:15px;font-weight:600;padding:13px;cursor:pointer;font-family:inherit;}
+.login-box button:hover{background:var(--green-d);}
+.login-err{color:var(--red);font-size:.82rem;margin-top:8px;display:none;}
+
+/* ── APP ── */
+#appScreen{display:none;min-height:100vh;}
+.top-bar{display:flex;align-items:center;justify-content:space-between;padding:14px 24px;background:var(--bg2);border-bottom:1px solid var(--line);position:sticky;top:0;z-index:100;}
+.top-bar-title{font-weight:700;font-size:1rem;letter-spacing:.02em;}
+.top-bar-sub{font-size:.78rem;color:var(--dim);}
+.top-bar-right{display:flex;align-items:center;gap:10px;}
+.btn-sm{padding:7px 14px;border-radius:8px;border:1px solid var(--line2);background:transparent;color:var(--ink);font-size:.8rem;font-weight:500;cursor:pointer;font-family:inherit;transition:all .15s;}
+.btn-sm:hover{border-color:var(--green);color:var(--green);}
+.btn-sm.danger:hover{border-color:var(--red);color:var(--red);}
+
+/* ── STATS BAR ── */
+.stats-bar{display:flex;gap:0;border-bottom:1px solid var(--line);background:var(--bg2);}
+.stat-pill{flex:1;padding:12px 16px;text-align:center;border-right:1px solid var(--line);}
+.stat-pill:last-child{border-right:none;}
+.stat-pill-val{font-size:1.4rem;font-weight:700;color:var(--ink);}
+.stat-pill-lbl{font-size:.72rem;color:var(--dim);letter-spacing:.04em;text-transform:uppercase;margin-top:2px;}
+
+/* ── FILTERS ── */
+.filter-bar{display:flex;align-items:center;gap:8px;padding:14px 24px;flex-wrap:wrap;border-bottom:1px solid var(--line);}
+.filter-btn{padding:6px 14px;border-radius:20px;border:1px solid var(--line2);background:transparent;color:var(--dim);font-size:.8rem;cursor:pointer;font-family:inherit;transition:all .15s;}
+.filter-btn.active,.filter-btn:hover{border-color:var(--green);color:var(--green);background:rgba(0,165,80,.08);}
+.filter-btn.f-validado.active{border-color:#00c853;color:#00c853;background:rgba(0,200,83,.08);}
+.filter-btn.f-pendiente.active{border-color:var(--yellow);color:var(--yellow);background:rgba(245,197,24,.08);}
+.filter-btn.f-rechazado.active{border-color:var(--red);color:var(--red);background:rgba(224,82,82,.08);}
+.search-input{margin-left:auto;background:var(--bg3);border:1px solid var(--line2);border-radius:8px;color:var(--ink);padding:6px 12px;font-size:.82rem;width:200px;font-family:inherit;outline:none;}
+.search-input:focus{border-color:var(--green);}
+
+/* ── TABLE ── */
+.table-wrap{overflow-x:auto;padding:0 24px 40px;}
+table{width:100%;border-collapse:collapse;margin-top:16px;min-width:900px;}
+th{text-align:left;font-size:.72rem;letter-spacing:.06em;text-transform:uppercase;color:var(--dim);font-weight:600;padding:10px 12px;border-bottom:1px solid var(--line2);white-space:nowrap;}
+td{padding:11px 12px;border-bottom:1px solid var(--line);vertical-align:middle;font-size:.85rem;}
+tr:hover td{background:rgba(255,255,255,.025);}
+.ticket-chips{display:flex;flex-wrap:wrap;gap:4px;}
+.t-chip{background:rgba(0,165,80,.12);border:1px solid rgba(0,165,80,.3);border-radius:6px;padding:2px 7px;font-size:.75rem;font-weight:600;color:var(--green);}
+.status-badge{display:inline-flex;align-items:center;gap:4px;padding:3px 10px;border-radius:20px;font-size:.75rem;font-weight:600;white-space:nowrap;}
+.sb-validado{background:rgba(0,200,83,.15);color:#00c853;}
+.sb-pendiente{background:rgba(245,197,24,.15);color:#f9a825;}
+.sb-rechazado{background:rgba(224,82,82,.15);color:#e05252;}
+.actions{display:flex;gap:6px;flex-wrap:wrap;}
+.action-btn{padding:5px 11px;border-radius:7px;border:1px solid var(--line2);background:transparent;color:var(--dim);font-size:.75rem;cursor:pointer;font-family:inherit;transition:all .15s;white-space:nowrap;}
+.action-btn:hover{border-color:var(--green);color:var(--green);}
+.action-btn.del:hover{border-color:var(--red);color:var(--red);}
+.receipt-link{color:var(--green);text-decoration:none;font-size:.78rem;}
+.receipt-link:hover{text-decoration:underline;}
+.no-rows{padding:48px;text-align:center;color:var(--dim);}
+.loading-msg{padding:32px;text-align:center;color:var(--dim);}
+.phone-link{color:var(--dim);text-decoration:none;}
+.phone-link:hover{color:var(--ink);}
+
+/* ── MODAL EDICIÓN ── */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.65);z-index:9000;display:flex;align-items:center;justify-content:center;padding:16px;backdrop-filter:blur(4px);}
+.modal-box{background:var(--bg2);border:1px solid var(--line2);border-radius:20px;padding:28px;max-width:480px;width:100%;}
+.modal-title{font-size:1.1rem;font-weight:700;margin-bottom:18px;}
+.modal-field{margin-bottom:14px;}
+.modal-field label{display:block;font-size:.78rem;font-weight:600;letter-spacing:.04em;text-transform:uppercase;color:var(--dim);margin-bottom:6px;}
+.modal-field input,.modal-field select,.modal-field textarea{width:100%;background:var(--bg3);border:1px solid var(--line2);border-radius:8px;color:var(--ink);font-size:14px;padding:10px 12px;font-family:inherit;outline:none;}
+.modal-field input:focus,.modal-field select,.modal-field textarea:focus{border-color:var(--green);}
+.modal-field select{cursor:pointer;}
+.modal-field textarea{resize:vertical;min-height:70px;}
+.modal-actions{display:flex;gap:8px;justify-content:flex-end;margin-top:20px;}
+.btn-save{padding:9px 20px;background:var(--green);border:none;border-radius:8px;color:#fff;font-weight:600;font-size:.88rem;cursor:pointer;font-family:inherit;}
+.btn-save:hover{background:var(--green-d);}
+.btn-cancel{padding:9px 16px;background:transparent;border:1px solid var(--line2);border-radius:8px;color:var(--dim);font-size:.88rem;cursor:pointer;font-family:inherit;}
+.btn-cancel:hover{border-color:var(--ink);color:var(--ink);}
+
+/* ── RECEIPT PREVIEW MODAL ── */
+.receipt-modal-inner{max-width:600px;}
+.receipt-modal-inner img{width:100%;border-radius:10px;margin-top:12px;max-height:70vh;object-fit:contain;}
+
+/* ── CONFIRM DELETE ── */
+.del-modal-inner{max-width:380px;text-align:center;}
+.del-modal-inner p{color:var(--dim);font-size:.9rem;line-height:1.6;margin:10px 0 20px;}
+.btn-del-confirm{padding:10px 24px;background:var(--red);border:none;border-radius:8px;color:#fff;font-weight:600;cursor:pointer;font-family:inherit;font-size:.9rem;}
+
+@media(max-width:600px){
+  .filter-bar{padding:10px 12px;}
+  .table-wrap{padding:0 8px 40px;}
+  .search-input{width:100%;margin-left:0;}
+  .stats-bar{flex-wrap:wrap;}
+  .stat-pill{min-width:50%;}
+}
+</style>
+</head>
+<body>
+
+<!-- ── LOGIN ── -->
+<div id="loginScreen">
+  <div class="login-box">
+    <div style="font-size:2rem;margin-bottom:10px;">🩰</div>
+    <h1>Admin · Rifa</h1>
+    <p>Ingresa la contraseña para acceder al panel de administración.</p>
+    <input type="password" id="pwInput" placeholder="Contraseña" onkeydown="if(event.key==='Enter')doLogin()"/>
+    <button onclick="doLogin()">Entrar</button>
+    <p class="login-err" id="loginErr">Contraseña incorrecta.</p>
+  </div>
+</div>
+
+<!-- ── APP ── -->
+<div id="appScreen">
+
+  <div class="top-bar">
+    <div>
+      <div class="top-bar-title">🩰 Admin · Rifa por sus Sueños</div>
+      <div class="top-bar-sub">Campeonato Sudamericano LIBRAF 2026 · Sorteo 5 julio 2026</div>
+    </div>
+    <div class="top-bar-right">
+      <button class="btn-sm" onclick="loadData()">⟳ Actualizar</button>
+      <button class="btn-sm danger" onclick="doLogout()">Salir</button>
+    </div>
+  </div>
+
+  <div class="stats-bar" id="statsBar">
+    <div class="stat-pill"><div class="stat-pill-val" id="statTotal">—</div><div class="stat-pill-lbl">Total compras</div></div>
+    <div class="stat-pill"><div class="stat-pill-val" id="statBoletos">—</div><div class="stat-pill-lbl">Boletos vendidos</div></div>
+    <div class="stat-pill"><div class="stat-pill-val" id="statValidado" style="color:#00c853">—</div><div class="stat-pill-lbl">Validados</div></div>
+    <div class="stat-pill"><div class="stat-pill-val" id="statPendiente" style="color:#f9a825">—</div><div class="stat-pill-lbl">Pendientes</div></div>
+    <div class="stat-pill"><div class="stat-pill-val" id="statRecaudado" style="color:var(--green)">—</div><div class="stat-pill-lbl">Recaudado</div></div>
+  </div>
+
+  <div class="filter-bar">
+    <button class="filter-btn active" data-filter="todos" onclick="setFilter('todos',this)">Todos</button>
+    <button class="filter-btn f-validado" data-filter="validado" onclick="setFilter('validado',this)">✅ Validados</button>
+    <button class="filter-btn f-pendiente" data-filter="pendiente_revision" onclick="setFilter('pendiente_revision',this)">⏳ Pendientes</button>
+    <button class="filter-btn f-rechazado" data-filter="rechazado" onclick="setFilter('rechazado',this)">❌ Rechazados</button>
+    <input class="search-input" id="searchInput" type="text" placeholder="🔍 Buscar por nombre o boleto…" oninput="renderTable()"/>
+  </div>
+
+  <div class="table-wrap">
+    <div id="tableMsg" class="loading-msg">Cargando datos…</div>
+    <table id="mainTable" style="display:none">
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>Nombre</th>
+          <th>WhatsApp</th>
+          <th>Boletos</th>
+          <th>Monto</th>
+          <th>Estado</th>
+          <th>Comprobante</th>
+          <th>Fecha y hora</th>
+          <th>Notas Claude</th>
+          <th>Acciones</th>
+        </tr>
+      </thead>
+      <tbody id="tableBody"></tbody>
+    </table>
+  </div>
+
+</div>
+
+<!-- ── MODAL EDICIÓN ── -->
+<div class="modal-overlay" id="editModal" style="display:none" onclick="if(event.target===this)closeEditModal()">
+  <div class="modal-box">
+    <div class="modal-title">✏️ Editar compra</div>
+    <input type="hidden" id="editId"/>
+    <div class="modal-field">
+      <label>Nombre</label>
+      <input type="text" id="editName"/>
+    </div>
+    <div class="modal-field">
+      <label>WhatsApp</label>
+      <input type="tel" id="editPhone"/>
+    </div>
+    <div class="modal-field">
+      <label>Estado de validación</label>
+      <select id="editStatus">
+        <option value="pendiente_revision">⏳ Pendiente de revisión</option>
+        <option value="validado">✅ Validado</option>
+        <option value="rechazado">❌ Rechazado</option>
+      </select>
+    </div>
+    <div class="modal-field">
+      <label>Notas (opcional)</label>
+      <textarea id="editNotes" placeholder="Observaciones sobre el comprobante…"></textarea>
+    </div>
+    <div class="modal-actions">
+      <button class="btn-cancel" onclick="closeEditModal()">Cancelar</button>
+      <button class="btn-save" onclick="saveEdit()">Guardar cambios</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── MODAL COMPROBANTE ── -->
+<div class="modal-overlay" id="receiptModal" style="display:none" onclick="if(event.target===this)document.getElementById('receiptModal').style.display='none'">
+  <div class="modal-box receipt-modal-inner">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;">
+      <div class="modal-title" style="margin:0">📎 Comprobante</div>
+      <button class="btn-cancel" onclick="document.getElementById('receiptModal').style.display='none'">Cerrar</button>
+    </div>
+    <img id="receiptImg" src="" alt="Comprobante de pago"/>
+    <div style="margin-top:10px;text-align:center;">
+      <a id="receiptFullLink" href="#" target="_blank" style="color:var(--green);font-size:.82rem;">Abrir en nueva pestaña ↗</a>
+    </div>
+  </div>
+</div>
+
+<!-- ── MODAL ELIMINAR ── -->
+<div class="modal-overlay" id="delModal" style="display:none" onclick="if(event.target===this)closeDelModal()">
+  <div class="modal-box del-modal-inner">
+    <div style="font-size:2rem;margin-bottom:8px;">⚠️</div>
+    <div class="modal-title">Eliminar compra</div>
+    <p>Esta acción es permanente. Los boletos asignados quedarán libres. ¿Confirmas?</p>
+    <input type="hidden" id="delId"/>
+    <div style="display:flex;gap:8px;justify-content:center;">
+      <button class="btn-cancel" onclick="closeDelModal()">Cancelar</button>
+      <button class="btn-del-confirm" onclick="confirmDelete()">Sí, eliminar</button>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ── CONFIG ── */
+var SB = "https://biuaxkpyujypiigxolwt.supabase.co";
+var SK = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJpdWF4a3B5dWp5cGlpZ3hvbHd0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk5MDY1ODUsImV4cCI6MjA5NTQ4MjU4NX0.4MJ2WfTo6tDNImcN0E5RCy4ilU2-sXnmRb6_BB85YaQ";
+var ADMIN_PASSWORD = "LibrafRifa2026";
+
+/* ── STATE ── */
+var allRows    = [];
+var activeFilter = "todos";
+
+/* ── AUTH ── */
+function doLogin() {
+  var pw = document.getElementById("pwInput").value;
+  var err = document.getElementById("loginErr");
+  if (pw === ADMIN_PASSWORD) {
+    document.getElementById("loginScreen").style.display = "none";
+    document.getElementById("appScreen").style.display  = "block";
+    sessionStorage.setItem("rifa_admin", "1");
+    loadData();
+  } else {
+    err.style.display = "block";
+    document.getElementById("pwInput").value = "";
+    document.getElementById("pwInput").focus();
+  }
+}
+function doLogout() {
+  sessionStorage.removeItem("rifa_admin");
+  document.getElementById("appScreen").style.display  = "none";
+  document.getElementById("loginScreen").style.display = "flex";
+}
+// Auto-login if session exists
+if (sessionStorage.getItem("rifa_admin") === "1") {
+  document.getElementById("loginScreen").style.display = "none";
+  document.getElementById("appScreen").style.display  = "block";
+}
+
+/* ── API ── */
+function sbHeaders() {
+  return { "apikey": SK, "Authorization": "Bearer " + SK, "Content-Type": "application/json" };
+}
+async function sbGet(table, filter) {
+  var r = await fetch(SB + "/rest/v1/" + table + (filter || ""), { headers: sbHeaders() });
+  return r.json();
+}
+async function sbPatch(table, filter, body) {
+  var r = await fetch(SB + "/rest/v1/" + table + (filter || ""), {
+    method: "PATCH",
+    headers: Object.assign({}, sbHeaders(), { "Prefer": "return=minimal" }),
+    body: JSON.stringify(body)
+  });
+  return r;
+}
+async function sbDelete(table, filter) {
+  var r = await fetch(SB + "/rest/v1/" + table + (filter || ""), {
+    method: "DELETE",
+    headers: sbHeaders()
+  });
+  return r;
+}
+
+/* ── LOAD ── */
+async function loadData() {
+  document.getElementById("tableMsg").textContent = "Cargando datos…";
+  document.getElementById("tableMsg").style.display = "block";
+  document.getElementById("mainTable").style.display = "none";
+  try {
+    var rows = await sbGet("rifa_purchases", "?select=*&order=created_at.desc");
+    allRows = Array.isArray(rows) ? rows : [];
+    updateStats();
+    renderTable();
+  } catch(e) {
+    document.getElementById("tableMsg").textContent = "Error cargando datos. Intenta de nuevo.";
+  }
+}
+
+function updateStats() {
+  var total     = allRows.length;
+  var boletos   = allRows.reduce(function(s,r){ return s + (Array.isArray(r.ticket_numbers)?r.ticket_numbers.length:0); }, 0);
+  var validados = allRows.filter(function(r){ return r.status==="validado"; }).length;
+  var pendiente = allRows.filter(function(r){ return r.status==="pendiente_revision"; }).length;
+  var recaudado = allRows.filter(function(r){ return r.status!=="rechazado"; })
+                         .reduce(function(s,r){ return s + (parseFloat(r.amount_paid)||0); }, 0);
+  document.getElementById("statTotal").textContent     = total;
+  document.getElementById("statBoletos").textContent   = boletos;
+  document.getElementById("statValidado").textContent  = validados;
+  document.getElementById("statPendiente").textContent = pendiente;
+  document.getElementById("statRecaudado").textContent = "$" + recaudado.toFixed(0);
+}
+
+/* ── FILTER ── */
+function setFilter(f, btn) {
+  activeFilter = f;
+  document.querySelectorAll(".filter-btn").forEach(function(b){ b.classList.remove("active"); });
+  btn.classList.add("active");
+  renderTable();
+}
+
+/* ── RENDER TABLE ── */
+function renderTable() {
+  var search = (document.getElementById("searchInput").value || "").toLowerCase().trim();
+  var filtered = allRows.filter(function(r) {
+    if (activeFilter !== "todos" && r.status !== activeFilter) return false;
+    if (search) {
+      var name = (r.buyer_name || "").toLowerCase();
+      var nums = (r.ticket_numbers || []).join(" ");
+      var phone = (r.buyer_phone || "").toLowerCase();
+      if (!name.includes(search) && !nums.includes(search) && !phone.includes(search)) return false;
+    }
+    return true;
+  });
+
+  var tbody = document.getElementById("tableBody");
+  var msg   = document.getElementById("tableMsg");
+  var table = document.getElementById("mainTable");
+
+  if (!filtered.length) {
+    msg.textContent = "Sin resultados.";
+    msg.style.display = "block";
+    table.style.display = "none";
+    return;
+  }
+  msg.style.display = "none";
+  table.style.display = "";
+
+  tbody.innerHTML = filtered.map(function(r, i) {
+    var chips = (r.ticket_numbers || []).map(function(n){
+      return '<span class="t-chip">#'+pad(n)+'</span>';
+    }).join("");
+    var badge = statusBadge(r.status);
+    var dt    = r.created_at ? fmtDate(r.created_at) : "—";
+    var phone = r.buyer_phone
+      ? '<a class="phone-link" href="https://wa.me/52'+r.buyer_phone.replace(/\D/g,"")+'" target="_blank">📱 '+r.buyer_phone+'</a>'
+      : '<span style="color:var(--faint)">—</span>';
+    var receipt = r.receipt_url
+      ? '<a class="receipt-link" href="#" onclick="showReceipt(\''+escHtml(r.receipt_url)+'\');return false;">Ver 🔍</a>'
+      : '<span style="color:var(--faint)">Sin imagen</span>';
+    var notes = r.claude_notes
+      ? '<span title="'+escHtml(r.claude_notes)+'" style="cursor:help;color:var(--dim);font-size:.78rem;">'+
+        escHtml((r.claude_notes).substring(0,40))+(r.claude_notes.length>40?"…":"")+'</span>'
+      : '<span style="color:var(--faint)">—</span>';
+    var amount = r.amount_paid ? "$" + parseFloat(r.amount_paid).toFixed(0) : "—";
+
+    return '<tr>' +
+      '<td style="color:var(--dim);font-size:.78rem;">' + (i+1) + '</td>' +
+      '<td><strong>' + escHtml(r.buyer_name || "—") + '</strong></td>' +
+      '<td>' + phone + '</td>' +
+      '<td><div class="ticket-chips">' + chips + '</div></td>' +
+      '<td style="font-weight:600;">' + amount + '</td>' +
+      '<td>' + badge + '</td>' +
+      '<td>' + receipt + '</td>' +
+      '<td style="color:var(--dim);white-space:nowrap;">' + dt + '</td>' +
+      '<td>' + notes + '</td>' +
+      '<td><div class="actions">' +
+        '<button class="action-btn" onclick="openEdit(\''+r.id+'\')">✏️ Editar</button>' +
+        '<button class="action-btn del" onclick="openDelete(\''+r.id+'\')">🗑️ Eliminar</button>' +
+      '</div></td>' +
+    '</tr>';
+  }).join("");
+}
+
+function statusBadge(s) {
+  if (s === "validado")          return '<span class="status-badge sb-validado">✅ Validado</span>';
+  if (s === "rechazado")         return '<span class="status-badge sb-rechazado">❌ Rechazado</span>';
+  return '<span class="status-badge sb-pendiente">⏳ Pendiente</span>';
+}
+function fmtDate(iso) {
+  var d = new Date(iso);
+  return d.toLocaleDateString("es-MX",{day:"2-digit",month:"short",year:"numeric"}) +
+    " " + d.toLocaleTimeString("es-MX",{hour:"2-digit",minute:"2-digit"});
+}
+function pad(n){ return String(n).padStart(2,"0"); }
+function escHtml(s){ return String(s||"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;"); }
+
+/* ── RECEIPT MODAL ── */
+function showReceipt(url) {
+  document.getElementById("receiptImg").src       = url;
+  document.getElementById("receiptFullLink").href = url;
+  document.getElementById("receiptModal").style.display = "flex";
+}
+
+/* ── EDIT MODAL ── */
+function openEdit(id) {
+  var row = allRows.find(function(r){ return r.id === id; });
+  if (!row) return;
+  document.getElementById("editId").value     = row.id;
+  document.getElementById("editName").value   = row.buyer_name || "";
+  document.getElementById("editPhone").value  = row.buyer_phone || "";
+  document.getElementById("editStatus").value = row.status || "pendiente_revision";
+  document.getElementById("editNotes").value  = row.claude_notes || "";
+  document.getElementById("editModal").style.display = "flex";
+}
+function closeEditModal() { document.getElementById("editModal").style.display = "none"; }
+
+async function saveEdit() {
+  var id     = document.getElementById("editId").value;
+  var name   = document.getElementById("editName").value.trim();
+  var phone  = document.getElementById("editPhone").value.trim();
+  var status = document.getElementById("editStatus").value;
+  var notes  = document.getElementById("editNotes").value.trim();
+  if (!name) { alert("El nombre no puede estar vacío."); return; }
+  try {
+    await sbPatch("rifa_purchases", "?id=eq." + id, {
+      buyer_name: name, buyer_phone: phone || null,
+      status: status, claude_notes: notes || null
+    });
+    var row = allRows.find(function(r){ return r.id === id; });
+    if (row) { row.buyer_name = name; row.buyer_phone = phone; row.status = status; row.claude_notes = notes; }
+    updateStats();
+    renderTable();
+    closeEditModal();
+  } catch(e) { alert("Error al guardar. Intenta de nuevo."); }
+}
+
+/* ── DELETE MODAL ── */
+function openDelete(id) {
+  document.getElementById("delId").value = id;
+  document.getElementById("delModal").style.display = "flex";
+}
+function closeDelModal() { document.getElementById("delModal").style.display = "none"; }
+
+async function confirmDelete() {
+  var id = document.getElementById("delId").value;
+  try {
+    await sbDelete("rifa_purchases", "?id=eq." + id);
+    allRows = allRows.filter(function(r){ return r.id !== id; });
+    updateStats();
+    renderTable();
+    closeDelModal();
+  } catch(e) { alert("Error al eliminar. Intenta de nuevo."); }
+}
+
+/* ── INIT ── */
+if (sessionStorage.getItem("rifa_admin") === "1") loadData();
+</script>
+</body>
+</html>

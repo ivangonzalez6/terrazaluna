@@ -1,195 +1,149 @@
 /* ============================================================
-   RIFA POR SUS SUEÑOS — main.js
-   IIFE pattern — no ES modules, no imports.
+   RIFA POR SUS SUEÑOS — main.js  v2  (Supabase + Claude Vision)
    ============================================================ */
 (function () {
   "use strict";
 
-  /* ── CONFIGURACIÓN ────────────────────────────────────────────
-     Personaliza estos valores según tus necesidades.
-     ---------------------------------------------------------- */
+  /* ── SUPABASE ──────────────────────────────────────────────── */
+  var SB = "https://biuaxkpyujypiigxolwt.supabase.co";
+  var SK = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJpdWF4a3B5dWp5cGlpZ3hvbHd0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk5MDY1ODUsImV4cCI6MjA5NTQ4MjU4NX0.4MJ2WfTo6tDNImcN0E5RCy4ilU2-sXnmRb6_BB85YaQ";
+
+  function sbHeaders() {
+    return { "apikey": SK, "Authorization": "Bearer " + SK, "Content-Type": "application/json" };
+  }
+  async function sbGet(table, filter) {
+    var r = await fetch(SB + "/rest/v1/" + table + (filter || ""), { headers: sbHeaders() });
+    return r.json();
+  }
+  async function sbPost(table, body) {
+    var r = await fetch(SB + "/rest/v1/" + table, {
+      method: "POST",
+      headers: Object.assign({}, sbHeaders(), { "Prefer": "return=representation" }),
+      body: JSON.stringify(body)
+    });
+    return r.json();
+  }
+
+  /* ── CONFIGURACIÓN ────────────────────────────────────────── */
   var CONFIG = {
-    // PLACEHOLDER: Reemplaza con tu número de WhatsApp (con código de país, sin +)
-    whatsappNumber: "52XXXXXXXXXX",
-
-    // PLACEHOLDER: Reemplaza con tu CLABE interbancaria (sin espacios para la función de copiar)
-    clabe: "000000000000000000",
-
-    // Fecha y hora del sorteo (año, mes-1, día, hora, minuto, segundo)
-    // Mexico City (UTC-6 en invierno, UTC-5 en verano)
-    // Julio 3, 2026 = verano = UTC-5 → 8 PM local = 01:00 UTC del 4 de julio
-    sorteoDate: new Date(Date.UTC(2026, 6, 4, 1, 0, 0)), // July 4 01:00 UTC = July 3 8PM Mexico
-
-    // PLACEHOLDER: URL del video de las niñas (YouTube, Instagram, etc.)
-    videoUrl: "https://www.youtube.com",
-
-    // Boletos ya vendidos (ajusta según la realidad)
-    ticketsTaken: new Set([3, 7, 12, 15, 18, 21, 24, 27, 33, 36, 42, 45, 51, 56, 63, 68, 72, 77, 82, 88, 91, 95, 99]),
-
+    whatsappNumber: "527761148786",
+    clabe: "012650015036728527",
+    card:  "4152314300987511",
+    // Domingo 5 julio 2026 20:00 México (UTC-5 en verano) = lunes 6 julio 01:00 UTC
+    sorteoDate: new Date(Date.UTC(2026, 6, 6, 1, 0, 0)),
     precioPorBoleto: 35,
   };
 
   /* ── ESTADO ─────────────────────────────────────────────── */
   var selectedTickets = new Set();
+  var takenTickets    = new Set();    // cargado desde Supabase
 
-  /* ── UTILITARIOS ────────────────────────────────────────── */
-  function safe(fn, name) {
-    try { fn(); }
-    catch (e) { console.warn("[" + (name || "?") + "]", e); }
-  }
-
-  function $(sel, ctx) { return (ctx || document).querySelector(sel); }
+  /* ── UTILS ───────────────────────────────────────────────── */
+  function safe(fn, name) { try { fn(); } catch (e) { console.warn("[" + (name||"?") + "]", e); } }
+  function $(sel, ctx)  { return (ctx || document).querySelector(sel); }
   function $$(sel, ctx) { return Array.from((ctx || document).querySelectorAll(sel)); }
+  function pad(n)       { return String(n).padStart(2, "0"); }
 
-  function pad(n) { return String(n).padStart(2, "0"); }
+  /* ── CARGAR BOLETOS VENDIDOS DESDE SUPABASE ─────────────── */
+  async function loadTakenTickets() {
+    try {
+      var rows = await sbGet("rifa_purchases", "?select=ticket_numbers,status&status=neq.rechazado");
+      if (!Array.isArray(rows)) return;
+      rows.forEach(function (r) {
+        if (Array.isArray(r.ticket_numbers)) {
+          r.ticket_numbers.forEach(function (n) { takenTickets.add(n); });
+        }
+      });
+    } catch (e) {
+      console.warn("[loadTakenTickets]", e);
+    }
+  }
 
   /* ── SPLASH ─────────────────────────────────────────────── */
   function initSplash() {
     var splash = $("[data-splash]");
     if (!splash) return;
     function hide() { splash.classList.add("is-out"); }
-    if (document.readyState === "complete") {
-      setTimeout(hide, 500);
-    } else {
-      window.addEventListener("load", function () { setTimeout(hide, 400); });
-    }
+    if (document.readyState === "complete") setTimeout(hide, 500);
+    else window.addEventListener("load", function () { setTimeout(hide, 400); });
     setTimeout(hide, 3800);
   }
 
-  /* ── NAV scrolled ────────────────────────────────────────── */
+  /* ── NAV ─────────────────────────────────────────────────── */
   function initNav() {
     var nav = $("#main-nav");
     if (!nav) return;
-    function onScroll() {
-      if (window.scrollY > 60) {
-        nav.classList.add("is-solid");
-      } else {
-        nav.classList.remove("is-solid");
-      }
-    }
+    function onScroll() { nav.classList.toggle("is-solid", window.scrollY > 60); }
     window.addEventListener("scroll", onScroll, { passive: true });
     onScroll();
   }
 
   /* ── COUNTDOWN ───────────────────────────────────────────── */
   function initCountdown() {
-    var daysEl   = $("#cd-days");
-    var hoursEl  = $("#cd-hours");
-    var minsEl   = $("#cd-mins");
-    var secsEl   = $("#cd-secs");
+    var daysEl  = $("#cd-days"),  hoursEl = $("#cd-hours");
+    var minsEl  = $("#cd-mins"),  secsEl  = $("#cd-secs");
     if (!daysEl) return;
-
     function tick() {
-      var now  = Date.now();
-      var diff = CONFIG.sorteoDate.getTime() - now;
-
+      var diff = CONFIG.sorteoDate.getTime() - Date.now();
       if (diff <= 0) {
-        daysEl.textContent = hoursEl.textContent = minsEl.textContent = secsEl.textContent = "00";
-        var label = $(".countdown-label");
-        if (label) label.textContent = "🎉 ¡El sorteo ya se realizó!";
+        [daysEl, hoursEl, minsEl, secsEl].forEach(function (e) { e.textContent = "00"; });
         return;
       }
-
-      var totalSecs = Math.floor(diff / 1000);
-      var d = Math.floor(totalSecs / 86400);
-      var h = Math.floor((totalSecs % 86400) / 3600);
-      var m = Math.floor((totalSecs % 3600) / 60);
-      var s = totalSecs % 60;
-
-      function update(el, val) {
-        var str = pad(val);
-        if (el.textContent !== str) {
-          el.textContent = str;
-          el.classList.add("tick");
-          setTimeout(function () { el.classList.remove("tick"); }, 200);
+      var s = Math.floor(diff / 1000);
+      var d = Math.floor(s / 86400), h = Math.floor((s % 86400) / 3600);
+      var m = Math.floor((s % 3600) / 60), sc = s % 60;
+      [[daysEl,d],[hoursEl,h],[minsEl,m],[secsEl,sc]].forEach(function(p){
+        var str = pad(p[1]);
+        if (p[0].textContent !== str) {
+          p[0].textContent = str;
+          p[0].classList.add("tick");
+          setTimeout(function(){ p[0].classList.remove("tick"); }, 200);
         }
-      }
-
-      update(daysEl,  d);
-      update(hoursEl, h);
-      update(minsEl,  m);
-      update(secsEl,  s);
+      });
     }
-
     tick();
     setInterval(tick, 1000);
   }
 
-  /* ── REVEAL ON SCROLL ────────────────────────────────────── */
+  /* ── REVEAL ─────────────────────────────────────────────── */
   function initReveals() {
     var items = $$(".reveal");
     if (!items.length) return;
-
-    // If GSAP ScrollTrigger is available, use it
     if (window.gsap && window.ScrollTrigger) {
       window.gsap.registerPlugin(window.ScrollTrigger);
       items.forEach(function (el, i) {
-        // Skip elements with data-split (already visible via CSS)
-        if (el.hasAttribute("data-split")) return;
-
-        window.gsap.fromTo(el,
-          { opacity: 0, y: 36 },
-          {
-            opacity: 1, y: 0,
-            duration: 0.75,
-            ease: "power3.out",
-            scrollTrigger: {
-              trigger: el,
-              start: "top 88%",
-              toggleActions: "play none none none",
-            },
-            delay: (i % 4) * 0.07,
-          }
-        );
+        window.gsap.fromTo(el, { opacity:0, y:36 }, {
+          opacity:1, y:0, duration:.75, ease:"power3.out",
+          scrollTrigger: { trigger:el, start:"top 88%", toggleActions:"play none none none" },
+          delay: (i % 4) * 0.07
+        });
       });
     } else {
-      // Fallback: IntersectionObserver
-      var io = new IntersectionObserver(function (entries) {
-        entries.forEach(function (e) {
-          if (e.isIntersecting) {
-            e.target.classList.add("is-visible");
-            io.unobserve(e.target);
-          }
-        });
-      }, { threshold: 0.05, rootMargin: "0px 0px -5% 0px" });
-
-      items.forEach(function (el) {
-        if (!el.hasAttribute("data-split")) io.observe(el);
-      });
-
-      // 6s safety net
-      setTimeout(function () {
-        items.forEach(function (el) {
-          if (!el.classList.contains("is-visible")) {
-            el.classList.add("is-visible");
-          }
-        });
-      }, 6000);
+      var io = new IntersectionObserver(function(entries){
+        entries.forEach(function(e){ if(e.isIntersecting){ e.target.classList.add("is-visible"); io.unobserve(e.target); } });
+      }, { threshold:.05 });
+      items.forEach(function(el){ io.observe(el); });
+      setTimeout(function(){ items.forEach(function(el){ el.classList.add("is-visible"); }); }, 6000);
     }
   }
 
-  /* ── SMOOTH SCROLL (anchor links) ───────────────────────── */
+  /* ── SMOOTH SCROLL ───────────────────────────────────────── */
   function initSmoothScroll() {
     document.addEventListener("click", function (e) {
       var a = e.target.closest('a[href^="#"]');
       if (!a) return;
       var id = a.getAttribute("href");
-      if (!id || id === "#") return;
-      var target = document.querySelector(id);
+      var target = id && id !== "#" && document.querySelector(id);
       if (!target) return;
       e.preventDefault();
-      var navOffset = 80;
-      var top = target.getBoundingClientRect().top + window.scrollY - navOffset;
-      window.scrollTo({ top: top, behavior: "smooth" });
+      window.scrollTo({ top: target.getBoundingClientRect().top + window.scrollY - 80, behavior: "smooth" });
     });
   }
 
   /* ── TICKET GRID ─────────────────────────────────────────── */
-  function initTicketGrid() {
+  function buildGrid() {
     var grid = $("#ticketGrid");
     if (!grid || grid.children.length > 0) return;
-
-    // Build 100 tickets
     var frag = document.createDocumentFragment();
     for (var i = 1; i <= 100; i++) {
       var div = document.createElement("div");
@@ -197,9 +151,7 @@
       div.setAttribute("role", "checkbox");
       div.setAttribute("tabindex", "0");
       div.setAttribute("data-num", i);
-
-      var isTaken = CONFIG.ticketsTaken.has(i);
-      if (isTaken) {
+      if (takenTickets.has(i)) {
         div.classList.add("taken");
         div.setAttribute("aria-checked", "false");
         div.setAttribute("aria-disabled", "true");
@@ -211,40 +163,25 @@
         div.textContent = pad(i);
         div.addEventListener("click", onTicketClick);
         div.addEventListener("keydown", function (e) {
-          if (e.key === "Enter" || e.key === " ") {
-            e.preventDefault();
-            onTicketClick.call(this);
-          }
+          if (e.key === "Enter" || e.key === " ") { e.preventDefault(); onTicketClick.call(this); }
         });
       }
       frag.appendChild(div);
     }
     grid.appendChild(frag);
 
-    // Stagger reveal of tickets via IO
-    var tickets = $$(".ticket", grid);
-    var io = new IntersectionObserver(function (entries) {
-      entries.forEach(function (e) {
-        if (e.isIntersecting) {
-          // Reveal in batches
-          io.unobserve(e.target);
-        }
-      });
-    }, { threshold: 0.01 });
-
-    tickets.forEach(function (t, idx) {
-      setTimeout(function () {
-        t.classList.add("is-visible");
-      }, idx * 8); // 8ms stagger
+    // Stagger reveal
+    $$(".ticket", grid).forEach(function (t, idx) {
+      setTimeout(function () { t.classList.add("is-visible"); }, idx * 6);
     });
 
+    updateStats();
     updateSelectedDisplay();
   }
 
   function onTicketClick() {
     var num = parseInt(this.getAttribute("data-num"), 10);
     if (isNaN(num)) return;
-
     if (selectedTickets.has(num)) {
       selectedTickets.delete(num);
       this.classList.remove("selected");
@@ -259,25 +196,60 @@
     syncTicketsToForm();
   }
 
+  function markAsTaken(nums) {
+    nums.forEach(function (n) {
+      takenTickets.add(n);
+      selectedTickets.delete(n);
+      var el = document.querySelector('[data-num="' + n + '"]');
+      if (el) {
+        el.classList.remove("selected");
+        el.classList.add("taken");
+        el.setAttribute("aria-disabled", "true");
+        el.setAttribute("aria-label", "Boleto #" + n + " — vendido");
+        el.innerHTML = "<span>" + pad(n) + "</span>";
+        el.removeEventListener("click", onTicketClick);
+      }
+    });
+    updateStats();
+    updateSelectedDisplay();
+    syncTicketsToForm();
+  }
+
+  function updateStats() {
+    var taken = takenTickets.size;
+    var avail = 100 - taken;
+    var pct   = (taken / 100) * 100;
+    // Hero
+    var hv = $("#hero-vendidos");    if (hv) hv.textContent = taken;
+    var hd = $("#hero-disponibles"); if (hd) hd.textContent = avail;
+    // Section
+    var sv = $("#stats-vendidos");    if (sv) sv.textContent = taken;
+    var sd = $("#stats-disponibles"); if (sd) sd.textContent = avail;
+    // Bars
+    $$(".progress-bar-fill").forEach(function (f) { f.style.width = pct + "%"; });
+    // ARIA
+    $$("[role='progressbar']").forEach(function(p){ p.setAttribute("aria-valuenow", taken); });
+  }
+
   function updateSelectedDisplay() {
     var numbersEl = $("#selectedNumbers");
     var totalEl   = $("#selectedTotal");
+    var amountRow = $("#amountRow");
+    var amountBadge = $("#amountBadge");
     if (!numbersEl) return;
-
     var nums = Array.from(selectedTickets).sort(function (a, b) { return a - b; });
-
     if (nums.length === 0) {
       numbersEl.textContent = "Ninguno";
       if (totalEl) totalEl.textContent = "";
+      if (amountRow) amountRow.style.display = "none";
     } else {
       numbersEl.textContent = nums.map(function (n) { return "#" + pad(n); }).join(", ");
+      var total = nums.length * CONFIG.precioPorBoleto;
       if (totalEl) {
-        var total = nums.length * CONFIG.precioPorBoleto;
-        totalEl.textContent =
-          nums.length === 1
-            ? "Total: $" + total + " pesos · 1 boleto"
-            : "Total: $" + total + " pesos · " + nums.length + " boletos";
+        totalEl.textContent = "Total: $" + total + " pesos · " + nums.length + " boleto" + (nums.length > 1 ? "s" : "");
       }
+      if (amountRow) amountRow.style.display = "";
+      if (amountBadge) amountBadge.textContent = "$" + total + " pesos";
     }
   }
 
@@ -285,38 +257,27 @@
     var input = $("#fieldTickets");
     if (!input) return;
     var nums = Array.from(selectedTickets).sort(function (a, b) { return a - b; });
-    input.value = nums.length
-      ? nums.map(function (n) { return "#" + pad(n); }).join(", ")
-      : "";
+    input.value = nums.length ? nums.map(function (n) { return "#" + pad(n); }).join(", ") : "";
   }
 
-  /* ── LUCKY NUMBER ────────────────────────────────────────── */
+  /* ── LUCKY BUTTON ────────────────────────────────────────── */
   function initLuckyButton() {
     var btn = $("#btnLucky");
     if (!btn) return;
     btn.addEventListener("click", function () {
-      // Find all available tickets not taken and not selected
       var available = [];
       $$(".ticket:not(.taken):not(.selected)").forEach(function (t) {
         var n = parseInt(t.getAttribute("data-num"), 10);
         if (!isNaN(n)) available.push({ num: n, el: t });
       });
       if (!available.length) return;
-
       var pick = available[Math.floor(Math.random() * available.length)];
-      // Deselect others first (only if user wants to pick one at a time via lucky button)
-      // Actually, let them accumulate - just add one more
       selectedTickets.add(pick.num);
       pick.el.classList.add("selected");
       pick.el.setAttribute("aria-checked", "true");
-
-      // Scroll ticket into view
       pick.el.scrollIntoView({ behavior: "smooth", block: "center" });
-
-      // Animate the button
       btn.textContent = "🎉 ¡Boleto #" + pad(pick.num) + "!";
       setTimeout(function () { btn.textContent = "🎲 Elige por mí"; }, 2000);
-
       fireConfetti(pick.el);
       updateSelectedDisplay();
       syncTicketsToForm();
@@ -338,287 +299,283 @@
     });
   }
 
-  /* ── PROGRESS BAR ANIMATE ───────────────────────────────── */
-  function initProgressBar() {
-    var taken = CONFIG.ticketsTaken.size;
-    var pct = (taken / 100) * 100;
-    // Animate both progress bars (hero + boletos section)
-    var fills = $$(".progress-bar-fill");
-    fills.forEach(function (fill) {
-      var io = new IntersectionObserver(function (entries) {
-        if (entries[0].isIntersecting) {
-          fill.style.width = pct + "%";
-          io.disconnect();
+  /* ── COPY BUTTONS ────────────────────────────────────────── */
+  function initCopyButtons() {
+    function setupCopy(btnId, textId, label) {
+      var btn = $("#" + btnId);
+      if (!btn) return;
+      btn.addEventListener("click", function () {
+        var el  = $("#" + textId);
+        var txt = (el ? el.textContent : "").replace(/\s/g, "");
+        var me  = btn;
+        function done() {
+          me.textContent = "✓ ¡Copiado!";
+          me.classList.add("copied");
+          setTimeout(function () { me.textContent = "📋 Copiar " + label; me.classList.remove("copied"); }, 2000);
         }
-      }, { threshold: 0.1 });
-      io.observe(fill);
-    });
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          navigator.clipboard.writeText(txt).then(done).catch(function () { fallbackCopy(txt); done(); });
+        } else { fallbackCopy(txt); done(); }
+      });
+    }
+    function fallbackCopy(text) {
+      var ta = document.createElement("textarea");
+      ta.value = text; ta.style.position = "fixed"; ta.style.opacity = "0";
+      document.body.appendChild(ta); ta.select();
+      try { document.execCommand("copy"); } catch (e) {}
+      document.body.removeChild(ta);
+    }
+    setupCopy("btnCopyClabe", "clabeText", "CLABE");
+    setupCopy("btnCopyCard",  "cardText",  "tarjeta");
   }
 
-  /* ── COPY CLABE ─────────────────────────────────────────── */
-  function initCopyClabe() {
-    var btn = $("#btnCopyClabe");
-    if (!btn) return;
-    btn.addEventListener("click", function () {
-      var clabe = CONFIG.clabe.replace(/\s/g, "");
-      if (navigator.clipboard && navigator.clipboard.writeText) {
-        navigator.clipboard.writeText(clabe).then(function () {
-          showCopied(btn);
-        }).catch(function () {
-          fallbackCopy(clabe, btn);
-        });
+  /* ── FILE INPUT ──────────────────────────────────────────── */
+  function initFileInput() {
+    var input   = $("#fieldReceipt");
+    var labelEl = $("#fileLabelEl");
+    var nameEl  = $("#fileNameDisplay");
+    if (!input) return;
+    input.addEventListener("change", function () {
+      var file = this.files[0];
+      if (file) {
+        if (labelEl) labelEl.classList.add("has-file");
+        if (nameEl)  nameEl.textContent = "✓ " + file.name;
       } else {
-        fallbackCopy(clabe, btn);
+        if (labelEl) labelEl.classList.remove("has-file");
+        if (nameEl)  nameEl.textContent = "";
       }
     });
   }
 
-  function fallbackCopy(text, btn) {
-    var ta = document.createElement("textarea");
-    ta.value = text;
-    ta.style.position = "fixed";
-    ta.style.opacity = "0";
-    document.body.appendChild(ta);
-    ta.select();
-    try { document.execCommand("copy"); } catch (e) {}
-    document.body.removeChild(ta);
-    showCopied(btn);
-  }
-
-  function showCopied(btn) {
-    btn.textContent = "✓ ¡CLABE copiada!";
-    btn.classList.add("copied");
-    setTimeout(function () {
-      btn.innerHTML = "📋 Copiar CLABE";
-      btn.classList.remove("copied");
-    }, 2500);
-  }
-
-  /* ── WHATSAPP FORM ───────────────────────────────────────── */
-  function initWhatsAppForm() {
-    var form = $("#rifaForm");
+  /* ── RECEIPT FORM (SUPABASE) ─────────────────────────────── */
+  function initReceiptForm() {
+    var form   = $("#rifaForm");
+    var errEl  = $("#formError");
+    var btnEl  = $("#btnSubmit");
     if (!form) return;
 
-    form.addEventListener("submit", function (e) {
+    form.addEventListener("submit", async function (e) {
       e.preventDefault();
+      if (errEl) { errEl.textContent = ""; errEl.style.display = "none"; }
 
-      var nombre  = ($("#fieldName").value || "").trim();
-      var boletos = ($("#fieldTickets").value || "").trim();
-      var phone   = ($("#fieldPhone").value || "").trim();
+      var nombre = ($("#fieldName").value || "").trim();
+      var phone  = ($("#fieldPhone").value || "").trim();
+      var file   = ($("#fieldReceipt").files || [])[0];
+      var nums   = Array.from(selectedTickets).sort(function (a, b) { return a - b; });
 
-      if (!nombre) {
-        alert("Por favor escribe tu nombre completo.");
-        $("#fieldName").focus();
-        return;
-      }
+      // Validaciones
+      if (!nombre) return showError(errEl, "Por favor escribe tu nombre completo.");
+      if (!nums.length) return showError(errEl, "Selecciona al menos un número de boleto arriba.");
+      if (!file)   return showError(errEl, "Adjunta la foto de tu comprobante de pago.");
 
-      var nums = Array.from(selectedTickets).sort(function (a, b) { return a - b; });
       var total = nums.length * CONFIG.precioPorBoleto;
 
-      var msg = "¡Hola! Quiero participar en la *Rifa por sus Sueños* 🌟\n\n";
-      msg += "👤 *Nombre:* " + nombre + "\n";
-      if (boletos) {
-        msg += "🎟️ *Boleto(s):* " + boletos + "\n";
-      }
-      if (nums.length > 0) {
-        msg += "💰 *Monto transferido:* $" + total + " pesos\n";
-      }
-      if (phone) {
-        msg += "📱 *Mi WhatsApp:* " + phone + "\n";
-      }
-      msg += "\nAdjunto mi comprobante de transferencia. ✅";
+      setBtnLoading(btnEl, true, "Subiendo comprobante…");
 
-      var waUrl = "https://wa.me/" + CONFIG.whatsappNumber +
-        "?text=" + encodeURIComponent(msg);
+      try {
+        // 1. Subir imagen al bucket
+        var ext   = file.name.split(".").pop().toLowerCase();
+        var fname = "comp_" + Date.now() + "_" + Math.random().toString(36).slice(2) + "." + ext;
+        var upRes = await fetch(SB + "/storage/v1/object/rifa-comprobantes/" + fname, {
+          method: "POST",
+          headers: { "apikey": SK, "Authorization": "Bearer " + SK, "Content-Type": file.type },
+          body: file
+        });
+        var imgUrl = upRes.ok
+          ? SB + "/storage/v1/object/public/rifa-comprobantes/" + fname
+          : null;
 
-      window.open(waUrl, "_blank", "noopener");
+        // 2. Insertar en rifa_purchases (status siempre pendiente_revision al inicio)
+        var record = {
+          buyer_name:     nombre,
+          buyer_phone:    phone || null,
+          ticket_numbers: nums,
+          amount_paid:    total,
+          receipt_url:    imgUrl,
+          status:         "pendiente_revision"
+        };
+        var insertData = await sbPost("rifa_purchases", record);
+        var purchaseId = Array.isArray(insertData) ? insertData[0]?.id : insertData?.id;
 
-      // Party confetti
-      fireBigConfetti();
+        // 3. Marcar boletos como tomados en el grid
+        markAsTaken(nums);
+        selectedTickets.clear();
+        updateSelectedDisplay();
+        syncTicketsToForm();
+
+        // 4. Llamar edge function de validación (no bloqueante, en background)
+        if (imgUrl && purchaseId) {
+          fetch(SB + "/functions/v1/validate-rifa-receipt", {
+            method: "POST",
+            headers: { "apikey": SK, "Authorization": "Bearer " + SK, "Content-Type": "application/json" },
+            body: JSON.stringify({
+              purchase_id:    purchaseId,
+              image_url:      imgUrl,
+              amount:         total,
+              ticket_numbers: nums
+            })
+          }).then(function (r) { return r.json(); }).then(function (result) {
+            // Actualizar el mensaje del modal si todavía está visible
+            var statusEl = $("#successStatusMsg");
+            if (statusEl && result.verdict === "validado") {
+              statusEl.textContent = "✅ Comprobante validado automáticamente.";
+              statusEl.style.color = "#00c853";
+            }
+          }).catch(function () {});
+        }
+
+        // 5. Mostrar modal de éxito
+        setBtnLoading(btnEl, false);
+        showSuccessModal(nums, total);
+        form.reset();
+        var labelEl = $("#fileLabelEl"); if (labelEl) labelEl.classList.remove("has-file");
+        var nameEl  = $("#fileNameDisplay"); if (nameEl) nameEl.textContent = "";
+
+      } catch (err) {
+        console.error("[receipt submit]", err);
+        setBtnLoading(btnEl, false);
+        showError(errEl, "Ocurrió un error al registrar tu comprobante. Intenta de nuevo o contáctanos por WhatsApp.");
+      }
     });
   }
 
-  /* ── VIDEO PLACEHOLDER ───────────────────────────────────── */
-  function initVideo() {
-    var placeholder = $("#videoPlaceholder");
-    if (!placeholder) return;
+  function showError(el, msg) {
+    if (!el) return;
+    el.textContent = msg;
+    el.style.display = "block";
+  }
 
-    function openVideo() {
-      if (CONFIG.videoUrl && CONFIG.videoUrl !== "https://www.youtube.com") {
-        window.open(CONFIG.videoUrl, "_blank", "noopener");
-      } else {
-        // PLACEHOLDER: Reemplaza CONFIG.videoUrl con la URL real del video
-        alert("Próximamente: video de las bailarinas. 🎬");
-      }
+  function setBtnLoading(btn, loading, label) {
+    if (!btn) return;
+    btn.disabled = loading;
+    btn.textContent = loading ? (label || "Procesando…") : "🎟️ Registrar mis boletos";
+  }
+
+  function showSuccessModal(nums, total) {
+    var modal     = $("#successModal");
+    var ticketsEl = $("#successTickets");
+    var statusEl  = $("#successStatusMsg");
+    var closeBtn  = $("#btnCloseModal");
+    if (!modal) return;
+
+    if (ticketsEl) {
+      ticketsEl.innerHTML =
+        "Boletos: " + nums.map(function(n){ return "<strong>#"+pad(n)+"</strong>"; }).join(", ") +
+        "<br><small>Monto pagado: $" + total + " pesos</small>";
     }
+    if (statusEl) {
+      statusEl.textContent = "⏳ Validando comprobante — si todo está bien, tus boletos quedan confirmados automáticamente. Si requiere revisión, te avisamos por WhatsApp.";
+      statusEl.style.color = "";
+    }
+    if (closeBtn) {
+      closeBtn.onclick = function () { modal.hidden = true; };
+    }
+    modal.hidden = false;
+    fireBigConfetti();
 
-    placeholder.addEventListener("click", openVideo);
-    placeholder.addEventListener("keydown", function (e) {
-      if (e.key === "Enter" || e.key === " ") {
-        e.preventDefault();
-        openVideo();
-      }
-    });
+    // Click backdrop to close
+    modal.addEventListener("click", function (e) {
+      if (e.target === modal) modal.hidden = true;
+    }, { once: true });
   }
 
-  /* ── FAQ ACCORDION ───────────────────────────────────────── */
+  /* ── FAQ ─────────────────────────────────────────────────── */
   function initFaq() {
     $$(".faq-q").forEach(function (btn) {
       btn.addEventListener("click", function () {
         var expanded = this.getAttribute("aria-expanded") === "true";
-        var answer = this.nextElementSibling;
-
-        // Close all others
         $$(".faq-q[aria-expanded='true']").forEach(function (b) {
           b.setAttribute("aria-expanded", "false");
-          var a = b.nextElementSibling;
-          if (a) a.hidden = true;
+          var a = b.nextElementSibling; if (a) a.hidden = true;
         });
-
         if (!expanded) {
           this.setAttribute("aria-expanded", "true");
-          if (answer) answer.hidden = false;
+          var ans = this.nextElementSibling; if (ans) ans.hidden = false;
         }
       });
     });
-
-    // Open first by default
     var first = $(".faq-q");
-    if (first) {
-      first.setAttribute("aria-expanded", "true");
-      var firstA = first.nextElementSibling;
-      if (firstA) firstA.hidden = false;
-    }
+    if (first) { first.setAttribute("aria-expanded","true"); var fa = first.nextElementSibling; if (fa) fa.hidden = false; }
   }
 
   /* ── CONFETTI ────────────────────────────────────────────── */
-  var confettiParticles = [];
-  var confettiCanvas = null;
-  var confettiCtx = null;
-  var confettiRunning = false;
-
-  var COLORS = [
-    "#d63aff", "#ff6b9d", "#f5c518", "#ffffff",
-    "#25d366", "#4ade80", "#38bdf8", "#fb923c"
-  ];
+  var confettiParticles = [], confettiCanvas = null, confettiCtx = null, confettiRunning = false;
+  var COLORS = ["#d63aff","#ff6b9d","#f5c518","#ffffff","#25d366","#4ade80","#38bdf8","#fb923c"];
 
   function initConfettiCanvas() {
     confettiCanvas = $("#confettiCanvas");
     if (!confettiCanvas) return;
     confettiCtx = confettiCanvas.getContext("2d");
+    function resize() { confettiCanvas.width = window.innerWidth; confettiCanvas.height = window.innerHeight; }
     resize();
     window.addEventListener("resize", resize, { passive: true });
   }
 
-  function resize() {
-    if (!confettiCanvas) return;
-    confettiCanvas.width  = window.innerWidth;
-    confettiCanvas.height = window.innerHeight;
-  }
-
   function Particle(x, y, big) {
-    this.x  = x;
-    this.y  = y;
-    this.vx = (Math.random() - 0.5) * (big ? 8 : 5);
-    this.vy = Math.random() * -(big ? 10 : 6) - 2;
-    this.w  = Math.random() * (big ? 12 : 7) + 3;
-    this.h  = Math.random() * (big ? 7 : 4) + 2;
-    this.rot= Math.random() * Math.PI * 2;
-    this.rotV= (Math.random() - 0.5) * 0.2;
-    this.color = COLORS[Math.floor(Math.random() * COLORS.length)];
-    this.alpha = 1;
-    this.life  = big ? 0.012 : 0.018;
-    this.gravity = 0.2;
+    this.x=x; this.y=y;
+    this.vx=(Math.random()-.5)*(big?8:5); this.vy=Math.random()*(big?-10:-6)-2;
+    this.w=Math.random()*(big?12:7)+3; this.h=Math.random()*(big?7:4)+2;
+    this.rot=Math.random()*Math.PI*2; this.rotV=(Math.random()-.5)*.2;
+    this.color=COLORS[Math.floor(Math.random()*COLORS.length)];
+    this.alpha=1; this.life=big?.012:.018; this.gravity=.2;
   }
-
-  Particle.prototype.update = function () {
-    this.vx *= 0.99;
-    this.vy += this.gravity;
-    this.x  += this.vx;
-    this.y  += this.vy;
-    this.rot += this.rotV;
-    this.alpha -= this.life;
+  Particle.prototype.update = function(){
+    this.vx*=.99; this.vy+=this.gravity;
+    this.x+=this.vx; this.y+=this.vy;
+    this.rot+=this.rotV; this.alpha-=this.life;
   };
-
-  Particle.prototype.draw = function (ctx) {
-    ctx.save();
-    ctx.globalAlpha = Math.max(0, this.alpha);
-    ctx.translate(this.x, this.y);
-    ctx.rotate(this.rot);
-    ctx.fillStyle = this.color;
-    ctx.fillRect(-this.w / 2, -this.h / 2, this.w, this.h);
+  Particle.prototype.draw = function(ctx){
+    ctx.save(); ctx.globalAlpha=Math.max(0,this.alpha);
+    ctx.translate(this.x,this.y); ctx.rotate(this.rot);
+    ctx.fillStyle=this.color; ctx.fillRect(-this.w/2,-this.h/2,this.w,this.h);
     ctx.restore();
   };
 
   function fireConfetti(sourceEl) {
     if (!confettiCanvas) return;
     var rect = sourceEl.getBoundingClientRect();
-    var x = rect.left + rect.width / 2;
-    var y = rect.top + rect.height / 2;
-    for (var i = 0; i < 18; i++) {
-      confettiParticles.push(new Particle(x, y, false));
-    }
+    for (var i = 0; i < 18; i++) confettiParticles.push(new Particle(rect.left+rect.width/2, rect.top+rect.height/2, false));
     if (!confettiRunning) runConfetti();
   }
-
   function fireBigConfetti() {
     if (!confettiCanvas) return;
-    for (var i = 0; i < 120; i++) {
-      confettiParticles.push(new Particle(
-        Math.random() * window.innerWidth,
-        Math.random() * window.innerHeight * 0.5,
-        true
-      ));
-    }
+    for (var i = 0; i < 120; i++) confettiParticles.push(new Particle(Math.random()*window.innerWidth, Math.random()*window.innerHeight*.5, true));
     if (!confettiRunning) runConfetti();
   }
-
   function runConfetti() {
     confettiRunning = true;
     function loop() {
       if (!confettiCtx) return;
-      confettiCtx.clearRect(0, 0, confettiCanvas.width, confettiCanvas.height);
-      confettiParticles = confettiParticles.filter(function (p) {
-        return p.alpha > 0;
-      });
-      confettiParticles.forEach(function (p) {
-        p.update();
-        p.draw(confettiCtx);
-      });
-      if (confettiParticles.length > 0) {
-        requestAnimationFrame(loop);
-      } else {
-        confettiRunning = false;
-        confettiCtx.clearRect(0, 0, confettiCanvas.width, confettiCanvas.height);
-      }
+      confettiCtx.clearRect(0,0,confettiCanvas.width,confettiCanvas.height);
+      confettiParticles = confettiParticles.filter(function(p){ return p.alpha > 0; });
+      confettiParticles.forEach(function(p){ p.update(); p.draw(confettiCtx); });
+      if (confettiParticles.length > 0) requestAnimationFrame(loop);
+      else { confettiRunning = false; confettiCtx.clearRect(0,0,confettiCanvas.width,confettiCanvas.height); }
     }
     requestAnimationFrame(loop);
   }
 
-  /* (no mouse-reactive mesh in this design — uses CSS animated mesh) */
-
   /* ── BOOT ────────────────────────────────────────────────── */
-  function boot() {
-    safe(initSplash,         "initSplash");
-    safe(initNav,            "initNav");
-    safe(initCountdown,      "initCountdown");
-    safe(initSmoothScroll,   "initSmoothScroll");
-    safe(initConfettiCanvas, "initConfettiCanvas");
-    safe(initTicketGrid,     "initTicketGrid");
-    safe(initLuckyButton,    "initLuckyButton");
-    safe(initClearButton,    "initClearButton");
-    safe(initProgressBar,    "initProgressBar");
-    safe(initCopyClabe,      "initCopyClabe");
-    safe(initWhatsAppForm,   "initWhatsAppForm");
-    safe(initVideo,          "initVideo");
-    safe(initFaq,            "initFaq");
-    safe(initReveals,        "initReveals");
+  async function boot() {
+    safe(initSplash,         "splash");
+    safe(initNav,            "nav");
+    safe(initCountdown,      "countdown");
+    safe(initSmoothScroll,   "scroll");
+    safe(initConfettiCanvas, "confetti");
+    safe(initLuckyButton,    "lucky");
+    safe(initClearButton,    "clear");
+    safe(initCopyButtons,    "copy");
+    safe(initFileInput,      "file");
+    safe(initFaq,            "faq");
+
+    // Cargar boletos vendidos, luego construir grid
+    try { await loadTakenTickets(); } catch(e) {}
+    safe(buildGrid, "grid");
+    safe(initReceiptForm, "form");
+    safe(initReveals,     "reveals");
   }
 
-  if (document.readyState === "loading") {
-    document.addEventListener("DOMContentLoaded", boot);
-  } else {
-    boot();
-  }
+  if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", boot);
+  else boot();
 
 })();
