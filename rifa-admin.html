@@ -244,7 +244,7 @@ tr:hover td{background:rgba(255,255,255,.025);}
 /* ── CONFIG ── */
 var SB = "https://biuaxkpyujypiigxolwt.supabase.co";
 var SK = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJpdWF4a3B5dWp5cGlpZ3hvbHd0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk5MDY1ODUsImV4cCI6MjA5NTQ4MjU4NX0.4MJ2WfTo6tDNImcN0E5RCy4ilU2-sXnmRb6_BB85YaQ";
-var ADMIN_PASSWORD = "LibrafRifa2026";
+var ADMIN_PASSWORD = "terraza123";
 
 /* ── STATE ── */
 var allRows    = [];
@@ -441,16 +441,23 @@ async function saveEdit() {
   var notes  = document.getElementById("editNotes").value.trim();
   if (!name) { alert("El nombre no puede estar vacío."); return; }
   try {
-    await sbPatch("rifa_purchases", "?id=eq." + id, {
+    var r = await sbPatch("rifa_purchases", "?id=eq." + id, {
       buyer_name: name, buyer_phone: phone || null,
       status: status, claude_notes: notes || null
     });
+    if (!r.ok) {
+      var body = await r.text();
+      throw new Error("HTTP " + r.status + ": " + body);
+    }
     var row = allRows.find(function(r){ return r.id === id; });
     if (row) { row.buyer_name = name; row.buyer_phone = phone; row.status = status; row.claude_notes = notes; }
     updateStats();
     renderTable();
     closeEditModal();
-  } catch(e) { alert("Error al guardar. Intenta de nuevo."); }
+  } catch(e) {
+    console.error("[save edit]", e);
+    alert("Error al guardar: " + e.message);
+  }
 }
 
 /* ── DELETE MODAL ── */
@@ -463,12 +470,19 @@ function closeDelModal() { document.getElementById("delModal").style.display = "
 async function confirmDelete() {
   var id = document.getElementById("delId").value;
   try {
-    await sbDelete("rifa_purchases", "?id=eq." + id);
+    var r = await sbDelete("rifa_purchases", "?id=eq." + id);
+    if (!r.ok) {
+      var body = await r.text();
+      throw new Error("HTTP " + r.status + ": " + body);
+    }
     allRows = allRows.filter(function(r){ return r.id !== id; });
     updateStats();
     renderTable();
     closeDelModal();
-  } catch(e) { alert("Error al eliminar. Intenta de nuevo."); }
+  } catch(e) {
+    console.error("[delete]", e);
+    alert("Error al eliminar: " + e.message);
+  }
 }
 
 /* ── INIT ── */
