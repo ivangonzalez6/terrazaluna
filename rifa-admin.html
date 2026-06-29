@@ -72,6 +72,8 @@ tr:hover td{background:rgba(255,255,255,.025);}
 .action-btn{padding:5px 11px;border-radius:7px;border:1px solid var(--line2);background:transparent;color:var(--dim);font-size:.75rem;cursor:pointer;font-family:inherit;transition:all .15s;white-space:nowrap;}
 .action-btn:hover{border-color:var(--green);color:var(--green);}
 .action-btn.del:hover{border-color:var(--red);color:var(--red);}
+.action-btn.approve{border-color:rgba(0,200,83,.4);color:#00c853;}
+.action-btn.approve:hover{background:rgba(0,200,83,.12);border-color:#00c853;}
 .receipt-link{color:var(--green);text-decoration:none;font-size:.78rem;}
 .receipt-link:hover{text-decoration:underline;}
 .no-rows{padding:48px;text-align:center;color:var(--dim);}
@@ -393,6 +395,7 @@ function renderTable() {
       '<td style="color:var(--dim);white-space:nowrap;">' + dt + '</td>' +
       '<td>' + notes + '</td>' +
       '<td><div class="actions">' +
+        (r.status === 'pendiente_revision' ? '<button class="action-btn approve" onclick="approveRow(\''+r.id+'\')">✅ Aprobar</button>' : '') +
         '<button class="action-btn" onclick="openEdit(\''+r.id+'\')">✏️ Editar</button>' +
         '<button class="action-btn del" onclick="openDelete(\''+r.id+'\')">🗑️ Eliminar</button>' +
       '</div></td>' +
@@ -458,6 +461,18 @@ async function saveEdit() {
     console.error("[save edit]", e);
     alert("Error al guardar: " + e.message);
   }
+}
+
+/* ── QUICK APPROVE ── */
+async function approveRow(id) {
+  try {
+    var r = await sbPatch("rifa_purchases", "?id=eq." + id, { status: "validado" });
+    if (!r.ok) { var b = await r.text(); throw new Error("HTTP " + r.status + ": " + b); }
+    var row = allRows.find(function(r){ return r.id === id; });
+    if (row) row.status = "validado";
+    updateStats();
+    renderTable();
+  } catch(e) { alert("Error al aprobar: " + e.message); }
 }
 
 /* ── DELETE MODAL ── */
