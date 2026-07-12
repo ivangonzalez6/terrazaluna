@@ -4,15 +4,18 @@
     <loc>https://terrazaluna.mx/</loc>
     <changefreq>weekly</changefreq>
     <priority>1.0</priority>
+    <lastmod>2026-07-11</lastmod>
   </url>
   <url>
     <loc>https://terrazaluna.mx/menu</loc>
     <changefreq>weekly</changefreq>
     <priority>0.9</priority>
+    <lastmod>2026-07-11</lastmod>
   </url>
   <url>
     <loc>https://terrazaluna.mx/tor</loc>
-    <changefreq>monthly</changefreq>
-    <priority>0.8</priority>
+    <changefreq>weekly</changefreq>
+    <priority>0.9</priority>
+    <lastmod>2026-07-11</lastmod>
   </url>
 </urlset>
