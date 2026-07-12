@@ -76,7 +76,7 @@ html,body{min-height:100%;background:var(--bg);color:var(--ink);font-family:'Int
 body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellipse 80vw 60vh at 90% -5%,rgba(201,163,91,.06) 0%,transparent 60%),radial-gradient(ellipse 60vw 50vh at -5% 100%,rgba(201,163,91,.04) 0%,transparent 60%);pointer-events:none;z-index:0;}
 
 /* ── SCREENS ── */
-.screen{position:fixed;inset:0;display:flex;flex-direction:column;align-items:center;padding:24px 20px 32px;overflow-y:auto;transition:opacity .3s,transform .3s;z-index:1;}
+.screen{position:fixed;inset:0;display:flex;flex-direction:column;align-items:center;padding:24px 20px 32px;overflow-y:auto;transition:opacity .3s,transform .3s;z-index:1;background:var(--bg);}
 .screen.hidden{opacity:0;pointer-events:none;transform:scale(.97)}
 .inner{width:100%;max-width:420px;display:flex;flex-direction:column;gap:14px;margin:auto}
 
