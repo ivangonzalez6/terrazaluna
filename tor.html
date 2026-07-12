@@ -77,6 +77,9 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
 
 /* ── SCREENS ── */
 .screen{position:fixed;inset:0;display:flex;flex-direction:column;align-items:center;padding:24px 20px 32px;overflow-y:auto;transition:opacity .3s,transform .3s;z-index:1;background:var(--bg);}
+body.show-info .screen{display:none;}
+#backToGameBtn{display:none;position:fixed;top:16px;left:16px;z-index:50;background:rgba(42,31,14,.9);border:1px solid rgba(212,175,55,.25);border-radius:999px;padding:8px 16px;font-size:11px;color:var(--gold);font-weight:600;letter-spacing:.04em;cursor:pointer;font-family:'Inter Tight',sans-serif;backdrop-filter:blur(8px);}
+body.show-info #backToGameBtn{display:block;}
 .screen.hidden{opacity:0;pointer-events:none;transform:scale(.97)}
 .inner{width:100%;max-width:420px;display:flex;flex-direction:column;gap:14px;margin:auto}
 
@@ -290,6 +293,10 @@ textarea{resize:none;line-height:1.5;}
         <div class="mode-card-label">En<br>línea</div>
         <div class="mode-card-sub">Sin límites,<br>sin secretos.</div>
       </div>
+    </div>
+
+    <div style="text-align:center;margin-top:18px;">
+      <button onclick="document.body.classList.add('show-info');window.scrollTo(0,0);" style="background:none;border:none;color:var(--faint);font-size:11px;letter-spacing:.04em;cursor:pointer;font-family:'Inter Tight',sans-serif;text-decoration:underline;text-underline-offset:3px;">¿Cómo jugar? · Preguntas frecuentes</button>
     </div>
 
   </div>
@@ -1726,6 +1733,8 @@ function handleLockedLevel(level){
 }
 </script>
 
+
+<button id="backToGameBtn" onclick="document.body.classList.remove('show-info');">← Volver al juego</button>
 
 <!-- ══════════════════════════════════════════
      CONTENIDO SEO VISIBLE: guía, ejemplos y FAQ
