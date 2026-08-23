@@ -1118,16 +1118,49 @@ function invalidateMenuCache(){_menuCacheTs=0;} // llamar tras guardar cambios e
 
 
 function loadOrders(){return sfetch('/rest/v1/orders?id=eq.current&select=data').then(function(r){return(r&&r[0])?r[0].data:{};});}
+// Adopta del servidor los campos que OTRO rol pudo haber cambiado mientras esta
+// mesa estaba "protegida" localmente (status de cocina, pagos por persona),
+// sin perder ediciones locales en curso (productos nuevos, notas, cantidades).
+// Sin esto, si Cocina marca un producto como entregado mientras el mesero tiene
+// esa mesa abierta, el siguiente guardado del mesero (p.ej. agregar otro
+// producto) pisaba el status y lo regresaba a "pendiente".
+function _mergeFreshItemState(localItems, freshItems){
+  if(!localItems||!freshItems)return;
+  var freshById={};
+  freshItems.forEach(function(it){ if(it&&it.id)freshById[it.id]=it; });
+  localItems.forEach(function(it){
+    var f=it&&it.id?freshById[it.id]:null;
+    if(f&&f.status!==undefined)it.status=f.status;
+  });
+}
+function _mergeFreshTableState(localTbl, freshTbl){
+  if(!localTbl||!freshTbl)return localTbl;
+  _mergeFreshItemState(localTbl.items, freshTbl.items);
+  if(localTbl.persons&&freshTbl.persons){
+    var freshPersonsById={};
+    freshTbl.persons.forEach(function(p){ if(p&&p.id)freshPersonsById[p.id]=p; });
+    localTbl.persons.forEach(function(p){
+      var fp=p&&p.id?freshPersonsById[p.id]:null;
+      if(!fp)return;
+      if(fp.paid!==undefined)p.paid=fp.paid;
+      if(fp.paymentMethod!==undefined)p.paymentMethod=fp.paymentMethod;
+      _mergeFreshItemState(p.items,fp.items);
+    });
+  }
+  return localTbl;
+}
 async function saveOrders(o, protectTable){
   if(!isOnline()){showSaveErr('Sin conexión — orden no guardada');return Promise.resolve();}
   // Read-modify-write: traer estado fresco del servidor y mezclar para NO pisar
-  // las mesas que otros usuarios estén editando. Solo forzamos la mesa activa local.
+  // las mesas que otros usuarios estén editando. Solo forzamos la mesa activa local,
+  // pero dentro de esa mesa adoptamos el status/pago más reciente del servidor.
   try{
     var ct=(protectTable!==undefined)?String(protectTable):(curTable===null||curTable===undefined)?null:String(curTable); // las claves de orders son strings
     var fresh=await loadOrders();
     if(fresh&&typeof fresh==='object'){
       Object.keys(fresh).forEach(function(t){ if(t!==ct) o[t]=fresh[t]; });
       Object.keys(o).forEach(function(t){ if(t!==ct && !(t in fresh)) delete o[t]; });
+      if(ct&&o[ct]&&fresh[ct])_mergeFreshTableState(o[ct],fresh[ct]);
     }
   }catch(e){/* si falla la lectura, guardamos lo local */}
   return spatch('/rest/v1/orders?id=eq.current',{data:o,updated_at:new Date().toISOString()})
@@ -3722,9 +3755,11 @@ async function sync(){
     if(fresh&&typeof fresh==='object'){
       var next={};
       Object.keys(fresh).forEach(function(t){ next[t]=fresh[t]; });
-      // Conservar la mesa activa local (edición en curso) para no perder cambios sin guardar
+      // Conservar la mesa activa local (edición en curso) para no perder cambios sin guardar,
+      // pero adoptando el status/pago más reciente del servidor (cocina, cobro por persona)
+      // para que no se "revierta" al siguiente guardado de esta mesa.
       var ct=(curTable===null||curTable===undefined)?null:String(curTable);
-      if(ct && orders[ct]) next[ct]=orders[ct];
+      if(ct && orders[ct]) next[ct]=_mergeFreshTableState(orders[ct],fresh[ct]);
       // No resucitar mesas cerradas recientemente: la baja puede no haberse reflejado
       // todavía en el servidor cuando llega este sync.
       var now=Date.now();
