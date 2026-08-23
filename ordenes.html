@@ -1608,7 +1608,7 @@ gid('noteSave').addEventListener('click',async function(){
     var persons=orders[curTable].persons,per=null;
     for(var i=0;i<persons.length;i++){if(persons[i].id===curPersonId){per=persons[i];break;}}
     if(!per)return;if(!per.items)per.items=[];
-    var ex=null;for(var j=0;j<per.items.length;j++){if(per.items[j].n===pendItem.n&&(per.items[j].note||'')===note){ex=per.items[j];break;}}
+    var ex=null;for(var j=0;j<per.items.length;j++){if(per.items[j].n===pendItem.n&&(per.items[j].note||'')===note&&!per.items[j].discounted){ex=per.items[j];break;}}
     if(ex)ex.q+=1;else per.items.push({id:uid(),n:pendItem.n,p:pendItem.p,q:1,note:note,addedAt:Date.now(),status:'pending',addedBy:loggedUser?loggedUser.username:''});
     deductInventory(pendItem.n,1);
     // If this table had everything delivered, new item resets the order clock
@@ -1617,7 +1617,7 @@ gid('noteSave').addEventListener('click',async function(){
     await saveOrders(orders);updateBadges();showToast('✓ Agregado a '+getPName());
   }else{
     var items=orders[curTable].items,exG=null;
-    for(var k=0;k<items.length;k++){if(items[k].n===pendItem.n&&(items[k].note||'')===note){exG=items[k];break;}}
+    for(var k=0;k<items.length;k++){if(items[k].n===pendItem.n&&(items[k].note||'')===note&&!items[k].discounted){exG=items[k];break;}}
     if(exG)exG.q+=1;else items.push({id:uid(),n:pendItem.n,p:pendItem.p,q:1,note:note,addedAt:Date.now(),status:'pending',addedBy:loggedUser?loggedUser.username:''});
     deductInventory(pendItem.n,1);
     // If this table had everything delivered, new item resets the order clock
@@ -1636,7 +1636,7 @@ function quickAdd(it,target){
     var persons=orders[curTable].persons,per=null;
     for(var i=0;i<persons.length;i++){if(persons[i].id===curPersonId){per=persons[i];break;}}
     if(!per)return;if(!per.items)per.items=[];
-    var ex=null;for(var j=0;j<per.items.length;j++){if(per.items[j].n===it.n&&(per.items[j].note||'')===''){ex=per.items[j];break;}}
+    var ex=null;for(var j=0;j<per.items.length;j++){if(per.items[j].n===it.n&&(per.items[j].note||'')===''&&!per.items[j].discounted){ex=per.items[j];break;}}
     if(ex)ex.q+=1;else per.items.push({id:uid(),n:it.n,p:it.p,q:1,note:'',addedAt:Date.now(),status:'pending',addedBy:loggedUser?loggedUser.username:''});
     deductInventory(it.n,1);
     _resetOrderTimeIfNeeded(curTable);
@@ -1644,7 +1644,7 @@ function quickAdd(it,target){
     showToast('✓ '+it.n+' → '+getPName());
   }else{
     var items=orders[curTable].items,exG=null;
-    for(var k=0;k<items.length;k++){if(items[k].n===it.n&&(items[k].note||'')===''){exG=items[k];break;}}
+    for(var k=0;k<items.length;k++){if(items[k].n===it.n&&(items[k].note||'')===''&&!items[k].discounted){exG=items[k];break;}}
     if(exG)exG.q+=1;else items.push({id:uid(),n:it.n,p:it.p,q:1,note:'',addedAt:Date.now(),status:'pending',addedBy:loggedUser?loggedUser.username:''});
     deductInventory(it.n,1);
     _resetOrderTimeIfNeeded(curTable);
@@ -1997,8 +1997,8 @@ async function moveItemToPerson(personId){
   if(o.items[genIdx].q>1){o.items[genIdx].q-=1;}else{o.items.splice(genIdx,1);}
   // Add to person
   if(!per.items)per.items=[];
-  var ex=null;for(var m=0;m<per.items.length;m++){if(per.items[m].n===item.n&&(per.items[m].note||'')===(item.note||'')){ex=per.items[m];break;}}
-  if(ex){ex.q+=1;}else{per.items.push({id:uid(),n:item.n,p:item.p,q:1,note:item.note||''});}
+  var ex=null;for(var m=0;m<per.items.length;m++){if(per.items[m].n===item.n&&(per.items[m].note||'')===(item.note||'')&&!!per.items[m].discounted===!!item.discounted){ex=per.items[m];break;}}
+  if(ex){ex.q+=1;}else{per.items.push({id:uid(),n:item.n,p:item.p,q:1,note:item.note||'',discounted:item.discounted||false});}
   gid('splitItemModal').classList.remove('show');_splitItem=null;
   await saveOrders(orders);renderCart();updateCartBar();showToast('Movido a '+per.name);
 }
@@ -2281,6 +2281,20 @@ async function renderKitchen(){
 }
 
 // ══ CAJA ══
+var PM_ICON={efectivo:'💵',tarjeta:'💳',transferencia:'📱'};
+var PM_LABEL={efectivo:'Efectivo',tarjeta:'Tarjeta',transferencia:'Transferencia'};
+// Desglosa una cuenta cerrada por método de pago real (por producto/persona), no solo el método "principal"
+function histMethods(h){
+  var m={};
+  (h.items||[]).forEach(function(it){
+    if(it.note==='Descuento 2×1')return;
+    var pm=it.pm||h.paymentMethod||'efectivo';
+    m[pm]=(m[pm]||0)+it.p*it.q;
+  });
+  var keys=Object.keys(m).filter(function(k){return m[k]>0.0001;});
+  if(!keys.length)return[{pm:h.paymentMethod||'efectivo',amt:h.total}];
+  return keys.map(function(k){return{pm:k,amt:m[k]};});
+}
 function pRange(p){var n=new Date(),s=new Date(n);if(p==='day')s.setHours(0,0,0,0);else if(p==='week'){var d=s.getDay();s.setDate(s.getDate()-(d===0?6:d-1));s.setHours(0,0,0,0);}else if(p==='month'){s.setDate(1);s.setHours(0,0,0,0);}else{s.setMonth(0,1);s.setHours(0,0,0,0);}return{from:s.getTime(),to:n.getTime()};}
 function pLabel(p){return{day:'Hoy',week:'Esta semana',month:'Este mes',year:'Este año'}[p];}
 function filtHist(p){var r=pRange(p);return appHistory.filter(function(h){return h.openedAt>=r.from&&h.openedAt<=r.to;});}
@@ -2303,9 +2317,12 @@ function renderStats(){
     var d=new Date(h.openedAt),ds=d.toLocaleDateString('es-MX',{day:'2-digit',month:'short'})+' '+d.getHours().toString().padStart(2,'0')+':'+d.getMinutes().toString().padStart(2,'0');
     var el=document.createElement('div');el.className='hi';
     var CARD_NET=1-0.035*1.16;
-    var isCard=h.paymentMethod==='tarjeta';
+    var pmBreak=histMethods(h);
+    var isMulti=pmBreak.length>1;
+    var isCard=!isMulti&&pmBreak[0].pm==='tarjeta';
     var netLbl=isCard?'<div style="font-size:10px;color:var(--faint);font-weight:400">neto '+money(Math.round(h.total*CARD_NET*100)/100)+'</div>':'';
-    el.innerHTML='<div class="hi-top"><div><div class="hi-tbl">'+(typeof h.table==='number'?'Mesa '+h.table.toString().padStart(2,'0'):esc(String(h.table).charAt(0).toUpperCase()+String(h.table).slice(1)))+(h.tableNote?' <span style="font-size:11px;font-weight:400;color:var(--faint)">· '+esc(h.tableNote)+'</span>':'')+'</div><div class="hi-date">'+ds+(isCard?' 💳':'')+'</div></div><div><div class="hi-tot">'+money(h.total)+netLbl+'</div><div class="hi-it">'+h.itemCount+' prod.'+(h.editNote?' · <em style="color:var(--gold)">'+esc(h.editNote)+'</em>':'')+'</div></div></div><div class="hi-acts"><button class="hi-vb" data-id="'+h.id+'">Ver</button>'+(isDay?'<button class="hi-eb" data-id="'+h.id+'">Editar</button><button class="hi-db" data-id="'+h.id+'">Eliminar</button>':'')+'</div>';
+    var pmBadge=isMulti?' <span title="Pago mixto: '+pmBreak.map(function(x){return PM_LABEL[x.pm]+' '+money(x.amt);}).join(' + ')+'">'+pmBreak.map(function(x){return PM_ICON[x.pm]||'';}).join('')+' Mixto</span>':(PM_ICON[pmBreak[0].pm]?' '+PM_ICON[pmBreak[0].pm]:'');
+    el.innerHTML='<div class="hi-top"><div><div class="hi-tbl">'+(typeof h.table==='number'?'Mesa '+h.table.toString().padStart(2,'0'):esc(String(h.table).charAt(0).toUpperCase()+String(h.table).slice(1)))+(h.tableNote?' <span style="font-size:11px;font-weight:400;color:var(--faint)">· '+esc(h.tableNote)+'</span>':'')+'</div><div class="hi-date">'+ds+pmBadge+'</div></div><div><div class="hi-tot">'+money(h.total)+netLbl+'</div><div class="hi-it">'+h.itemCount+' prod.'+(h.editNote?' · <em style="color:var(--gold)">'+esc(h.editNote)+'</em>':'')+'</div></div></div><div class="hi-acts"><button class="hi-vb" data-id="'+h.id+'">Ver</button>'+(isDay?'<button class="hi-eb" data-id="'+h.id+'">Editar</button><button class="hi-db" data-id="'+h.id+'">Eliminar</button>':'')+'</div>';
     (function(rec){
       el.querySelector('.hi-vb').addEventListener('click',function(e){e.stopPropagation();showHistDetail(rec);});
       if(isDay){
@@ -2322,12 +2339,18 @@ function showHistDetail(h){
   var ds=d.toLocaleDateString('es-MX',{weekday:'short',day:'2-digit',month:'short'})+' '+d.getHours().toString().padStart(2,'0')+':'+d.getMinutes().toString().padStart(2,'0');
   gid('hdSaleDesc').textContent=tbl+' · '+ds;
   gid('hdTotal').textContent=money(h.total);
+  var pmBreak=histMethods(h);
+  var pmHtml=pmBreak.length>1
+    ?'<div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px">'+pmBreak.map(function(x){return'<span style="font-size:11px;font-weight:600;color:var(--gold);background:#fbf3e6;border:1px solid var(--gold);border-radius:999px;padding:3px 10px">'+(PM_ICON[x.pm]||'')+' '+PM_LABEL[x.pm]+' · '+money(x.amt)+'</span>';}).join('')+'</div>'
+    :'<div style="font-size:11px;color:var(--faint);margin-bottom:10px">'+(PM_ICON[pmBreak[0].pm]||'')+' '+(PM_LABEL[pmBreak[0].pm]||pmBreak[0].pm)+'</div>';
   var html='';
   (h.items||[]).forEach(function(it){
-    html+='<div class="hd-item"><span class="hd-q">'+it.q+'×</span><span class="hd-n">'+esc(it.n)+(it.note?'<span class="hd-note"> "'+esc(it.note)+'"</span>':'')+'</span>'+(it.person?'<span class="hd-person">'+esc(it.person)+'</span>':'')+'<span class="hd-p">'+money(it.p*it.q)+'</span></div>';
+    var pm=it.pm||h.paymentMethod||'efectivo';
+    var pmTag=it.note==='Descuento 2×1'?'':'<span style="font-size:10px;color:var(--faint);margin-left:6px">'+(PM_ICON[pm]||'')+'</span>';
+    html+='<div class="hd-item"><span class="hd-q">'+it.q+'×</span><span class="hd-n">'+esc(it.n)+(it.note?'<span class="hd-note"> "'+esc(it.note)+'"</span>':'')+pmTag+'</span>'+(it.person?'<span class="hd-person">'+esc(it.person)+'</span>':'')+'<span class="hd-p">'+money(it.p*it.q)+'</span></div>';
   });
   if(!html)html='<div style="color:var(--faint);font-size:13px;padding:10px 0">Sin productos registrados</div>';
-  gid('hdItems').innerHTML=html;
+  gid('hdItems').innerHTML=pmHtml+html;
   gid('histDetailModal').classList.add('show');
 }
 function openEditSale(h){editSaleId=h.id;gid('esSaleDesc').textContent=(typeof h.table==='number'?'Mesa '+h.table:String(h.table).charAt(0).toUpperCase()+String(h.table).slice(1))+' · '+new Date(h.closedAt).toLocaleString('es-MX');gid('esTotal').value=h.total;gid('esNote').value=h.editNote||'';gid('editSaleModal').classList.add('show');setTimeout(function(){gid('esTotal').focus();},250);}

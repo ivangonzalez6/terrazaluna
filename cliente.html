@@ -400,21 +400,18 @@ function isDrinkExcluded(nombre){
   return false;
 }
 
-// Categories excluded from the Drinks Passport
-const EXCLUDE_CATS = new Set([
-  // Categorías de shots (no son cocteles del passport)
-  'Ron (shot)','Tequila (shot)','Whisky (shot)',
-  'Ron (Shot)','Tequila (Shot)','Whisky (Shot)',
-  // Brandy & mezcal (excluidos del passport)
-  'Brandy & Mezcal','Brandy (shot)','Mezcal (shot)','Mezcalitas',
-  // Food
-  'Alimentos','Comida','Botanas','Snacks','Boneless','Alitas','Postres',
-  // Drinks that are not cocktails
-  'Cervezas','Bebidas Frías','Bebidas Frias','Bebidas Calientes',
-  'Refrescos','Aguas','Shots','Destilados',
-  // Promotions / misc
-  'Promociones','Promoción','Especiales'
+// Categories included in the Drinks Passport (whitelist).
+// Solo categorías de coctelería real entran al passport — cualquier categoría
+// nueva que se cree en el menú (comida, cigarros, refrescos, etc.) queda
+// excluida automáticamente por default, sin tener que acordarse de agregarla
+// a mano a una lista negra.
+const INCLUDE_CATS = new Set([
+  'mojitos','gin & tonic','caipiroska (vodka)','daiquirí (ron)',
+  'margarita (tequila)','frozen (vodka)','coctelería clásica','alta coctelería'
 ]);
+function isCategoryIncluded(cat){
+  return INCLUDE_CATS.has((cat||'').trim().toLowerCase());
+}
 
 const io=new IntersectionObserver(e=>e.forEach(el=>{if(el.isIntersecting){el.target.classList.add('vis');io.unobserve(el.target)}}),{threshold:.05});
 document.querySelectorAll('[data-reveal]').forEach(el=>io.observe(el));
@@ -461,10 +458,10 @@ async function init(){
   const since=new Date(c.created_at);
   document.getElementById('lcSince').textContent=since.toLocaleDateString('es-MX',{month:'long',year:'numeric'});
 
-  // Drinks — from menu_items, excluding brandy/mezcal and non-cocktail categories, sorted alphabetically
+  // Drinks — solo categorías de coctelería real (whitelist), sorted alphabetically
   allDrinks=(drinks||[])
     .map(d=>({id:d.id,nombre:d.name,categoria:d.menu_categories?.name||''}))
-    .filter(d=>d.categoria&&!EXCLUDE_CATS.has(d.categoria)&&!isDrinkExcluded(d.nombre))
+    .filter(d=>d.categoria&&isCategoryIncluded(d.categoria)&&!isDrinkExcluded(d.nombre))
     .sort((a,b)=>a.categoria.localeCompare(b.categoria,'es')||a.nombre.localeCompare(b.nombre,'es'));
   totalCocktails=allDrinks.length;
   myRatings={};
