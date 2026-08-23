@@ -210,6 +210,19 @@ textarea{resize:vertical;min-height:60px;font-family:inherit}
 .empty .etit{font-family:'Cormorant Garamond',serif;font-size:18px;color:var(--dim);margin-bottom:5px}
 .empty .esub{font-size:10px;letter-spacing:.2em;text-transform:uppercase}
 
+/* ── Buscador ── */
+.search-wrap{position:relative;margin-bottom:14px}
+.search-wrap input[type="search"]{width:100%;background:#fff;border:1px solid var(--line);border-radius:10px;padding:12px 36px 12px 14px;font-family:'Inter Tight',sans-serif;font-size:14px;color:var(--ink);outline:none;transition:border-color .15s}
+.search-wrap input[type="search"]:focus{border-color:var(--gold)}
+.search-wrap input[type="search"]::-webkit-search-cancel-button{-webkit-appearance:none}
+.search-clear{position:absolute;right:6px;top:50%;transform:translateY(-50%);background:none;border:none;color:var(--faint);font-size:15px;cursor:pointer;padding:6px 8px;display:none}
+.search-wrap.has-val .search-clear{display:block}
+.gtab{flex:1;background:none;border:none;padding:9px 12px;font-size:10px;letter-spacing:.2em;text-transform:uppercase;font-weight:600;color:var(--faint);cursor:pointer;border-radius:999px;white-space:nowrap;transition:all .15s}
+.gtab.active{background:var(--ink);color:#fff}
+.search-group-head{font-family:'Cormorant Garamond',serif;font-size:16px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;margin:16px 0 8px;padding-bottom:6px;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;align-items:baseline;gap:8px}
+.search-group-head:first-child{margin-top:0}
+.search-group-tot{font-family:'Inter Tight',sans-serif;font-size:11px;letter-spacing:0;text-transform:none;font-weight:600;white-space:nowrap}
+
 /* ── Login ── */
 .login{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px}
 .login-card{background:#fff;border:1px solid var(--line);border-radius:18px;padding:36px 28px;max-width:380px;width:100%;box-shadow:0 4px 24px rgba(60,45,20,.06)}
@@ -282,6 +295,8 @@ textarea{resize:vertical;min-height:60px;font-family:inherit}
       <span class="icn">📊</span>
       <span>Ver Reportes</span>
     </button>
+
+    <button class="btn btn-g" id="goSearchBtn" style="width:100%;padding:12px;font-size:11px;letter-spacing:.15em;text-transform:uppercase;margin-bottom:14px">🔎 Buscar movimientos</button>
 
     <div class="sum-card">
       <div class="sum-date" id="todayDate"></div>
@@ -571,6 +586,42 @@ textarea{resize:vertical;min-height:60px;font-family:inherit}
     </div>
   </div>
 
+  <!-- ═══ BUSCAR MOVIMIENTOS ═══ -->
+  <div class="view" id="view-search">
+    <div class="back-bar">
+      <button class="back-btn back-home">← Inicio</button>
+      <div class="section-title">Buscar</div>
+    </div>
+
+    <div class="search-wrap" id="searchWrap">
+      <input id="searchInput" type="search" placeholder="Ej. salarios, renta, Juan…" autocomplete="off">
+      <button class="search-clear" id="searchClearBtn" title="Limpiar">✕</button>
+    </div>
+
+    <div class="period-tabs">
+      <button class="gtab active" data-g="day">Por día</button>
+      <button class="gtab" data-g="month">Por mes</button>
+      <button class="gtab" data-g="year">Por año</button>
+    </div>
+
+    <div class="period-summary" style="margin-top:14px">
+      <div class="ps-card ing">
+        <div class="ps-lbl">Ingresos</div>
+        <div class="ps-val ing" id="sIngTotal">$0</div>
+      </div>
+      <div class="ps-card eg">
+        <div class="ps-lbl">Egresos</div>
+        <div class="ps-val eg" id="sEgTotal">$0</div>
+      </div>
+      <div class="ps-card ut">
+        <div class="ps-lbl">Coincidencias</div>
+        <div class="ps-val ut" id="sCount">0</div>
+      </div>
+    </div>
+
+    <div id="searchGroups" style="margin-top:6px"></div>
+  </div>
+
 </div>
 
   <!-- ═══ ARQUEO DE CAJA ═══ -->
@@ -775,6 +826,106 @@ gid('goReportsBtn').addEventListener('click',function(){
   showView('reports');
 });
 document.querySelectorAll('.back-home').forEach(function(b){b.addEventListener('click',function(){showView('home');});});
+
+// ═══════════════════════════════════════════════════════
+// BUSCADOR DE MOVIMIENTOS (por palabra, agrupado día/mes/año)
+// ═══════════════════════════════════════════════════════
+var searchGroupBy='day';
+gid('goSearchBtn').addEventListener('click',function(){
+  gid('searchInput').value='';
+  gid('searchWrap').classList.remove('has-val');
+  searchGroupBy='day';
+  document.querySelectorAll('#view-search .gtab').forEach(function(t){t.classList.toggle('active',t.getAttribute('data-g')==='day');});
+  renderSearch();
+  showView('search');
+  setTimeout(function(){gid('searchInput').focus();},250);
+});
+gid('searchInput').addEventListener('input',function(){
+  gid('searchWrap').classList.toggle('has-val',!!gid('searchInput').value);
+  renderSearch();
+});
+gid('searchClearBtn').addEventListener('click',function(){
+  gid('searchInput').value='';
+  gid('searchWrap').classList.remove('has-val');
+  renderSearch();
+  gid('searchInput').focus();
+});
+document.querySelectorAll('#view-search .gtab').forEach(function(btn){
+  btn.addEventListener('click',function(){
+    searchGroupBy=btn.getAttribute('data-g');
+    document.querySelectorAll('#view-search .gtab').forEach(function(b){b.classList.toggle('active',b===btn);});
+    renderSearch();
+  });
+});
+// Quita acentos para que "salarios" encuentre "Salarios", "María", etc.
+function normText(s){
+  return String(s||'').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'');
+}
+function movementMatchesQuery(m,q){
+  if(!q)return true;
+  var hay=normText([m.description,SUBCAT_LABELS[m.subcategory]||m.subcategory,m.subcategory,m.category,m.payment_method,m.created_by].join(' '));
+  return hay.indexOf(q)>=0;
+}
+function searchPeriodKey(iso,mode){
+  if(mode==='year')return iso.slice(0,4);
+  if(mode==='month')return iso.slice(0,7);
+  return iso;
+}
+function searchPeriodLabel(key,mode){
+  if(mode==='year')return key;
+  if(mode==='month'){
+    var d=new Date(key+'-01T12:00:00');
+    var months=['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+    return months[d.getMonth()]+' '+d.getFullYear();
+  }
+  return fmtDateLong(key);
+}
+function renderSearch(){
+  var qRaw=gid('searchInput').value.trim();
+  var q=normText(qRaw);
+  var matched=movements.filter(function(m){return movementMatchesQuery(m,q);});
+  var ing=0,eg=0;
+  matched.forEach(function(m){
+    var amt=parseFloat(m.amount)||0;
+    if(m.kind==='ingreso')ing+=amt;else eg+=amt;
+  });
+  gid('sIngTotal').textContent=money(ing);
+  gid('sEgTotal').textContent=money(eg);
+  gid('sCount').textContent=matched.length;
+
+  var wrap=gid('searchGroups');wrap.innerHTML='';
+  if(!qRaw){
+    wrap.innerHTML='<div class="empty"><div class="etit">Escribe una palabra para buscar</div><div class="esub">ej. "salarios", "renta", "Juan"…</div></div>';
+    return;
+  }
+  if(!matched.length){
+    wrap.innerHTML='<div class="empty"><div class="etit">Sin resultados</div><div class="esub">para "'+esc(qRaw)+'"</div></div>';
+    return;
+  }
+  // movements ya viene ordenado desc (movement_date, created_at) — se conserva ese orden dentro de cada grupo
+  var groups={},order=[];
+  matched.forEach(function(m){
+    var k=searchPeriodKey(m.movement_date,searchGroupBy);
+    if(!groups[k]){groups[k]={ing:0,eg:0,items:[]};order.push(k);}
+    var amt=parseFloat(m.amount)||0;
+    if(m.kind==='ingreso')groups[k].ing+=amt;else groups[k].eg+=amt;
+    groups[k].items.push(m);
+  });
+  order.sort().reverse();
+  order.forEach(function(k){
+    var g=groups[k];
+    var head=document.createElement('div');
+    head.className='search-group-head';
+    var totBits=[];
+    if(g.ing>0)totBits.push('<span style="color:var(--ok)">+'+money(g.ing)+'</span>');
+    if(g.eg>0)totBits.push('<span style="color:var(--danger)">−'+money(g.eg)+'</span>');
+    head.innerHTML='<span>'+esc(searchPeriodLabel(k,searchGroupBy))+'</span><span class="search-group-tot">'+totBits.join(' · ')+'</span>';
+    wrap.appendChild(head);
+    var listEl=document.createElement('div');listEl.className='mvs';listEl.style.marginTop='0';
+    g.items.forEach(function(m){listEl.appendChild(buildMovementRow(m,true));});
+    wrap.appendChild(listEl);
+  });
+}
 gid('goArqueoBtn').addEventListener('click',function(){
   var today=todayISO();
   gid('arqueoFecha').value=today;
