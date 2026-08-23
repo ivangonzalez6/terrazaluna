@@ -407,7 +407,8 @@ function isDrinkExcluded(nombre){
 // a mano a una lista negra.
 const INCLUDE_CATS = new Set([
   'mojitos','gin & tonic','caipiroska (vodka)','daiquirí (ron)',
-  'margarita (tequila)','frozen (vodka)','coctelería clásica','alta coctelería'
+  'margarita (tequila)','frozen (vodka)','coctelería clásica','alta coctelería',
+  'mezcalitas'
 ]);
 function isCategoryIncluded(cat){
   return INCLUDE_CATS.has((cat||'').trim().toLowerCase());
