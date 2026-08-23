@@ -567,6 +567,10 @@ textarea{resize:vertical;min-height:60px;font-family:inherit}
         <span>Ventas por producto</span>
         <span class="total" id="rProductTotal"></span>
       </div>
+      <div class="search-wrap" id="productSearchWrap" style="margin-bottom:10px">
+        <input id="productSearchInput" type="search" placeholder="Filtrar por producto… (ej. mojito, margarita)" autocomplete="off">
+        <button class="search-clear" id="productSearchClearBtn" title="Limpiar">✕</button>
+      </div>
       <div id="rProductBreak"></div>
     </div>
 
@@ -786,6 +790,8 @@ gid('goReportsBtn').addEventListener('click',function(){
   updatePeriodNav();
   gid('searchInput').value='';
   gid('searchWrap').classList.remove('has-val');
+  gid('productSearchInput').value='';
+  gid('productSearchWrap').classList.remove('has-val');
   renderReports();
   showView('reports');
 });
@@ -814,6 +820,16 @@ gid('searchClearBtn').addEventListener('click',function(){
   gid('searchWrap').classList.remove('has-val');
   renderReportMovements();
   gid('searchInput').focus();
+});
+gid('productSearchInput').addEventListener('input',function(){
+  gid('productSearchWrap').classList.toggle('has-val',!!gid('productSearchInput').value);
+  renderProductBreakdown();
+});
+gid('productSearchClearBtn').addEventListener('click',function(){
+  gid('productSearchInput').value='';
+  gid('productSearchWrap').classList.remove('has-val');
+  renderProductBreakdown();
+  gid('productSearchInput').focus();
 });
 gid('goArqueoBtn').addEventListener('click',function(){
   var today=todayISO();
@@ -1310,35 +1326,8 @@ function renderReports(){
       });
     }
   });
-  var productNames=Object.keys(productMap).sort(function(a,b){return productMap[b].q-productMap[a].q;});
-  var prodWrap=gid('productBreakWrap');
-  if(productNames.length){
-    prodWrap.style.display='block';
-    var totalProductRevenue=productNames.reduce(function(s,n){return s+productMap[n].total;},0);
-    var totalProductQty=productNames.reduce(function(s,n){return s+productMap[n].q;},0);
-    gid('rProductTotal').textContent=totalProductQty+' uds · '+money(totalProductRevenue);
-    var maxQ=Math.max.apply(null,productNames.map(function(n){return productMap[n].q;}));
-    var plist=gid('rProductBreak');plist.innerHTML='';
-    productNames.forEach(function(n,rank){
-      var p=productMap[n];
-      var pct=maxQ>0?(p.q/maxQ)*100:0;
-      var rankColors=['#8a6420','#4a6b2d','#1d6b7a'];
-      var qColor=rankColors[rank]||'var(--faint)';
-      var el=document.createElement('div');
-      el.className='b-row ing';
-      el.style.cssText='display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--line)';
-      el.innerHTML=
-        '<div style="min-width:48px;text-align:center;font-family:Cormorant Garamond,serif;font-size:32px;font-weight:700;line-height:1;color:'+qColor+'">'+p.q+'</div>'+
-        '<div style="flex:1">'+
-          '<div style="font-size:13px;font-weight:500;color:var(--ink)">'+esc(n)+'</div>'+
-          '<div style="height:4px;border-radius:2px;background:var(--line);margin-top:4px"><div style="height:4px;border-radius:2px;background:'+qColor+';width:'+pct.toFixed(0)+'%"></div></div>'+
-        '</div>'+
-        '<div style="font-size:14px;font-weight:600;color:var(--gold);white-space:nowrap">'+money(p.total)+'</div>';
-      plist.appendChild(el);
-    });
-  }else{
-    prodWrap.style.display='none';
-  }
+  _reportProductMap=productMap;
+  renderProductBreakdown();
 
   // ── Export CSV ──
   gid('exportReportCSV').onclick=function(){
@@ -1390,6 +1379,50 @@ function renderReportMovements(){
   mvList.innerHTML='';
   list.forEach(function(m){
     mvList.appendChild(buildMovementRow(m,true));
+  });
+}
+
+// Vuelve a pintar "Ventas por producto" aplicando el filtro por nombre de
+// producto, sin recalcular el resto del reporte. El total mostrado (uds y $)
+// corresponde solo a lo filtrado.
+var _reportProductMap={};
+function renderProductBreakdown(){
+  var wrap=gid('productBreakWrap');
+  var allNames=Object.keys(_reportProductMap);
+  if(!allNames.length){wrap.style.display='none';return;}
+  wrap.style.display='block';
+
+  var qRaw=gid('productSearchInput')?gid('productSearchInput').value.trim():'';
+  var q=normText(qRaw);
+  var names=(qRaw?allNames.filter(function(n){return normText(n).indexOf(q)>=0;}):allNames)
+    .sort(function(a,b){return _reportProductMap[b].q-_reportProductMap[a].q;});
+
+  var totQty=names.reduce(function(s,n){return s+_reportProductMap[n].q;},0);
+  var totRev=names.reduce(function(s,n){return s+_reportProductMap[n].total;},0);
+  gid('rProductTotal').textContent=(qRaw?'Filtrado · ':'')+totQty+' uds · '+money(totRev);
+
+  var plist=gid('rProductBreak');plist.innerHTML='';
+  if(!names.length){
+    plist.innerHTML='<div class="empty"><div class="etit">Sin productos</div><div class="esub">que coincidan con "'+esc(qRaw)+'"</div></div>';
+    return;
+  }
+  var maxQ=Math.max.apply(null,names.map(function(n){return _reportProductMap[n].q;}));
+  names.forEach(function(n,rank){
+    var p=_reportProductMap[n];
+    var pct=maxQ>0?(p.q/maxQ)*100:0;
+    var rankColors=['#8a6420','#4a6b2d','#1d6b7a'];
+    var qColor=rankColors[rank]||'var(--faint)';
+    var el=document.createElement('div');
+    el.className='b-row ing';
+    el.style.cssText='display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--line)';
+    el.innerHTML=
+      '<div style="min-width:48px;text-align:center;font-family:Cormorant Garamond,serif;font-size:32px;font-weight:700;line-height:1;color:'+qColor+'">'+p.q+'</div>'+
+      '<div style="flex:1">'+
+        '<div style="font-size:13px;font-weight:500;color:var(--ink)">'+esc(n)+'</div>'+
+        '<div style="height:4px;border-radius:2px;background:var(--line);margin-top:4px"><div style="height:4px;border-radius:2px;background:'+qColor+';width:'+pct.toFixed(0)+'%"></div></div>'+
+      '</div>'+
+      '<div style="font-size:14px;font-weight:600;color:var(--gold);white-space:nowrap">'+money(p.total)+'</div>';
+    plist.appendChild(el);
   });
 }
 
