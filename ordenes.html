@@ -682,6 +682,7 @@ h2.sec::after{content:'';flex:1;height:1px;background:var(--line);margin-left:6p
       <button class="btn btn-p" style="flex:0;padding:8px 14px;font-size:10px" id="addRecipeBtn">+ Receta</button>
     </div>
     <div class="sep"></div>
+    <input class="menu-search" id="recipeSearchInput" type="search" placeholder="🔍 Buscar producto…" autocomplete="off">
     <!-- Filtro por categoría -->
     <div class="cat-tabs" id="recipeCatFilter" style="margin-bottom:4px"></div>
     <div id="recipeAdminList"></div>
@@ -3025,7 +3026,7 @@ function deleteRecipeDB(id){return sdel('/rest/v1/recipes?id=eq.'+id);}
 function deleteIngredients(recipeId){return sdel('/rest/v1/recipe_ingredients?recipe_id=eq.'+recipeId);}
 function insertIngredient(ing){return spost('/rest/v1/recipe_ingredients',ing);}
 
-var recipeAdminCatFilter=null, recipeAllCats=[], editingRecipeId=null, recipeBackRole='stats';
+var recipeAdminCatFilter=null, recipeAdminSearchTerm='', recipeAllCats=[], editingRecipeId=null, recipeBackRole='stats';
 
 
 // ══ SEED RECETAS BASE ══
@@ -3368,6 +3369,7 @@ gid('adminRecipeBtn').addEventListener('click',async function(){
   await openRecipeAdmin();
 });
 gid('backToStatsFromRecipe').addEventListener('click',function(){setRole('stats');});
+gid('recipeSearchInput').addEventListener('input',function(){recipeAdminSearchTerm=this.value.trim().toLowerCase();renderRecipeAdminList();});
 
 async function openRecipeAdmin(){
   var seeded=await seedMissingRecipes();
@@ -3375,6 +3377,7 @@ async function openRecipeAdmin(){
   var catSet={};all.forEach(function(r){catSet[r.category_name]=true;});
   recipeAllCats=Object.keys(catSet).sort();
   recipeAdminCatFilter=null;
+  recipeAdminSearchTerm='';if(gid('recipeSearchInput'))gid('recipeSearchInput').value='';
   renderRecipeCatFilter();
   await renderRecipeAdminList();
   setRole('recipe-admin');
@@ -3400,8 +3403,14 @@ function renderRecipeCatFilter(){
 async function renderRecipeAdminList(){
   var list=gid('recipeAdminList');list.innerHTML='<div class="empty"><div class="etit">Cargando…</div></div>';
   var recipes=await loadRecipes(recipeAdminCatFilter);
+  if(recipeAdminSearchTerm){recipes=recipes.filter(function(r){return r.item_name.toLowerCase().indexOf(recipeAdminSearchTerm)>=0;});}
   list.innerHTML='';
-  if(!recipes.length){list.innerHTML='<div class="empty"><div class="etit crescent">Sin recetas</div><div class="esub">Agrega la primera receta</div></div>';return;}
+  if(!recipes.length){
+    list.innerHTML=recipeAdminSearchTerm
+      ?'<div class="empty"><div class="etit crescent">Sin resultados</div><div class="esub">No se encontró "'+esc(recipeAdminSearchTerm)+'"</div></div>'
+      :'<div class="empty"><div class="etit crescent">Sin recetas</div><div class="esub">Agrega la primera receta</div></div>';
+    return;
+  }
   recipes.forEach(function(rec){
     var el=document.createElement('div');el.className='rec-admin-row';
     el.innerHTML=
