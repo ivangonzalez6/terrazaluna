@@ -146,6 +146,10 @@ main{flex:1;padding:24px;max-width:960px;width:100%;margin:0 auto}
 .table-wrap{overflow-x:auto}
 table{width:100%;border-collapse:collapse;font-size:13px}
 th{text-align:left;font-size:9px;font-weight:600;letter-spacing:.2em;text-transform:uppercase;color:var(--faint);padding:0 12px 12px;border-bottom:1px solid var(--line)}
+th.sortable{cursor:pointer;user-select:none;white-space:nowrap;transition:color .15s}
+th.sortable:hover{color:var(--gold)}
+th.sortable.sorted{color:var(--gold)}
+.sort-arrow{display:inline-block;margin-left:3px;font-size:9px;color:var(--gold)}
 td{padding:13px 12px;border-bottom:1px solid var(--line);color:var(--dim)}
 td:first-child{font-weight:600;color:var(--ink)}
 tr:hover td{background:var(--gold-pale)}
@@ -241,7 +245,16 @@ tr:hover td{background:var(--gold-pale)}
         </div>
         <div class="table-wrap">
           <table><thead><tr>
-            <th>Nombre</th><th>WhatsApp</th><th>Nivel</th><th>Visitas</th><th>Sellos</th><th>Premio</th><th>Cumpleaños</th><th>Visita</th><th></th>
+            <th class="sortable" data-key="nombre" onclick="onSortClick('nombre')">Nombre<span class="sort-arrow" data-arrow="nombre"></span></th>
+            <th class="sortable" data-key="whatsapp" onclick="onSortClick('whatsapp')">WhatsApp<span class="sort-arrow" data-arrow="whatsapp"></span></th>
+            <th class="sortable" data-key="nivel" onclick="onSortClick('nivel')">Nivel<span class="sort-arrow" data-arrow="nivel"></span></th>
+            <th class="sortable" data-key="visitas" onclick="onSortClick('visitas')">Visitas<span class="sort-arrow" data-arrow="visitas"></span></th>
+            <th class="sortable" data-key="sellos" onclick="onSortClick('sellos')">Sellos<span class="sort-arrow" data-arrow="sellos"></span></th>
+            <th class="sortable" data-key="premio" onclick="onSortClick('premio')">Premio<span class="sort-arrow" data-arrow="premio"></span></th>
+            <th class="sortable" data-key="cumple" onclick="onSortClick('cumple')">Cumpleaños<span class="sort-arrow" data-arrow="cumple"></span></th>
+            <th class="sortable" data-key="inscripcion" onclick="onSortClick('inscripcion')">Inscripción<span class="sort-arrow" data-arrow="inscripcion"></span></th>
+            <th class="sortable" data-key="ultima_visita" onclick="onSortClick('ultima_visita')">Última visita<span class="sort-arrow" data-arrow="ultima_visita"></span></th>
+            <th>Visita</th><th></th>
           </tr></thead><tbody id="clientesTable"></tbody></table>
         </div>
       </div>
@@ -452,6 +465,7 @@ let currentScanClient=null;
 let allClientes=[];
 let _rewardsCache=[];            // niveles ordenados por visitas_requeridas
 let _redeemedByClient={};        // client_id -> Set(niveles canjeados)
+let _lastVisitByClient={};       // client_id -> fecha (ISO) de la visita más reciente
 function nivelActual(visitas){
   let r=null;
   _rewardsCache.forEach(x=>{ if(visitas>=x.visitas_requeridas) r=x; });
@@ -459,10 +473,11 @@ function nivelActual(visitas){
 }
 async function loadClientes(){
   try{
-    const [clientes,rewards,redemptions]=await Promise.all([
+    const [clientes,rewards,redemptions,visits]=await Promise.all([
       api('GET','loyalty_clients',null,'?order=created_at.desc&select=*'),
       api('GET','loyalty_rewards',null,'?activo=eq.true&order=visitas_requeridas.asc&select=*'),
-      api('GET','loyalty_redemptions',null,'?select=client_id,nivel')
+      api('GET','loyalty_redemptions',null,'?select=client_id,nivel'),
+      api('GET','loyalty_visits',null,'?select=client_id,fecha&order=fecha.desc')
     ]);
     allClientes=clientes||[];
     _rewardsCache=rewards||[];
@@ -472,6 +487,12 @@ async function loadClientes(){
       if(!_redeemedByClient[k])_redeemedByClient[k]=new Set();
       _redeemedByClient[k].add(r.nivel);
     });
+    _lastVisitByClient={};
+    // Viene ordenado por fecha desc, así que la primera visita que veamos por cliente es la más reciente
+    (visits||[]).forEach(v=>{
+      const k=String(v.client_id);
+      if(!_lastVisitByClient[k]) _lastVisitByClient[k]=v.fecha;
+    });
     renderClientes(allClientes);
   }catch(e){}
 }
@@ -479,11 +500,68 @@ function filtrarClientes(){
   const q=document.getElementById('searchClients').value.toLowerCase();
   renderClientes(allClientes.filter(c=>c.nombre.toLowerCase().includes(q)||c.whatsapp.includes(q)));
 }
+
+// ── ORDENAR TABLA DE CLIENTES ──
+let _sortState={key:null,dir:1};
+let _lastRenderList=[];
+function getSortValue(c,key){
+  switch(key){
+    case 'nombre': return (c.nombre||'').toLowerCase();
+    case 'whatsapp': return c.whatsapp||'';
+    case 'nivel': { const rw=nivelActual(c.visitas_totales); return rw?rw.nivel:null; }
+    case 'visitas': return c.visitas_totales??0;
+    case 'sellos': return c.sellos??0;
+    case 'premio': {
+      const rw=nivelActual(c.visitas_totales);
+      if(!rw) return null;
+      return (_redeemedByClient[String(c.id)]||new Set()).has(rw.nivel)?2:1;
+    }
+    case 'cumple': {
+      if(!c.fecha_nacimiento) return null;
+      const bd=new Date(c.fecha_nacimiento+'T12:00:00');
+      return bd.getMonth()*100+bd.getDate();
+    }
+    case 'inscripcion': return c.created_at?new Date(c.created_at).getTime():null;
+    case 'ultima_visita': { const lv=_lastVisitByClient[String(c.id)]; return lv?new Date(lv).getTime():null; }
+    default: return null;
+  }
+}
+function applySort(list){
+  if(!_sortState.key) return list;
+  const key=_sortState.key, dir=_sortState.dir;
+  return [...list].sort((a,b)=>{
+    const va=getSortValue(a,key), vb=getSortValue(b,key);
+    const aNull=(va===null||va===undefined||va===''||(typeof va==='number'&&Number.isNaN(va)));
+    const bNull=(vb===null||vb===undefined||vb===''||(typeof vb==='number'&&Number.isNaN(vb)));
+    if(aNull&&bNull)return 0;
+    if(aNull)return 1;   // los vacíos siempre al final, sin importar la dirección
+    if(bNull)return -1;
+    if(va<vb)return -1*dir;
+    if(va>vb)return 1*dir;
+    return 0;
+  });
+}
+function updateSortIndicators(){
+  document.querySelectorAll('#sec-clientes th.sortable').forEach(th=>{
+    th.classList.toggle('sorted',th.dataset.key===_sortState.key);
+  });
+  document.querySelectorAll('#sec-clientes .sort-arrow').forEach(sp=>{
+    sp.textContent=(sp.dataset.arrow===_sortState.key)?(_sortState.dir===1?'▲':'▼'):'';
+  });
+}
+function onSortClick(key){
+  if(_sortState.key===key) _sortState.dir*=-1;
+  else{ _sortState.key=key; _sortState.dir=1; }
+  renderClientes(_lastRenderList);
+}
 function renderClientes(list){
+  _lastRenderList=list;
+  const sorted=applySort(list);
   const tb=document.getElementById('clientesTable');tb.innerHTML='';
-  if(!list.length){tb.innerHTML='<tr><td colspan="8" style="color:var(--faint);text-align:center;padding:28px">Sin clientes registrados</td></tr>';return}
+  updateSortIndicators();
+  if(!sorted.length){tb.innerHTML='<tr><td colspan="11" style="color:var(--faint);text-align:center;padding:28px">Sin clientes registrados</td></tr>';return}
   const now=new Date();
-  list.forEach(c=>{
+  sorted.forEach(c=>{
     const bd=c.fecha_nacimiento?new Date(c.fecha_nacimiento+'T12:00:00'):null;
     const isBd=bd&&bd.getMonth()===now.getMonth();
     const bdStr=bd?`${bd.toLocaleDateString('es-MX',{day:'numeric',month:'short'})}${isBd?' 🎂':''}` :'—';
@@ -496,6 +574,9 @@ function renderClientes(list){
     } else {
       premioStr='<span style="color:var(--gold);font-weight:600">Pendiente</span>';
     }
+    const inscStr=c.created_at?new Date(c.created_at).toLocaleDateString('es-MX',{day:'numeric',month:'short',year:'numeric'}):'—';
+    const lastVisit=_lastVisitByClient[String(c.id)];
+    const lastVisitStr=lastVisit?new Date(lastVisit).toLocaleDateString('es-MX',{day:'numeric',month:'short',year:'numeric'}):'—';
     tb.innerHTML+=`<tr>
       <td><a class="client-name-link" onclick="verDetalleCliente('${c.id}')">${c.nombre}</a>${!c.activo?' <span style="color:var(--faint);font-size:11px">(inactivo)</span>':''}</td>
       <td><a href="https://wa.me/${c.whatsapp.replace(/\D/g,'')}" target="_blank" style="color:var(--faint);text-decoration:none;border-bottom:1px dashed var(--line2)" onmouseover="this.style.color='#25D366'" onmouseout="this.style.color='var(--faint)'">${c.whatsapp}</a></td>
@@ -504,6 +585,8 @@ function renderClientes(list){
       <td><strong>${c.sellos}</strong>/10</td>
       <td>${premioStr}</td>
       <td style="color:var(--faint)">${bdStr}</td>
+      <td style="color:var(--faint)">${inscStr}</td>
+      <td style="color:var(--faint)">${lastVisitStr}</td>
       <td><button class="btn" style="padding:5px 12px;font-size:11px;white-space:nowrap" onclick="marcarVisitaDirecta('${c.id}','${c.nombre}')">✓ Visita</button></td>
       <td><div class="actions-cell">
         <button class="btn-sm" onclick='editClient(${JSON.stringify(c)})'>Editar</button>
