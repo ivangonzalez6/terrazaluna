@@ -959,10 +959,11 @@ h2.sec::after{content:'';flex:1;height:1px;background:var(--line);margin-left:6p
     </div>
     <!-- Método de pago obligatorio -->
     <label class="flbl">Método de pago</label>
-    <div id="payMethodGrid" style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin-top:5px;margin-bottom:6px">
+    <div id="payMethodGrid" style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:5px;margin-bottom:6px">
       <div class="pay-pm" data-pm="efectivo" style="background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:11px 6px;text-align:center;cursor:pointer;font-size:10px;letter-spacing:.15em;text-transform:uppercase;font-weight:600;color:var(--dim);transition:all .15s">💵 Efectivo</div>
       <div class="pay-pm" data-pm="tarjeta" style="background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:11px 6px;text-align:center;cursor:pointer;font-size:10px;letter-spacing:.15em;text-transform:uppercase;font-weight:600;color:var(--dim);transition:all .15s">💳 Tarjeta</div>
       <div class="pay-pm" data-pm="transferencia" style="background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:11px 6px;text-align:center;cursor:pointer;font-size:10px;letter-spacing:.15em;text-transform:uppercase;font-weight:600;color:var(--dim);transition:all .15s">📱 Transfer.</div>
+      <div class="pay-pm" data-pm="mixto" style="background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:11px 6px;text-align:center;cursor:pointer;font-size:10px;letter-spacing:.15em;text-transform:uppercase;font-weight:600;color:var(--dim);transition:all .15s">🔀 Mixto</div>
     </div>
     <!-- Campo: pago del cliente (solo aplica para efectivo) -->
     <div id="payCashWrap">
@@ -972,6 +973,25 @@ h2.sec::after{content:'';flex:1;height:1px;background:var(--line);margin-left:6p
       <input id="payClientAmt" type="number" min="0" step="1" placeholder="0"
         style="padding-left:26px;font-family:'Cormorant Garamond',serif;font-size:22px;font-weight:600;color:var(--ink)">
     </div>
+    </div>
+    <!-- Desglose de pago mixto -->
+    <div id="payMixedWrap" style="display:none;margin-top:2px">
+      <label class="flbl">Desglose del pago mixto</label>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin-top:6px">
+        <div>
+          <div style="font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:var(--faint);margin-bottom:3px;text-align:center">💵 Efectivo</div>
+          <input id="payMixEfectivo" type="number" min="0" step="1" placeholder="0" style="text-align:center;padding:8px 4px;font-family:'Cormorant Garamond',serif;font-size:16px;font-weight:600;color:var(--ink)">
+        </div>
+        <div>
+          <div style="font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:var(--faint);margin-bottom:3px;text-align:center">💳 Tarjeta</div>
+          <input id="payMixTarjeta" type="number" min="0" step="1" placeholder="0" style="text-align:center;padding:8px 4px;font-family:'Cormorant Garamond',serif;font-size:16px;font-weight:600;color:var(--ink)">
+        </div>
+        <div>
+          <div style="font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:var(--faint);margin-bottom:3px;text-align:center">📱 Transfer.</div>
+          <input id="payMixTransferencia" type="number" min="0" step="1" placeholder="0" style="text-align:center;padding:8px 4px;font-family:'Cormorant Garamond',serif;font-size:16px;font-weight:600;color:var(--ink)">
+        </div>
+      </div>
+      <div id="payMixDiff" style="margin-top:8px;font-size:11px;text-align:center;color:var(--faint)"></div>
     </div>
     <!-- Cambio -->
     <div id="payChangeWrap" style="margin-top:10px;padding:12px 16px;border-radius:12px;background:#f0f9ec;border:1px solid #a8c995;display:none;justify-content:space-between;align-items:center">
@@ -1183,14 +1203,20 @@ async function insertFinanceMovements(rec){
   // Agrupar importe por método de pago
   var methods={efectivo:0,tarjeta:0,transferencia:0};
   var items=rec.items||[];
+  // Las entradas virtuales (virtualPM) representan el desglose exacto de un pago Mixto;
+  // cuando existen, los productos reales NO cargan pm (no sabemos "cuál se pagó con cuál"),
+  // así que se excluyen de la suma para no contar el dinero dos veces.
+  var hasVirtual=items.some(function(it){return it.virtualPM;});
   items.forEach(function(it){
     if(it.note==='Descuento 2×1')return; // skip discount lines, they reduce total already
+    if(it.virtualPM){var vpm=it.pm||'efectivo';if(!methods[vpm])methods[vpm]=0;methods[vpm]+=it.p*it.q;return;}
+    if(hasVirtual&&!it.pm)return;
     var pm=it.pm||rec.paymentMethod||'efectivo';
     if(!methods[pm])methods[pm]=0;
     methods[pm]+=it.p*it.q;
   });
   // Si no hay items detallados, asignar total al método principal
-  var hasDetail=items.some(function(it){return it.pm;});
+  var hasDetail=items.some(function(it){return it.pm||it.virtualPM;});
   if(!hasDetail||Object.values(methods).every(function(v){return v===0;})){
     methods={};methods[rec.paymentMethod||'efectivo']=rec.total;
   }else{
@@ -1203,10 +1229,10 @@ async function insertFinanceMovements(rec){
   }
   var methodsUsed=Object.keys(methods).filter(function(k){return methods[k]>0;});
   if(!methodsUsed.length)methodsUsed=[rec.paymentMethod||'efectivo'];
-  // Construir mapa de productos
+  // Construir mapa de productos (las entradas virtuales no son productos reales)
   var products={};
   items.forEach(function(it){
-    if(it.note==='Descuento 2×1')return;
+    if(it.note==='Descuento 2×1'||it.virtualPM)return;
     var name=it.n||'Producto';
     if(!products[name])products[name]={q:0,total:0};
     products[name].q+=it.q;products[name].total+=it.p*it.q;
@@ -1885,6 +1911,9 @@ function openPayModal(title, sub, total, confirmLabel, onConfirm){
   });
   // Cash wrap visible by default until selection
   gid('payCashWrap').style.display='block';
+  gid('payMixedWrap').style.display='none';
+  gid('payMixEfectivo').value='';gid('payMixTarjeta').value='';gid('payMixTransferencia').value='';
+  gid('payMixDiff').textContent='';
   gid('payModal').classList.add('show');
   setTimeout(function(){gid('payClientAmt').focus();},280);
   gid('payClientAmt').setAttribute('data-total', total);
@@ -1897,6 +1926,9 @@ function closePayModal(){
   gid('payClientAmt').value='';
   gid('payChangeWrap').style.display='none';
   gid('payShortWrap').style.display='none';
+  gid('payMixedWrap').style.display='none';
+  gid('payMixEfectivo').value='';gid('payMixTarjeta').value='';gid('payMixTransferencia').value='';
+  gid('payMixDiff').textContent='';
 }
 
 // Payment method buttons
@@ -1912,14 +1944,48 @@ document.querySelectorAll('.pay-pm').forEach(function(btn){
     // Hide cash-given/change field for non-cash methods
     if(_payMethod==='efectivo'){
       gid('payCashWrap').style.display='block';
+      gid('payMixedWrap').style.display='none';
+    }else if(_payMethod==='mixto'){
+      gid('payCashWrap').style.display='none';
+      gid('payChangeWrap').style.display='none';
+      gid('payShortWrap').style.display='none';
+      gid('payClientAmt').value='';
+      gid('payMixedWrap').style.display='block';
+      updatePayMixDiff();
     }else{
       gid('payCashWrap').style.display='none';
       gid('payChangeWrap').style.display='none';
       gid('payShortWrap').style.display='none';
       gid('payClientAmt').value='';
+      gid('payMixedWrap').style.display='none';
     }
   });
 });
+function updatePayMixDiff(){
+  var total=parseFloat(gid('payClientAmt').getAttribute('data-total'))||0;
+  var sum=(parseFloat(gid('payMixEfectivo').value)||0)+(parseFloat(gid('payMixTarjeta').value)||0)+(parseFloat(gid('payMixTransferencia').value)||0);
+  var diff=total-sum;
+  var el=gid('payMixDiff');
+  if(sum<=0){el.textContent='Total a cobrar: '+money(total);el.style.color='var(--faint)';}
+  else if(Math.abs(diff)<0.5){el.textContent='✓ Cuadra con el total';el.style.color='var(--ok)';}
+  else if(diff>0){el.textContent='Falta '+money(diff);el.style.color='var(--danger)';}
+  else{el.textContent='Sobran '+money(-diff);el.style.color='var(--danger)';}
+}
+['payMixEfectivo','payMixTarjeta','payMixTransferencia'].forEach(function(id){
+  gid(id).addEventListener('input',updatePayMixDiff);
+});
+// Construye las entradas "virtuales" (no son productos) que representan el desglose
+// exacto de un pago Mixto — una por cada método con monto > 0. No se reparten los
+// productos reales entre métodos: solo se registra cuánto entró por cada uno.
+function buildMixedVirtualEntries(amounts){
+  var order=['efectivo','tarjeta','transferencia'];
+  var out=[];
+  order.forEach(function(k){
+    var amt=Math.round((parseFloat(amounts[k])||0)*100)/100;
+    if(amt>0.004)out.push({n:'Pago mixto',p:amt,q:1,note:'',pm:k,virtualPM:true});
+  });
+  return out;
+}
 
 // Change calculation
 gid('payClientAmt').addEventListener('input',function(){
@@ -1945,8 +2011,19 @@ gid('payModalConfirm').addEventListener('click',async function(){
   var cb=_payModalCb;
   if(!cb)return;
   if(!_payMethod){showToast('Selecciona el método de pago');return;}
-  var given=parseFloat(gid('payClientAmt').value)||0;
   var total=parseFloat(gid('payClientAmt').getAttribute('data-total'))||0;
+  if(_payMethod==='mixto'){
+    var mEf=parseFloat(gid('payMixEfectivo').value)||0;
+    var mTar=parseFloat(gid('payMixTarjeta').value)||0;
+    var mTrans=parseFloat(gid('payMixTransferencia').value)||0;
+    var sum=mEf+mTar+mTrans;
+    if(sum<=0){showToast('Ingresa al menos un monto');return;}
+    if(Math.abs(sum-total)>0.5){showToast('Los montos no cuadran: '+money(sum)+' de '+money(total));return;}
+    closePayModal();
+    await cb({mixed:true,amounts:{efectivo:mEf,tarjeta:mTar,transferencia:mTrans}});
+    return;
+  }
+  var given=parseFloat(gid('payClientAmt').value)||0;
   if(_payMethod==='efectivo'&&given>0&&given<total){showToast('El pago es menor al total');return;}
   var method=_payMethod;
   closePayModal();
@@ -1964,17 +2041,31 @@ function doCloseTable(t){
   var sub=paid>0?'Ya cobrado: '+money(paid):' ';
   openPayModal('Cobrar mesa '+t,sub,remaining,'Cobrar y cerrar',async function(method){
     if(_closeBusy)return; _closeBusy=true; // evita doble cobro por doble toque
-    var fallbackPm=method||'efectivo';
+    var mixed=method&&typeof method==='object'&&method.mixed;
+    var fallbackPm=mixed?'mixto':(method||'efectivo');
     var all=[];
-    if(o.items)o.items.forEach(function(it){all.push({n:it.n,p:it.p,q:it.q,note:it.note||'',paid:false,pm:fallbackPm});});
+    // Productos aún no pagados (cuenta general + personas sin pagar): reciben el método
+    // elegido ahora. Si es pago mixto, los productos NO se reparten entre métodos — se
+    // agregan entradas virtuales al final con el desglose exacto que escribió el cajero.
+    if(o.items)o.items.forEach(function(it){all.push({n:it.n,p:it.p,q:it.q,note:it.note||'',paid:false,pm:mixed?undefined:fallbackPm});});
     if(o.persons)o.persons.forEach(function(p){
-      var personPm=p.paymentMethod||fallbackPm;
-      if(p.items)p.items.forEach(function(it){all.push({n:it.n,p:it.p,q:it.q,note:it.note||'',person:p.name,paid:!!p.paid,pm:personPm});});
+      if(p.paid){
+        // Persona que ya pagó antes (individualmente) conserva su propio método/desglose.
+        if(p.paymentMethod==='mixto'&&p.paymentBreakdown){
+          if(p.items)p.items.forEach(function(it){all.push({n:it.n,p:it.p,q:it.q,note:it.note||'',person:p.name,paid:true,pm:undefined});});
+          all=all.concat(buildMixedVirtualEntries(p.paymentBreakdown));
+        }else{
+          if(p.items)p.items.forEach(function(it){all.push({n:it.n,p:it.p,q:it.q,note:it.note||'',person:p.name,paid:true,pm:it.pm||p.paymentMethod||'efectivo'});});
+        }
+      }else{
+        if(p.items)p.items.forEach(function(it){all.push({n:it.n,p:it.p,q:it.q,note:it.note||'',person:p.name,paid:false,pm:mixed?undefined:fallbackPm});});
+      }
     });
+    if(mixed)all=all.concat(buildMixedVirtualEntries(method.amounts));
     if(o.discounts&&o.discounts.length)o.discounts.forEach(function(d){all.push({n:d.label,p:d.amount,q:1,note:'Descuento 2×1',pm:fallbackPm});});
-    var pb=o.persons?o.persons.map(function(p){return{name:p.name,total:pTotal(p),count:pCount(p),paid:!!p.paid,paymentMethod:p.paymentMethod||fallbackPm};}):[];
+    var pb=o.persons?o.persons.map(function(p){return{name:p.name,total:pTotal(p),count:pCount(p),paid:!!p.paid,paymentMethod:p.paid?(p.paymentMethod||'efectivo'):fallbackPm};}):[];
     var totalClosed=tblSubtotal(t)+tblDiscount(t);
-    var rec={id:uid(),table:t,tableNote:o.tableNote||'',openedAt:o.openedAt||Date.now(),closedAt:Date.now(),total:totalClosed,itemCount:all.reduce(function(s,it){return s+(it.q||1);},0),items:all,persons:pb,paymentMethod:fallbackPm};
+    var rec={id:uid(),table:t,tableNote:o.tableNote||'',openedAt:o.openedAt||Date.now(),closedAt:Date.now(),total:totalClosed,itemCount:Math.round(all.reduce(function(s,it){return s+(it.virtualPM?0:(it.q||1));},0)),items:all,persons:pb,paymentMethod:fallbackPm};
     appHistory.unshift(rec);
     _closedRecently[String(t)]=Date.now();
     delete orders[t];
@@ -2315,13 +2406,17 @@ async function renderKitchen(){
 }
 
 // ══ CAJA ══
-var PM_ICON={efectivo:'💵',tarjeta:'💳',transferencia:'📱'};
-var PM_LABEL={efectivo:'Efectivo',tarjeta:'Tarjeta',transferencia:'Transferencia'};
+var PM_ICON={efectivo:'💵',tarjeta:'💳',transferencia:'📱',mixto:'🔀'};
+var PM_LABEL={efectivo:'Efectivo',tarjeta:'Tarjeta',transferencia:'Transferencia',mixto:'Mixto'};
 // Desglosa una cuenta cerrada por método de pago real (por producto/persona), no solo el método "principal"
 function histMethods(h){
   var m={};
-  (h.items||[]).forEach(function(it){
+  var items=h.items||[];
+  var hasVirtual=items.some(function(it){return it.virtualPM;});
+  items.forEach(function(it){
     if(it.note==='Descuento 2×1')return;
+    if(it.virtualPM){var vpm=it.pm||'efectivo';m[vpm]=(m[vpm]||0)+it.p*it.q;return;}
+    if(hasVirtual&&!it.pm)return; // ya cubierto por una entrada virtual de pago mixto
     var pm=it.pm||h.paymentMethod||'efectivo';
     m[pm]=(m[pm]||0)+it.p*it.q;
   });
@@ -2379,6 +2474,7 @@ function showHistDetail(h){
     :'<div style="font-size:11px;color:var(--faint);margin-bottom:10px">'+(PM_ICON[pmBreak[0].pm]||'')+' '+(PM_LABEL[pmBreak[0].pm]||pmBreak[0].pm)+'</div>';
   var html='';
   (h.items||[]).forEach(function(it){
+    if(it.virtualPM)return; // desglose de pago mixto, no es un producto
     var pm=it.pm||h.paymentMethod||'efectivo';
     var pmTag=it.note==='Descuento 2×1'?'':'<span style="font-size:10px;color:var(--faint);margin-left:6px">'+(PM_ICON[pm]||'')+'</span>';
     html+='<div class="hd-item"><span class="hd-q">'+it.q+'×</span><span class="hd-n">'+esc(it.n)+(it.note?'<span class="hd-note"> "'+esc(it.note)+'"</span>':'')+pmTag+'</span>'+(it.person?'<span class="hd-person">'+esc(it.person)+'</span>':'')+'<span class="hd-p">'+money(it.p*it.q)+'</span></div>';
@@ -2393,7 +2489,7 @@ gid('histDetailModal').addEventListener('click',function(e){if(e.target===gid('h
 gid('esCancel').addEventListener('click',function(){gid('editSaleModal').classList.remove('show');editSaleId=null;});
 gid('esSave').addEventListener('click',async function(){if(!editSaleId)return;var nt=parseFloat(gid('esTotal').value);if(isNaN(nt)||nt<0){showToast('Total inválido');return;}var note=gid('esNote').value.trim();await updateHist(editSaleId,nt,note);var r=null;for(var i=0;i<appHistory.length;i++){if(appHistory[i].id===editSaleId){r=appHistory[i];break;}}if(r){r.total=nt;r.editNote=note;}await updateFinanceMovements(editSaleId,nt,r&&r.paymentMethod);gid('editSaleModal').classList.remove('show');editSaleId=null;renderStats();showToast('✓ Venta actualizada');});
 document.querySelectorAll('.per-tab').forEach(function(btn){btn.addEventListener('click',function(){var p=btn.getAttribute('data-period');if(p!=='day'&&!isAdmin())return;curPeriod=p;renderStats();});});
-gid('exportCSV').addEventListener('click',async function(){var ok=await askPass('Contraseña para exportar CSV');if(!ok)return;var f=filtHist(curPeriod);if(!f.length){showToast('Sin datos');return;}var csv='fecha,hora,mesa,persona,producto,nota,cantidad,precio_unitario,subtotal,total_cuenta\n';f.forEach(function(h){var d=new Date(h.closedAt),fe=d.toISOString().slice(0,10),ho=d.toTimeString().slice(0,5);h.items.forEach(function(it){var nt=(it.note||'').replace(/"/g,'""'),ps=(it.person||'').replace(/"/g,'""');csv+=fe+','+ho+','+h.table+',"'+ps+'","'+it.n+'","'+nt+'",'+it.q+','+it.p+','+it.p*it.q+','+h.total+'\n';});});dlFile('terraza_luna_'+Date.now()+'.csv',csv,'text/csv');showToast('CSV descargado');});
+gid('exportCSV').addEventListener('click',async function(){var ok=await askPass('Contraseña para exportar CSV');if(!ok)return;var f=filtHist(curPeriod);if(!f.length){showToast('Sin datos');return;}var csv='fecha,hora,mesa,persona,producto,nota,cantidad,precio_unitario,subtotal,total_cuenta\n';f.forEach(function(h){var d=new Date(h.closedAt),fe=d.toISOString().slice(0,10),ho=d.toTimeString().slice(0,5);h.items.forEach(function(it){if(it.virtualPM)return;var nt=(it.note||'').replace(/"/g,'""'),ps=(it.person||'').replace(/"/g,'""');csv+=fe+','+ho+','+h.table+',"'+ps+'","'+it.n+'","'+nt+'",'+it.q+','+it.p+','+it.p*it.q+','+h.total+'\n';});});dlFile('terraza_luna_'+Date.now()+'.csv',csv,'text/csv');showToast('CSV descargado');});
 gid('exportJSON').addEventListener('click',async function(){var ok=await askPass('Contraseña para exportar JSON');if(!ok)return;var f=filtHist(curPeriod);if(!f.length){showToast('Sin datos');return;}dlFile('terraza_luna_'+Date.now()+'.json',JSON.stringify(f,null,2),'application/json');showToast('JSON descargado');});
 gid('clearHistory').addEventListener('click',async function(){var ok=await askPass('Contraseña para borrar historial');if(!ok)return;openConfirm('Borrar TODO el historial','Sin retorno.','Borrar todo',async function(){await deleteAllHist();appHistory=[];renderStats();showToast('Historial borrado');});});
 function dlFile(n,c,t){var b=new Blob([c],{type:t}),u=URL.createObjectURL(b),a=document.createElement('a');a.href=u;a.download=n;document.body.appendChild(a);a.click();a.remove();setTimeout(function(){URL.revokeObjectURL(u);},1000);}
@@ -3646,12 +3742,17 @@ async function doAutoCloseTable(t){
   var all=[];
   if(o.items)o.items.forEach(function(it){all.push({n:it.n,p:it.p,q:it.q,note:it.note||'',paid:false,pm:'efectivo'});});
   if(o.persons)o.persons.forEach(function(p){
-    var pm=p.paymentMethod||'efectivo';
-    if(p.items)p.items.forEach(function(it){all.push({n:it.n,p:it.p,q:it.q,note:it.note||'',person:p.name,paid:true,pm:pm});});
+    if(p.paymentMethod==='mixto'&&p.paymentBreakdown){
+      if(p.items)p.items.forEach(function(it){all.push({n:it.n,p:it.p,q:it.q,note:it.note||'',person:p.name,paid:true,pm:undefined});});
+      all=all.concat(buildMixedVirtualEntries(p.paymentBreakdown));
+    }else{
+      var pm=p.paymentMethod||'efectivo';
+      if(p.items)p.items.forEach(function(it){all.push({n:it.n,p:it.p,q:it.q,note:it.note||'',person:p.name,paid:true,pm:it.pm||pm});});
+    }
   });
   if(o.discounts&&o.discounts.length)o.discounts.forEach(function(d){all.push({n:d.label,p:d.amount,q:1,note:'Descuento 2×1',pm:'efectivo'});});
   var pb=o.persons?o.persons.map(function(p){return{name:p.name,total:pTotal(p),count:pCount(p),paid:true,paymentMethod:p.paymentMethod||'efectivo'};}):[];
-  var rec={id:uid(),table:t,tableNote:o.tableNote||'',openedAt:o.openedAt||Date.now(),closedAt:Date.now(),total:totalClosed,itemCount:all.reduce(function(s,it){return s+(it.q||1);},0),items:all,persons:pb,paymentMethod:'efectivo'};
+  var rec={id:uid(),table:t,tableNote:o.tableNote||'',openedAt:o.openedAt||Date.now(),closedAt:Date.now(),total:totalClosed,itemCount:Math.round(all.reduce(function(s,it){return s+(it.virtualPM?0:(it.q||1));},0)),items:all,persons:pb,paymentMethod:'efectivo'};
   appHistory.unshift(rec);
   _closedRecently[String(t)]=Date.now();
   delete orders[t];
@@ -3711,11 +3812,23 @@ function renderPerPersonPay(){
       if(!amt){showToast('Sin productos para cobrar');return;}
       openPayModal('Cobrar a '+name,'',amt,'Cobrar',async function(method){
         var tbl=curTable;
+        var mixed=method&&typeof method==='object'&&method.mixed;
         for(var i=0;i<orders[tbl].persons.length;i++){
-          if(orders[tbl].persons[i].id===pid){orders[tbl].persons[i].paid=true;orders[tbl].persons[i].paymentMethod=method||'efectivo';break;}
+          if(orders[tbl].persons[i].id===pid){
+            var per=orders[tbl].persons[i];
+            per.paid=true;
+            if(mixed){
+              per.paymentMethod='mixto';
+              per.paymentBreakdown=method.amounts;
+            }else{
+              per.paymentMethod=method||'efectivo';
+              delete per.paymentBreakdown;
+            }
+            break;
+          }
         }
         await saveOrders(orders);
-        showToast('✓ '+name+' pagó '+money(amt)+' ('+(method||'efectivo')+')');
+        showToast('✓ '+name+' pagó '+money(amt)+' ('+(mixed?'mixto':(method||'efectivo'))+')');
         // Cerrar automáticamente si el remanente es $0
         if(tblTotal(tbl)===0){
           await doAutoCloseTable(tbl);
